@@ -277,8 +277,9 @@ pub enum ServerMessage {
         /// rounded to 0.001: virtual shifting pushes the pedals with it, so
         /// they feel the drag the physics applied (not a client-side guess).
         drag_factor: f64,
-        /// The viewer's drag-area multiplier from drafting alone, rounded to
-        /// 0.001, for display; left out in clear air.
+        /// The viewer's drag-area multiplier from drafting alone (the riders
+        /// ahead and alongside), rounded to 0.001, for display; left out in
+        /// clear air, also for a leader whose only shelter is a wheel behind.
         #[serde(skip_serializing_if = "Option::is_none")]
         draft: Option<f64>,
     },
@@ -1652,6 +1653,13 @@ mod tests {
         let factor = world.rider(follower).unwrap().drag_factor;
         let json = state_json(&world, follower);
         assert!(json.contains(&format!("\"drag_factor\":{}", round3(factor))), "{json}");
+    }
+
+    #[test]
+    fn state_leaves_the_draft_out_for_the_leader_of_a_line() {
+        let (world, leader, _) = two_in_a_line();
+        let json = state_json(&world, leader);
+        assert!(!json.contains("\"draft\""), "{json}");
     }
 
     /// The state of a rider riding alone again after its follower left.

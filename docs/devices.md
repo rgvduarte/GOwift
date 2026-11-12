@@ -72,7 +72,8 @@ in simulation mode, Cog or not:
   [ADR 0019](adr/0019-calibrated-physics.md)). The same Crr goes to the trainer,
   since the app assumes the trainer adds it. Its air drag is scaled by the
   server's `state.drag_factor`, what the server's physics scaled the rider's
-  drag by in the last tick (drafting and the thinner air high up included), so
+  drag by in the last tick (drafting, a leader's small gain from a wheel close
+  behind and the thinner air high up included), so
   a draft feels exactly as light as it rides. An older server doesn't send it; then the app estimates
   the draft from the riders it sees.
 - Climb feel doesn't apply with gears, and its sliders hide: the gears make a

@@ -89,21 +89,26 @@ impl DraftParams {
         self.follow(gap, self.max_reduction)
     }
 
-    /// CdA multiplier for a rider at `place` in a group: the shelter of its
-    /// wheel, deeper in the line and with riders alongside, times the little
-    /// a wheel behind gives.
+    /// CdA multiplier for a rider at `place` in a group: its draft (see
+    /// [`Self::group_draft`]) times the little a wheel behind gives.
     pub fn group_factor(&self, place: &GroupPlace) -> f64 {
-        let follow = place.line.first().map_or(1.0, |wheel| {
-            let line = self.line_reduction(&place.line);
-            let side: f64 = place.alongside.iter().map(|&gap| self.side_share(gap)).sum();
-            let flanked = line + self.side_per_rider * side;
-            self.follow(wheel.gap, flanked.min(self.max_bunch.max(line)))
-        });
         let lead = place.gap_behind.map_or(1.0, |gap| {
             let t = ((gap - self.min_gap) / (self.leader_gap - self.min_gap)).clamp(0.0, 1.0);
             1.0 - self.leader * (1.0 - t)
         });
-        follow * lead
+        self.group_draft(place) * lead
+    }
+
+    /// The drafting part of [`Self::group_factor`]: the shelter of the
+    /// rider's wheel, deeper in the line and with riders alongside. 1 for a
+    /// rider on no wheel, whoever rides behind it.
+    pub fn group_draft(&self, place: &GroupPlace) -> f64 {
+        place.line.first().map_or(1.0, |wheel| {
+            let line = self.line_reduction(&place.line);
+            let side: f64 = place.alongside.iter().map(|&gap| self.side_share(gap)).sum();
+            let flanked = line + self.side_per_rider * side;
+            self.follow(wheel.gap, flanked.min(self.max_bunch.max(line)))
+        })
     }
 
     /// The most a rider at the back of `line` saves right behind its wheel.
@@ -306,6 +311,26 @@ mod tests {
         assert!((leading(2.0) - 0.974).abs() < 1e-12);
         assert!((leading(3.0) - 0.987).abs() < 1e-12);
         assert_eq!(leading(4.0), 1.0);
+    }
+
+    #[test]
+    fn a_wheel_behind_is_no_draft() {
+        let p = DraftParams::default();
+        let leading = GroupPlace {
+            gap_behind: Some(2.0),
+            ..GroupPlace::default()
+        };
+        assert_eq!(p.group_draft(&leading), 1.0);
+    }
+
+    #[test]
+    fn the_draft_in_the_middle_of_a_line_is_the_wheel_ahead_s() {
+        let p = DraftParams::default();
+        let middle = GroupPlace {
+            gap_behind: Some(2.0),
+            ..in_line(2.0, 1)
+        };
+        assert!((p.group_draft(&middle) - 0.7).abs() < 1e-12);
     }
 
     #[test]

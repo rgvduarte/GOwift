@@ -42,8 +42,9 @@ the gap.
   when a rider up the line or alongside drifts a centimetre.
 - **The server sends the result.** `state.drag_factor` is everything the
   physics scaled the rider's air drag by in the last tick, `state.draft` the
-  drafting part alone. Virtual shifting pushes with `drag_factor`, the HUD shows
-  `draft`. The client's copy of the rule stays only for older servers, which
+  drafting part alone: the shelter of the riders ahead and alongside, without
+  the leader's gain from a wheel behind. Virtual shifting pushes with
+  `drag_factor`, the HUD shows `draft`. The client's copy of the rule stays only for older servers, which
   send neither, and to draw the gap to the wheel ahead on the map.
 
 ## Consequences
@@ -60,6 +61,8 @@ the gap.
   short loop, and after one link per rider in the field at most. The per-tick
   cost stays one scan of the field per rider, as before.
 - The HUD now shows what the server applies: 0 % behind another app's rider,
-  50 % behind a beer bike, a few percent for a leader with a wheel behind.
+  50 % behind a beer bike. A leader with a wheel behind is not drafting and
+  sees no drafting line; its few percent reach the pedals through
+  `drag_factor`.
 - Only the viewer's own numbers are sent; other riders' drafts stay on the
   server.

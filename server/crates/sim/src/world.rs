@@ -32,6 +32,7 @@ use std::collections::{BTreeMap, BTreeSet};
 use std::fmt;
 
 mod vehicles;
+use vehicles::VehicleShelter;
 
 pub type RiderId = u32;
 
@@ -163,8 +164,10 @@ pub struct Rider {
     pub pass_urge: f64,
     /// Acceleration in the last tick (m/s²): what a rider behind compares itself with.
     pub accel: f64,
-    /// Multiplier on the drag area from the riders around, in the last tick:
-    /// 1 in clear air, below 1 in a draft (a seat: its vehicle's).
+    /// Multiplier on the drag area from riding in the slipstream of the
+    /// riders ahead and alongside, in the last tick: 1 in clear air, below 1
+    /// in a draft (a seat: its vehicle's). A wheel behind is no draft: what it
+    /// gives a leader is only in `drag_factor`.
     pub draft: f64,
     /// Everything the last tick scaled the rider's air drag `½·ρ·CdA·v²` by,
     /// `draft` included: what the client's virtual shifting needs to push
@@ -878,11 +881,20 @@ impl World {
         let around = self.bot_surroundings(&field, &own_slots);
 
         let shelter = field.shelter(&self.config.draft);
-        // The draft each vehicle gets where its captain rides.
-        let vehicle_drafts: Vec<(VehicleId, f64)> = self
+        // The shelter each vehicle gets where its captain rides.
+        let vehicle_drafts: Vec<(VehicleId, VehicleShelter)> = self
             .vehicles
             .values()
-            .filter_map(|v| Some((v.id, shelter.get(&v.captain)?.factor)))
+            .filter_map(|v| {
+                let s = shelter.get(&v.captain)?;
+                Some((
+                    v.id,
+                    VehicleShelter {
+                        factor: s.factor,
+                        draft: s.draft,
+                    },
+                ))
+            })
             .collect();
 
         for (rider, me) in self.riders.values_mut().zip(&own_slots) {
@@ -944,9 +956,11 @@ impl World {
 
             // 2. Physics with drafting. A parked rider has no slot in the field
             // and so no shelter: it rides in clear air.
-            let (ahead, draft) = shelter.get(&rider.id).map_or((None, 1.0), |s| (s.ahead, s.factor));
+            let (ahead, factor, draft) = shelter
+                .get(&rider.id)
+                .map_or((None, 1.0, 1.0), |s| (s.ahead, s.factor, s.draft));
             let air = roads.thin_air(rider, &self.config.physics);
-            let cda_factor = draft * air;
+            let cda_factor = factor * air;
             rider.draft = draft;
             rider.drag_factor = cda_factor;
             let power_watts = if rider.parked {
@@ -1856,11 +1870,13 @@ impl Roads<'_> {
 }
 
 /// A slot's draft in one step: the wheel ahead in its lane (at any gap: the
-/// spacing logic keeps off it) and the CdA multiplier it rides with.
+/// spacing logic keeps off it), the CdA multiplier it rides with, and the
+/// drafting part of that (without a leader's gain from a wheel behind).
 #[derive(Debug, Clone, Copy)]
 struct Shelter<'a> {
     ahead: Option<(f64, &'a Slot)>,
     factor: f64,
+    draft: f64,
 }
 
 /// Everybody's position before the step, to find who rides ahead of whom.
@@ -1952,6 +1968,7 @@ impl Field<'_> {
                 let shelter = Shelter {
                     ahead: ahead[i],
                     factor: draft.group_factor(&place),
+                    draft: draft.group_draft(&place),
                 };
                 (me.id, shelter)
             })
@@ -2375,7 +2392,17 @@ mod tests {
     #[test]
     fn the_leader_rides_with_less_drag_with_a_wheel_right_behind() {
         let (world, ids) = line_of(flat_loop(10_000.0), &[102.0, 100.0], &[1, 1]);
-        assert!((draft_of(&world, ids[0]) - (1.0 - DraftParams::default().leader)).abs() < 1e-12);
+        let factor = world.rider(ids[0]).unwrap().drag_factor;
+        assert!(
+            (factor - (1.0 - DraftParams::default().leader)).abs() < 1e-12,
+            "{factor}"
+        );
+    }
+
+    #[test]
+    fn the_leader_with_a_wheel_right_behind_is_not_drafting() {
+        let (world, ids) = line_of(flat_loop(10_000.0), &[102.0, 100.0], &[1, 1]);
+        assert_eq!(draft_of(&world, ids[0]), 1.0);
     }
 
     #[test]

@@ -65,7 +65,8 @@ rider:
 f_lead = 1 − leader · (1 − clamp((gap_behind − 2) / (4 − 2), 0, 1))
 ```
 
-A rider's draft is `f · f_lead`; its `drag_factor` is `draft · ρ(h) / ρ₀`.
+A rider's draft (sent as `state.draft`, shown as drafting) is `f`; its
+`drag_factor` is `f · f_lead · ρ(h) / ρ₀`.
 The walk follows the line to its front, so a beer bike anywhere ahead counts; it
 ends back at the rider round a ring of riders on a short loop, and after one link
 per rider in the field at most.
