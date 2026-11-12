@@ -22,12 +22,12 @@ the drag the server's physics applies. Today:
 | Question | Decision |
 | --- | --- |
 | Who computes the draft | The server, and only the server. `state` carries the viewer's `drag_factor` (everything the physics scaled ½·ρ·CdA·v² by) and `draft` (drafting alone, for display). The client mirror stays as the fallback for older servers |
-| Depth in a line | Reduction 30 / 40 / 45 / 48 % on the 1st / 2nd / 3rd / 4th-and-later wheel of a same-lane line whose every link is inside the draft window |
-| Riders alongside | +4 % per rider up to 4 m ahead in a neighbouring lane (≤ 1.5 lanes off), only for a rider on a wheel |
+| Depth in a line | Reduction 30 / 40 / 45 / 48 % on the 1st / 2nd / 3rd / 4th-and-later wheel of a same-lane line whose every link is inside the draft window; each step up counts as far as the links up to that depth are close (the window's fade), so the draft stays continuous as a link opens |
+| Riders alongside | Up to +4 % per rider ahead in a neighbouring lane (≤ 1.5 lanes off), only for a rider on a wheel: all of it 2 m ahead, nothing level or 4 m ahead |
 | Bunch cap | 60 % (Blocken et al. 2018 measured 90–95 % deep in a peloton; game riders hold perfect position and nobody is gapped by crosswind) |
 | Leader | 2.6 % less drag with a wheel 2 m behind, fading to none at 4 m (Blocken et al. 2013) |
 | Draft window | Unchanged (2–6.5 m, linear fade): bots' `draft_window` and the spacing logic stay valid |
-| Beer bike | Its 50 % holds on every wheel of the line behind it (`max` with the largest reduction any wheel of the line gives) |
+| Beer bike | Its 50 % holds on every wheel of a closed-up line behind it (each step up the line also rises to the largest reduction any wheel up to there gives) |
 | Wheel inertia | I = 0.14 kg·m² for both wheels, r = 0.311 m: about 1.45 kg more inertial mass (Martin et al. 1998). Vehicles use the same pair |
 | Push from rest | Propulsion force at most 0.5 g × mass (rear-tyre grip, μ ≈ 0.8 with about 60 % of the load on it) |
 | Drivetrain efficiency | Not added: trainers measure power at the hub, after the chain |
@@ -46,10 +46,16 @@ to a trainer without virtual shifting, and the 20 Hz loop.
 
 ## Model
 
-Follower factor, with `t(gap)` the existing linear fade across the window:
+Follower factor, with `c(gap) = 1 − t(gap)` the closeness in the window (1 from
+2 m in, 0 at 6.5 m and beyond) and wheels `k = 1…n` of the line ahead, nearest
+first, link `k` running from wheel `k − 1` (the rider for `k = 1`) to wheel `k`,
+and `deeper[k]` 40 / 45 / 48 % for `k` = 2 / 3 / 4 and later (none for `k = 1`):
 
 ```text
-f = 1 − min(max_bunch, max(line[depth], max over the line's wheels of max_reduction) + side · n_alongside) · (1 − t(gap))
+L_k  = max(L_(k−1), deeper[k], max_reduction of wheel k)     (L_0 = 0)
+R    = Σ_k (L_k − L_(k−1)) · c(gap_2) · … · c(gap_k)
+side = Σ_alongside min(gap / 2, (4 − gap) / (4 − 2)) clamped to 0…1
+f    = 1 − min(max(max_bunch, R), R + 0.04 · side) · c(gap_1)
 ```
 
 Leader factor, with `gap_behind` the nearest rider whose wheel ahead is this

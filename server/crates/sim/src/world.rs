@@ -1939,7 +1939,11 @@ impl Field<'_> {
             .enumerate()
             .map(|(i, me)| {
                 let line = line(i);
-                let alongside = if line.is_empty() { 0 } else { self.alongside(me, draft) };
+                let alongside = if line.is_empty() {
+                    Vec::new()
+                } else {
+                    self.alongside(me, draft)
+                };
                 let place = GroupPlace {
                     line,
                     alongside,
@@ -1954,13 +1958,13 @@ impl Field<'_> {
             .collect()
     }
 
-    /// Riders up to `side_gap` ahead of `me` in a neighbouring lane.
-    fn alongside(&self, me: &Slot, draft: &DraftParams) -> usize {
+    /// Metres to each rider up to `side_gap` ahead of `me` in a neighbouring lane.
+    fn alongside(&self, me: &Slot, draft: &DraftParams) -> Vec<f64> {
         self.slots
             .iter()
             .filter(|s| s.id != me.id && !in_lane(me, s, me.lane) && (s.lane - me.lane).abs() <= draft.side_lanes)
-            .filter(|s| self.gap_to(me, s).is_some_and(|gap| gap > 0.0 && gap <= draft.side_gap))
-            .count()
+            .filter_map(|s| self.gap_to(me, s).filter(|&gap| gap > 0.0 && gap <= draft.side_gap))
+            .collect()
     }
 
     /// Gap to the closest rider behind `me` in `lane` on its route, if any.
@@ -2379,6 +2383,49 @@ mod tests {
         let (world, ids) = line_of(flat_loop(10_000.0), &[102.0, 100.0], &[1, 1]);
         let (flanked, flanked_ids) = line_of(flat_loop(10_000.0), &[102.0, 100.0, 101.0], &[1, 1, 2]);
         assert!(draft_of(&flanked, flanked_ids[1]) < draft_of(&world, ids[1]));
+    }
+
+    /// The draft of the third rider of a line 2 m behind the second, the
+    /// second `link` metres behind the first.
+    fn third_wheel_behind_a_link_of(link: f64) -> f64 {
+        let (world, ids) = line_of(flat_loop(10_000.0), &[102.0 + link, 102.0, 100.0], &[1, 1, 1]);
+        draft_of(&world, ids[2])
+    }
+
+    #[test]
+    fn a_deeper_wheel_s_draft_fades_out_as_the_link_ahead_opens_past_the_window() {
+        let max_gap = DraftParams::default().max_gap;
+        let (inside, outside) = (
+            third_wheel_behind_a_link_of(max_gap - 0.01),
+            third_wheel_behind_a_link_of(max_gap + 0.01),
+        );
+        assert!((inside - outside).abs() < 1e-3, "{inside} vs {outside}");
+    }
+
+    /// The draft of a rider 2 m behind a wheel, with a rider `gap` metres
+    /// ahead of it in the next lane.
+    fn wheel_with_a_rider_alongside_at(gap: f64) -> f64 {
+        let (world, ids) = line_of(flat_loop(10_000.0), &[102.0, 100.0, 100.0 + gap], &[1, 1, 2]);
+        draft_of(&world, ids[1])
+    }
+
+    #[test]
+    fn a_rider_alongside_fades_out_at_the_side_gap() {
+        let side_gap = DraftParams::default().side_gap;
+        let (inside, outside) = (
+            wheel_with_a_rider_alongside_at(side_gap - 0.01),
+            wheel_with_a_rider_alongside_at(side_gap + 0.01),
+        );
+        assert!((inside - outside).abs() < 1e-3, "{inside} vs {outside}");
+    }
+
+    #[test]
+    fn a_rider_alongside_fades_in_as_it_draws_level() {
+        let (ahead, behind) = (
+            wheel_with_a_rider_alongside_at(0.01),
+            wheel_with_a_rider_alongside_at(-0.01),
+        );
+        assert!((ahead - behind).abs() < 1e-3, "{ahead} vs {behind}");
     }
 
     #[test]

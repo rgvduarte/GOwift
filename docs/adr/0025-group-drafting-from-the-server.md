@@ -26,14 +26,20 @@ the gap.
   tick by `Field::shelter`):
   - the first, second, third and fourth-and-later wheel of a same-lane line
     (every link inside the 2–6.5 m window) save up to 30, 40, 45 and 48 %;
-  - each rider up to 4 m ahead in a neighbouring lane (at most 1.5 lanes off)
-    adds 4 %, for a rider on a wheel;
+    each wheel's extra over the one ahead of it counts as far as every link
+    up the line to that depth is close, faded like the draft (all of it from
+    2 m in, nothing at 6.5 m);
+  - each rider ahead in a neighbouring lane (at most 1.5 lanes off) adds up
+    to 4 % for a rider on a wheel: all of it a bike length (2 m) ahead, fading
+    to nothing level with the rider and 4 m ahead;
   - a bunch saves at most 60 %;
   - a rider with a wheel 2 m behind saves 2.6 %, fading to nothing at 4 m.
   The window and its linear fade stay as they were, so bots' draft window and
   the spacing logic need no change, and a pair rides exactly as before. Behind
-  a beer bike every wheel keeps at least its 50 %: a line saves at least what
-  any of its wheels gives the rider right behind it.
+  a beer bike every wheel of a closed-up line keeps its 50 %: a line saves up
+  to what any of its wheels gives the rider right behind it, faded by the links
+  up to that wheel like the depth. Every part fades, so no rider's drag jumps
+  when a rider up the line or alongside drifts a centimetre.
 - **The server sends the result.** `state.drag_factor` is everything the
   physics scaled the rider's air drag by in the last tick, `state.draft` the
   drafting part alone. Virtual shifting pushes with `drag_factor`, the HUD shows
