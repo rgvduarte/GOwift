@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { fileURLToPath } from "node:url";
-import { loadProfile, routeStats } from "../src/lib/route.ts";
+import { loadProfile, routeStats, simplifyProfile } from "../src/lib/route.ts";
 
 // Two tiny loops whose numbers can be checked by hand (see the files):
 // square.json: 300 + 400 + 300 m, then 400 m back to the start; it rises 10 m.
@@ -50,4 +50,36 @@ test("the route stats add up the climbing as the sum of every rise", () => {
 
 test("the route stats name the longest route", () => {
   assert.deepEqual(routeStats(fixtures).longest, { name: "Line", lengthM: 2000 });
+});
+
+// A long, wavy road with one sharp peak and one dip, sampled every metre.
+const wavy = Array.from({ length: 2000 }, (_, d) => [d, 100 + 20 * Math.sin(d / 50)]);
+wavy[1234][1] = 400;
+wavy[777][1] = -50;
+
+test("a simplified profile keeps the start and the finish", () => {
+  const simple = simplifyProfile(wavy, 100);
+  assert.deepEqual([simple[0], simple.at(-1)], [wavy[0], wavy.at(-1)]);
+});
+
+test("a simplified profile keeps the highest and the lowest point", () => {
+  const simple = simplifyProfile(wavy, 100);
+  assert.deepEqual(
+    [simple.some(([d]) => d === 1234), simple.some(([d]) => d === 777)],
+    [true, true],
+  );
+});
+
+test("a simplified profile has at most two points per bucket, plus the ends", () => {
+  assert.ok(simplifyProfile(wavy, 100).length <= 202);
+});
+
+test("a simplified profile stays in order along the road", () => {
+  const distances = simplifyProfile(wavy, 100).map(([d]) => d);
+  assert.deepEqual(distances, [...distances].sort((a, b) => a - b));
+});
+
+test("a profile with fewer points than buckets stays as it is", () => {
+  const short = wavy.slice(0, 50);
+  assert.deepEqual(simplifyProfile(short, 100), short);
 });

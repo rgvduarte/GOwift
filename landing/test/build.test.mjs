@@ -131,6 +131,50 @@ test("the route profile draws itself for visitors who allow motion", { skip }, (
   assert.equal(drawing.length > 0, true);
 });
 
+test("the footer credits read with their spaces", { skip }, () => {
+  const footer = read("index.html").match(/<footer[\s\S]*?<\/footer>/)[0];
+  const text = footer.replace(/<[^>]+>/g, "").replace(/\s+/g, " ");
+  assert.match(text, /OpenRadlr contributors, CC BY-SA 4\.0 \(artwork credits\)\./);
+});
+
+test("the questions' plus and minus signs are not read out", { skip }, () => {
+  const css = allCss();
+  assert.deepEqual(
+    [/content:\s*"\+"\s*\/\s*""/.test(css), /content:\s*"−"\s*\/\s*""/.test(css)],
+    [true, true],
+  );
+});
+
+test("the colours stay monochrome, apart from the route colours of the profile", { skip }, () => {
+  const route = ["5fb47c", "ff5d5d", "4cc3ff"];
+  const hex = [...allCss().matchAll(/#([0-9a-f]{3,8})\b/gi)].map((m) => m[1].toLowerCase());
+  const rgb = hex.map((h) => (h.length <= 4 ? [...h.slice(0, 3)].map((c) => c + c).join("") : h.slice(0, 6)));
+  const coloured = rgb.filter((h) => {
+    const [r, g, b] = [0, 2, 4].map((i) => parseInt(h.slice(i, i + 2), 16));
+    return Math.max(r, g, b) - Math.min(r, g, b) > 8 && !route.includes(h);
+  });
+  assert.deepEqual([...new Set(coloured)], []);
+});
+
+test("the page describes the app for search engines without claiming ratings", { skip }, () => {
+  const json = read("index.html").match(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/)[1];
+  const app = JSON.parse(json);
+  assert.deepEqual(
+    [app["@type"], app.offers.price, "aggregateRating" in app, "review" in app],
+    ["WebApplication", "0", false, false],
+  );
+});
+
+test("the header's monogram is drawn as SVG, sharp on every screen", { skip }, () => {
+  const header = read("index.html").match(/<header[\s\S]*?<\/header>/)[0];
+  assert.deepEqual([/<svg[^>]*class="gd-mark/.test(header), header.includes("brand-mark.png")], [true, false]);
+});
+
+test("the host section's commands come with a copy button", { skip }, () => {
+  const host = read("index.html").match(/<section[^>]*id="host"[\s\S]*?<\/section>/)[0];
+  assert.match(host, /<button[^>]*type="button"[^>]*data-copy/);
+});
+
 test("a wake-up request only ever goes to the server's health check", { skip }, () => {
   const targets = [...read("index.html").matchAll(/\sdata-wake="([^"]*)"/g)].map((m) => m[1]);
   assert.deepEqual(

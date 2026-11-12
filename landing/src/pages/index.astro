@@ -6,6 +6,7 @@ import { site, appHost, hasApp, coldStart, wakeUrl } from "../site";
 import { startLabel } from "../lib/app";
 import { routeStats } from "../lib/route";
 import { routeFacts } from "../lib/facts";
+import CopyButton from "../components/CopyButton.astro";
 import hero from "../assets/hero.png";
 import studio from "../assets/studio.png";
 // The repository's screenshots (also shown in the README), so one set stays current.
@@ -21,6 +22,24 @@ const start = startLabel(hasApp);
 // Counted from routes/*.json when the page is built (ADR 0025).
 const facts = routeFacts(routeStats());
 const [routesFact, lengthFact] = facts;
+
+// What search engines read about the app. Only facts: free, in the browser,
+// open source; no ratings, as there are no reviews to back them.
+const structuredData = {
+  "@context": "https://schema.org",
+  "@type": "WebApplication",
+  name: site.name,
+  url: hasApp ? site.appUrl : site.url,
+  description: site.description,
+  applicationCategory: "GameApplication",
+  operatingSystem: "Windows, macOS, Android, ChromeOS",
+  browserRequirements: "Requires Web Bluetooth: Chrome or Edge, or Bluefy on iPhone and iPad.",
+  isAccessibleForFree: true,
+  license: "https://www.gnu.org/licenses/agpl-3.0.html",
+  codeRepository: site.githubUrl,
+  author: { "@type": "Person", name: site.owner, url: site.ownerUrl },
+  offers: { "@type": "Offer", price: "0", priceCurrency: "EUR" },
+};
 
 // Shown next to the buttons when the server sleeps while nobody rides.
 const coldStartNote = "The free server naps when nobody rides, so the first start can take up to a minute.";
@@ -93,6 +112,7 @@ const faq = [
 ---
 
 <Base overlay>
+  <script type="application/ld+json" slot="head" set:html={JSON.stringify(structuredData).replace(/</g, "\\u003c")} />
   <section class="hero" aria-labelledby="hero-title">
     <Picture
       class="hero-shot"
@@ -294,10 +314,13 @@ const faq = [
         </p>
       </header>
       <div class="host-body reveal">
-        <pre><code><span class="muted"># needs Docker with Compose and make</span>
+        <div class="code">
+          <pre id="host-code"><code><span class="muted"># needs Docker with Compose and make</span>
 git clone {site.githubUrl}.git
 cd GOwift
 make up</code></pre>
+          <CopyButton target="host-code" />
+        </div>
         <p>
           Then open <code>http://localhost:8080</code>. Bug reports, routes and pull requests are welcome on <a
             href={site.githubUrl}>GitHub</a
@@ -797,8 +820,9 @@ make up</code></pre>
   summary::-webkit-details-marker {
     display: none;
   }
+  /* The empty alternative text keeps screen readers from saying "plus". */
   summary::after {
-    content: "+";
+    content: "+" / "";
     position: absolute;
     right: 0.25rem;
     color: var(--accent);
@@ -808,7 +832,10 @@ make up</code></pre>
     translate: 0 -50%;
   }
   details[open] summary::after {
-    content: "−";
+    content: "−" / "";
+  }
+  summary:focus-visible {
+    outline-offset: -2px;
   }
   details p {
     padding-bottom: 1.25rem;
@@ -832,6 +859,15 @@ make up</code></pre>
   .host-body p {
     color: var(--muted);
   }
+  .code {
+    position: relative;
+    /* Lets the code block scroll inside the column instead of widening it. */
+    min-width: 0;
+  }
+  /* Room above the commands for the Copy button, so it never covers them. */
+  .code pre {
+    padding-top: 3.25rem;
+  }
   pre {
     margin: 0;
     padding: 1.25rem 1.5rem;
@@ -846,6 +882,13 @@ make up</code></pre>
     .faq-grid,
     .host-grid {
       grid-template-columns: minmax(0, 1fr);
+    }
+  }
+  /* Phones: the clone line fits without scrolling sideways. */
+  @media (max-width: 30rem) {
+    pre {
+      font-size: 0.8125rem;
+      padding: 1rem 1.1rem;
     }
   }
 

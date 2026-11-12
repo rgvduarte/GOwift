@@ -2,7 +2,7 @@
 // The elevation profile of a real route, drawn as the ground the hero stands
 // on: the area below the line is filled with the page colour, climbs are
 // traced red and sprints blue, as on the app's profile.
-import { loadProfile } from "../lib/route";
+import { loadProfile, simplifyProfile } from "../lib/route";
 
 interface Props {
   route: string;
@@ -15,8 +15,11 @@ const TOP = 12; // room for the stroke at the highest point
 const x = (d: number) => (d / profile.lengthM) * W;
 const y = (e: number) => TOP + (1 - (e - profile.minEle) / (profile.maxEle - profile.minEle)) * (H - TOP - 28);
 
+// About two points per 4 units of the 1000-wide drawing: smooth at any
+// width, with every peak and dip, at half the path data.
+const samples = simplifyProfile(profile.samples, W / 4);
 const line = (from = 0, to = profile.lengthM) =>
-  profile.samples
+  samples
     .filter(([d]) => d >= from && d <= to)
     .map(([d, e], i) => `${i ? "L" : "M"}${x(d).toFixed(1)},${y(e).toFixed(1)}`)
     .join("");

@@ -81,6 +81,29 @@ export function loadProfile(id: string, dir = routesDir): Profile {
   };
 }
 
+/**
+ * Fewer points for drawing a profile: the road is cut into `buckets` equal
+ * stretches and each keeps only its lowest and highest point, so peaks and
+ * dips survive while the page carries a fraction of the path data.
+ */
+export function simplifyProfile(samples: [number, number][], buckets: number): [number, number][] {
+  if (samples.length <= buckets) return samples;
+  const first = samples[0];
+  const last = samples[samples.length - 1];
+  const span = last[0] - first[0] || 1;
+  const kept = new Set<[number, number]>([first, last]);
+  const extremes = new Map<number, { low: [number, number]; high: [number, number] }>();
+  for (const sample of samples) {
+    const bucket = Math.min(buckets - 1, Math.floor(((sample[0] - first[0]) / span) * buckets));
+    const seen = extremes.get(bucket);
+    if (!seen) extremes.set(bucket, { low: sample, high: sample });
+    else if (sample[1] < seen.low[1]) seen.low = sample;
+    else if (sample[1] > seen.high[1]) seen.high = sample;
+  }
+  for (const { low, high } of extremes.values()) kept.add(low).add(high);
+  return samples.filter((sample) => kept.has(sample));
+}
+
 /** The facts about all routes in `dir`, as the server loads them. */
 export function routeStats(dir = routesDir): RouteStats {
   const laps = readdirSync(dir)

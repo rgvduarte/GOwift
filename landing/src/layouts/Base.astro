@@ -2,6 +2,7 @@
 import "../styles/global.css";
 import { site, appHost, rideUrl, href, wakeUrl } from "../site";
 import GoGlyphs from "../components/GoGlyphs.astro";
+import GdMark from "../components/GdMark.astro";
 import Prewarm from "../components/Prewarm.astro";
 
 interface Props {
@@ -42,13 +43,14 @@ const ogImage = new URL(href("og.png"), site.url).href;
     <meta name="twitter:card" content="summary_large_image" />
 
     {site.plausibleDomain && <script is:inline defer data-domain={site.plausibleDomain} src={site.plausibleScript} />}
+    <slot name="head" />
   </head>
   <body>
     <a class="skip button" href="#content">Skip to content</a>
     <header class:list={["top", { overlay }]}>
       <div class="wrap top-inner">
         <a class="brand" href={href()} aria-label="GOindoor home">
-          <img src={href("icons/brand-mark.png")} alt="" width="49" height="30" />
+          <GdMark />
           <span><GoGlyphs />indoor</span>
         </a>
         <nav aria-label="Main">
@@ -68,9 +70,12 @@ const ogImage = new URL(href("og.png"), site.url).href;
       <div class="wrap foot-inner">
         <p>
           <span class="brand-word"><GoGlyphs />indoor</span> is open source.
-          <span class="muted">Created and developed by <a href={site.ownerUrl}>{site.owner}</a>. Based on <a href={site.upstreamUrl}>OpenRadlr</a>. Hero image © The OpenRadlr contributors,
-            <a href="https://creativecommons.org/licenses/by-sa/4.0/">CC BY-SA 4.0</a>
-            (<a href={`${site.githubUrl}/blob/main/ASSETS-LICENSE.md`}>artwork credits</a>).</span>
+          <span class="muted">
+            Created and developed by <a href={site.ownerUrl}>{site.owner}</a>. Based on{" "}
+            <a href={site.upstreamUrl}>OpenRadlr</a>. Hero image © The OpenRadlr contributors,{" "}
+            <a href="https://creativecommons.org/licenses/by-sa/4.0/">CC BY-SA 4.0</a>{" "}
+            (<a href={`${site.githubUrl}/blob/main/ASSETS-LICENSE.md`}>artwork credits</a>).
+          </span>
         </p>
         <nav aria-label="Footer">
           <a href={rideUrl}>Open the app</a>
