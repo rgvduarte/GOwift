@@ -1,4 +1,4 @@
-# 25. Graphics quality tiers: detected, governed, never raised behind the rider's back
+# 27. Graphics quality tiers: detected, governed, never raised behind the rider's back
 
 Date: 2026-11-12 · Status: accepted
 

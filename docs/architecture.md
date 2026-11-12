@@ -177,7 +177,7 @@ cycles cameras, <kbd>T</kbd> cycles the time of day; *Graphics: Low* turns off t
 shadow map, grass, high-DPI drawing and moving waves for weaker GPUs. Until the
 rider picks, `quality.js` picks the tier for the device (software GL, data saver
 and very small devices start low) and drops an automatic high tier to low once if
-frames stay above 40 ms ([ADR 0025](adr/0025-quality-tiers.md)). Devices without
+frames stay above 40 ms ([ADR 0027](adr/0027-quality-tiers.md)). Devices without
 WebGL 2 fall back to 2D.
 
 ### 2D view

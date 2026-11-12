@@ -13,7 +13,7 @@ visible effects that run on both tiers, and keep the expensive ones on high.
 
 | Question | Decision |
 | --- | --- |
-| Tiers | Keep two, `high` and `low`; the contract is in [ADR 0025](../../adr/0025-quality-tiers.md) |
+| Tiers | Keep two, `high` and `low`; the contract is in [ADR 0027](../../adr/0027-quality-tiers.md) |
 | Default tier | Detected until the rider presses the button: software WebGL (SwiftShader, llvmpipe, Basic Render), data saver, `deviceMemory ≤ 2` or two cores start low |
 | Rider's pick | New key `goindoor.quality`, written only by the button. The old key was written "high" on every ride start, so only its "low" still counts |
 | Governor | Median frame over 5 s above 40 ms drops an automatic high tier to low once, with a ticker line; never raises, never touches a pick |

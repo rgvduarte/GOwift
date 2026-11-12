@@ -1,7 +1,7 @@
 # Graphics: quality tiers and look — implementation plan
 
 Spec: [2026-11-12-graphics-tiers-and-look-design.md](../specs/2026-11-12-graphics-tiers-and-look-design.md)
-· ADR: [0025 quality tiers](../../adr/0025-quality-tiers.md)
+· ADR: [0027 quality tiers](../../adr/0027-quality-tiers.md)
 
 Each step starts with its failing test and ends with `npm run lint`, `npm test`
 and `npm run preload` green, then one Conventional Commit.
@@ -14,7 +14,7 @@ and `npm run preload` green, then one Conventional Commit.
    - `main.js`: one governor per page; `chooseQuality` (button, stored),
      `applyQuality` (view and studio, not stored), `governFrame` after each
      drawn 3D frame; the menu island hides only for a picked low tier.
-   - i18n: `graphics.autoLow`, the button's tooltip; ADR 0025.
+   - i18n: `graphics.autoLow`, the button's tooltip; ADR 0027.
 2. **Sky fix** (`fix:`): draw the sky pass without the depth test;
    `test/fakeGl.js` and `renderer.test.js`.
 3. **Atmosphere**: `view3d/atmosphere.js` (`skyAlong`, `fogColor`,

@@ -123,7 +123,7 @@ const CAMERA_KEY = "openride.camera";
 const TIME_KEY = "openride.time";
 /** Before auto-detection: written "high" on every ride start, so only its "low" was the rider's pick (view3d/quality.js). */
 const QUALITY_KEY = "openride.quality";
-/** The graphics tier the rider picked with the button; unset means automatic (docs/adr/0025-quality-tiers.md). */
+/** The graphics tier the rider picked with the button; unset means automatic (docs/adr/0027-quality-tiers.md). */
 const QUALITY_CHOICE_KEY = "goindoor.quality";
 const BIOME_KEY = "openride.biome";
 const LAYOUT_KEY = "openride.layout";

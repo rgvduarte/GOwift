@@ -11,7 +11,7 @@ Branch: `impl/landing`.
    buttons that wrap, so phones stop scrolling sideways.
 3. Failing tests for the wake-up URL and the once-only wake-up, then the
    cold-start note, the FAQ entry and the `no-cors` ping behind
-   `PUBLIC_APP_COLD_START` / `PUBLIC_APP_PREWARM`; docs and ADR 0025.
+   `PUBLIC_APP_COLD_START` / `PUBLIC_APP_PREWARM`; docs and ADR 0028.
 4. Failing build test for fixed backgrounds, then the spacing, type and glow
    tokens.
 5. Failing tests for the route stats, then the new page order, the bento of

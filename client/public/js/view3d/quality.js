@@ -1,5 +1,5 @@
 /**
- * Graphics quality tiers (docs/adr/0025-quality-tiers.md): which tier a
+ * Graphics quality tiers (docs/adr/0027-quality-tiers.md): which tier a
  * device starts on, and the frame-time governor that drops an automatic
  * "high" to "low" when the device cannot keep up. Pure: the WebGL renderer
  * name, the device hints and the frame times are passed in.

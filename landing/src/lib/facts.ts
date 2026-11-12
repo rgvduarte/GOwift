@@ -1,6 +1,6 @@
 // The numbers the page states, worded from the route stats (lib/route.ts).
 // Nothing here is typed in by hand, so the page can't promise more than the
-// game has (ADR 0025).
+// game has (ADR 0028).
 
 import type { RouteStats } from "./route";
 

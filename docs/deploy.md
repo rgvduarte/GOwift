@@ -27,7 +27,7 @@ credit card is needed, and HTTPS, so Bluetooth, works from the start.
    then tells visitors that the first start can take a minute; set
    `GOINDOOR_LANDING_COLD_START` to `false` for a server that never sleeps.
    To wake the server while visitors read (one request to `/healthz`, see
-   [ADR 0025](adr/0025-landing-facts-and-wake-up.md)), set
+   [ADR 0028](adr/0028-landing-facts-and-wake-up.md)), set
    `GOINDOOR_LANDING_PREWARM` to `true`. It shows every visitor's IP address
    to Render, so first set `GOINDOOR_PRIVACY_URL` to a privacy policy that
    says so (and `GOINDOOR_LANDING_IMPRINT_URL` to your imprint, if you need

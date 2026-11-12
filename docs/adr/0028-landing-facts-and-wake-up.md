@@ -1,4 +1,4 @@
-# 25. The landing page shows build-time facts and wakes the server with a no-cors request
+# 28. The landing page shows build-time facts and wakes the server with a no-cors request
 
 Date: 2026-11-12 · Status: accepted
 

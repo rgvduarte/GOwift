@@ -30,7 +30,7 @@ off-palette colour on the changelog) and no tests: the page is not part of
   time from `routes/*.json`, the same files the server loads, with the game's
   own definitions (one lap including the closing segment). No live rider
   count: the server sends no CORS headers, `players` counts humans only, and
-  every request would wake the sleeping server (see ADR 0025). Screenshots are
+  every request would wake the sleeping server (see ADR 0028). Screenshots are
   the existing ones (`landing/src/assets`, `docs/assets`); the metric ride
   screenshot replaces the imperial one, and the studio screenshot is cropped
   by CSS so its imperial HUD corner stays out of view. The hero file stays

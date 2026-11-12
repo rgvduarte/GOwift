@@ -17,7 +17,7 @@ const option = (id, label) => ({ id, label });
 /**
  * `{ cameras, layouts, modes, showTime, times, qualities }`. The spin studio has
  * its own cameras, no layouts, only a 3D view and no time of day; both offer the
- * graphics tiers (docs/adr/0025-quality-tiers.md).
+ * graphics tiers (docs/adr/0027-quality-tiers.md).
  */
 export function viewControls({ studio }) {
   const cameraIds = studio ? STUDIO_CAMERAS : Object.keys(CAMERA_MODES);

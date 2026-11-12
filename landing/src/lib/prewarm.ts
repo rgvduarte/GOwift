@@ -1,7 +1,7 @@
 // Waking a sleeping game server while the visitor reads. A free Render
 // server sleeps after 15 minutes without riders and takes about a minute to
 // start again (docs/deploy.md), so one early request saves most of that wait.
-// See ADR 0025.
+// See ADR 0028.
 
 /** The address to request so a sleeping server starts: its health check. */
 export function prewarmUrl(appUrl: string): string | null {

@@ -20,7 +20,7 @@ export const site = {
   // "true" when that server sleeps while nobody rides and takes about a
   // minute to wake, like Render's free plan: the page then says so.
   appColdStart: env.PUBLIC_APP_COLD_START === "true",
-  // "true" wakes that server with one request while visitors read (ADR 0025).
+  // "true" wakes that server with one request while visitors read (ADR 0028).
   appPrewarm: env.PUBLIC_APP_PREWARM === "true",
   githubUrl,
   owner: "GD",
