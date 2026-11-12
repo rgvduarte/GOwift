@@ -68,9 +68,14 @@ pub fn authorize_url(config: &StravaConfig, state: &str) -> String {
     )
 }
 
-/// Riders may untick "upload activities" on Strava's consent screen.
+/// Riders may untick "upload activities" on Strava's consent screen. Strava
+/// has listed scopes comma-separated and, since April 2026, space-separated.
 pub fn scope_allows_upload(scope: Option<&str>) -> bool {
-    scope.is_some_and(|scope| scope.split(',').any(|s| s.trim() == "activity:write"))
+    scope.is_some_and(|scope| {
+        scope
+            .split(|c: char| c == ',' || c.is_whitespace())
+            .any(|s| s == "activity:write")
+    })
 }
 
 /// The value of cookie `name` from all `Cookie` header values.
@@ -420,6 +425,12 @@ mod tests {
         assert!(scope_allows_upload(Some("read,activity:write")));
         assert!(!scope_allows_upload(Some("read")));
         assert!(!scope_allows_upload(None));
+    }
+
+    #[test]
+    fn upload_scope_is_found_in_space_delimited_lists() {
+        // Strava documents granted scopes as space-delimited since April 2026.
+        assert!(scope_allows_upload(Some("read activity:write")));
     }
 
     #[test]
