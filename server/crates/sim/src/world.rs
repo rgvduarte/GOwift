@@ -1915,8 +1915,8 @@ impl Field<'_> {
     }
 
     /// Every slot's wheel ahead and the draft it rides with, from its place
-    /// in the group (see [`DraftParams::group_factor`]): how deep in a line of
-    /// wheels, how many riders alongside, how close a wheel behind.
+    /// in the group (see [`DraftParams::group_factor`]): the line of wheels
+    /// ahead, the riders just ahead alongside, how close a wheel behind.
     fn shelter(&self, draft: &DraftParams) -> BTreeMap<RiderId, Shelter<'_>> {
         let index: BTreeMap<RiderId, usize> = self.slots.iter().enumerate().map(|(i, s)| (s.id, i)).collect();
         let ahead: Vec<Option<(f64, &Slot)>> = self.slots.iter().map(|s| self.draft_ahead(s, s.lane)).collect();
