@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { ATMOSPHERE, ATMOSPHERE_GLSL, fogColor, skyColor, sunDisk } from "../public/js/view3d/atmosphere.js";
+import { ATMOSPHERE, ATMOSPHERE_GLSL, fogColor, glslPower, skyColor, sunDisk } from "../public/js/view3d/atmosphere.js";
 import { TIME_PRESETS, resolvedLight } from "../public/js/view3d/lighting.js";
 import { BIOMES } from "../public/js/view3d/biomes/index.js";
 import { MESH_FRAGMENT, SKY_FRAGMENT } from "../public/js/view3d/renderer.js";
@@ -74,5 +74,11 @@ test("the sky and the lit world share one atmosphere chunk", () => {
 });
 
 test("the shader's atmosphere uses the same constants as the maths here", () => {
-  for (const value of [ATMOSPHERE.horizonCurve, ATMOSPHERE.hazeBand, ...ATMOSPHERE.halo, ...ATMOSPHERE.glow]) assert.ok(ATMOSPHERE_GLSL.includes(value.toFixed(4)), `${value}`);
+  for (const value of [ATMOSPHERE.horizonCurve, ATMOSPHERE.hazeBand, ATMOSPHERE.halo[1], ATMOSPHERE.glow[1]]) assert.ok(ATMOSPHERE_GLSL.includes(value.toFixed(4)), `${value}`);
+  for (const sharpness of [ATMOSPHERE.halo[0], ATMOSPHERE.glow[0]]) assert.ok(ATMOSPHERE_GLSL.includes(glslPower("mu", sharpness)), `power ${sharpness}`);
+});
+
+test("the shaders raise to whole powers by multiplying, with the same result", () => {
+  assert.ok(Math.abs(new Function("mu", `return ${glslPower("mu", 12)};`)(0.93) - 0.93 ** 12) < 1e-12);
+  assert.throws(() => glslPower("mu", 2.5));
 });

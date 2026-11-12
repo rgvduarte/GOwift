@@ -108,7 +108,9 @@ void main() {
     // The sky it mirrors (level at most: a wave never shows the ground), and the sun's glint: the sun is
     // so much brighter than the sky that its reflection shows even where the water reflects little.
     mirror = fogAlong(r, u_fogColor, u_skyColor, u_sunDirection, u_sunColor, 1.0);
-    glint = u_sunColor * pow(max(dot(r, u_sunDirection), 0.0), ${WATER.glint[0].toFixed(1)}) * ${WATER.glint[1].toFixed(2)} * shade;
+    float towardsSun = max(dot(r, u_sunDirection), 0.0);
+    // Far off the sun the glint is far below one colour step: skip its pow.
+    if (towardsSun > 0.95) glint = u_sunColor * pow(towardsSun, ${WATER.glint[0].toFixed(1)}) * ${WATER.glint[1].toFixed(2)} * shade;
     // Seen flat, water is a mirror and hides what lies under it.
     alpha = mix(u_alpha, 1.0, reflectance);
   }
@@ -164,7 +166,8 @@ void main() {
   vec3 direction = normalize(far.xyz / far.w - u_cameraPosition);
   vec3 sky = skyAlong(direction, u_horizonColor, u_zenithColor, u_sunDirection, u_sunColor, u_scatter);
   float sunAmount = max(dot(direction, u_sunDirection), 0.0);
-  sky += u_sunColor * pow(sunAmount, ${ATMOSPHERE.disk[0].toFixed(1)}) * ${ATMOSPHERE.disk[1].toFixed(2)};
+  // Only near the sun is the disk visible at all (0.99 to the power 900 is far below one colour step).
+  if (sunAmount > 0.99) sky += u_sunColor * pow(sunAmount, ${ATMOSPHERE.disk[0].toFixed(1)}) * ${ATMOSPHERE.disk[1].toFixed(2)};
   outColor = vec4(sky, 1.0);
 }`;
 

@@ -5,6 +5,7 @@
  * glitter path. The GLSL chunk is written from the constants here, so the
  * shader and the tested maths cannot drift apart.
  */
+import { glslPower } from "./atmosphere.js";
 
 /** [slope, kx, kz, speed]: a wave's steepest slope, its wave vector (rad/m) and phase speed (rad/s). */
 const SWELL = Object.freeze([
@@ -94,6 +95,7 @@ vec3 waveNormal(vec2 q, float t, float chop) {
   return normalize(vec3(-g.x, 1.0, -g.y));
 }
 float mirrorShare(float cosine) {
-  return ${f(WATER.mirror)} * (${f(WATER.f0)} + ${f(1 - WATER.f0)} * pow(1.0 - cosine, 5.0));
+  float rest = 1.0 - cosine;
+  return ${f(WATER.mirror)} * (${f(WATER.f0)} + ${f(1 - WATER.f0)} * ${glslPower("rest", 5)});
 }
 `;

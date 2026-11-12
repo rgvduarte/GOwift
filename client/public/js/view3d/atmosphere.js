@@ -29,15 +29,26 @@ export const ATMOSPHERE = Object.freeze({
 const f = (value) => value.toFixed(4);
 
 /**
+ * GLSL for `x` to the whole power `n`, by multiplying: `pow` is a log and an
+ * exp, which software GL pays for on every pixel.
+ */
+export function glslPower(x, n) {
+  if (!Number.isInteger(n) || n < 1) throw new Error(`Not a whole power: ${n}`);
+  return `(${Array.from({ length: n }, () => x).join(" * ")})`;
+}
+
+/**
  * `skyAlong(direction, horizon, zenith, sunDirection, sunColor, scatter)`:
  * the sky without the sun's disk, for a unit direction.
  */
 export const ATMOSPHERE_GLSL = `
 vec3 skyAlong(vec3 d, vec3 horizon, vec3 zenith, vec3 sunDirection, vec3 sunColor, float scatter) {
   float height = clamp(d.y, 0.0, 1.0);
-  vec3 sky = mix(horizon, zenith, pow(height, ${f(ATMOSPHERE.horizonCurve)}) * smoothstep(0.0, ${f(ATMOSPHERE.hazeBand)}, height));
+  // On the horizon (all the fog below it) there is nothing to blend.
+  float t = height > 0.0 ? pow(height, ${f(ATMOSPHERE.horizonCurve)}) * smoothstep(0.0, ${f(ATMOSPHERE.hazeBand)}, height) : 0.0;
+  vec3 sky = mix(horizon, zenith, t);
   float mu = max(dot(d, sunDirection), 0.0);
-  return sky + sunColor * (pow(mu, ${f(ATMOSPHERE.halo[0])}) * ${f(ATMOSPHERE.halo[1])} + scatter * pow(mu, ${f(ATMOSPHERE.glow[0])}) * ${f(ATMOSPHERE.glow[1])});
+  return sky + sunColor * (${glslPower("mu", ATMOSPHERE.halo[0])} * ${f(ATMOSPHERE.halo[1])} + scatter * ${glslPower("mu", ATMOSPHERE.glow[0])} * ${f(ATMOSPHERE.glow[1])});
 }
 vec3 fogAlong(vec3 ray, vec3 horizon, vec3 zenith, vec3 sunDirection, vec3 sunColor, float scatter) {
   if (scatter <= 0.0) return horizon;
