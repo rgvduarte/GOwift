@@ -39,8 +39,10 @@ GPU (animated wave normals).
   variants, so both tiers run the same compiled shader and the low tier (which
   the menu island always uses) compile-checks all of it.
 - **The rider's pick always wins.** It lives in a new key, `goindoor.quality`,
-  written only by the button. Of the old key only a stored `low` counts as a
-  pick; its `high` was written on every ride start and is ignored.
+  written only when the rider picks a tier: the Graphics row of the top bar's
+  View popover (on roads and in the studio) or the button in Menu → View. Of
+  the old key only a stored `low` counts as a pick; its `high` was written on
+  every ride start and is ignored.
 - **Without a pick the tier is detected** from the WebGL renderer's name (read
   once from a throwaway context, then released), the data-saver flag,
   `navigator.deviceMemory ≤ 2` and `hardwareConcurrency ≤ 2`. Hints the
@@ -49,7 +51,7 @@ GPU (animated wave normals).
 - **A frame-time governor** (`FrameBudget`) watches the drawn 3D frames of the
   ride and the studio. When the median frame over the last 5 s is above 40 ms
   (under 25 fps), an automatic high tier drops to low once and a ticker line
-  says so. It never raises a tier and never touches a tier the rider picked.
+  says so and points to View, where the rider can raise it again. It never raises a tier and never touches a tier the rider picked.
   Gaps of a second or more (a hidden tab) are not frames.
 - **Multisampling is a context attribute** and cannot change while the canvas
   lives, so it follows the tier the session starts on; the button's tooltip

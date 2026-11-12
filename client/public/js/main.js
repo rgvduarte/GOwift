@@ -3427,7 +3427,7 @@ function initHudCommon() {
   initViewPopover();
 }
 
-/** The View popover: camera, layout, 3D/2D and time of day, for roads and the studio. */
+/** The View popover: camera, layout, 3D/2D, time of day and graphics, for roads and the studio. */
 function initViewPopover() {
   app.viewPopover = createViewPopover({
     root: $("view-popover"),
@@ -3440,6 +3440,7 @@ function initViewPopover() {
       layout: app.layoutChoice,
       mode: app.viewMode,
       time: $("time-mode").value,
+      quality: app.quality.quality,
       has3d: Boolean(app.view3d),
     }),
     onPick: (kind, id) => {
@@ -3447,6 +3448,7 @@ function initViewPopover() {
       else if (kind === "layout") setLayoutChoice(id);
       else if (kind === "mode") setViewMode(id);
       else if (kind === "time") setTimeMode(id);
+      else if (kind === "quality") chooseQuality(id);
     },
   });
 }
@@ -4166,6 +4168,7 @@ function applyQuality() {
   app.view3d?.setQuality(quality);
   app.studioView?.setQuality(quality);
   $("quality-mode").textContent = t("graphics.label", { level: quality === "high" ? t("graphics.high") : t("graphics.low") });
+  app.viewPopover?.refresh();
 }
 
 /** What the browser tells about the device, for its starting tier. The GPU's name stays here: it is a fingerprint. */
