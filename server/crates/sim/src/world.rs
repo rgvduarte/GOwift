@@ -2380,6 +2380,20 @@ mod tests {
     }
 
     #[test]
+    fn a_rider_alongside_but_behind_adds_no_shelter() {
+        let (pair, ids) = line_of(flat_loop(10_000.0), &[102.0, 100.0], &[1, 1]);
+        let (flanked, flanked_ids) = line_of(flat_loop(10_000.0), &[102.0, 100.0, 99.0], &[1, 1, 2]);
+        assert_eq!(draft_of(&flanked, flanked_ids[1]), draft_of(&pair, ids[1]));
+    }
+
+    #[test]
+    fn a_rider_two_lanes_over_adds_no_shelter() {
+        let (pair, ids) = line_of(flat_loop(10_000.0), &[102.0, 100.0], &[1, 1]);
+        let (flanked, flanked_ids) = line_of(flat_loop(10_000.0), &[102.0, 100.0, 101.0], &[1, 1, 3]);
+        assert_eq!(draft_of(&flanked, flanked_ids[1]), draft_of(&pair, ids[1]));
+    }
+
+    #[test]
     fn a_ring_of_riders_on_a_short_loop_terminates() {
         // Every rider has a wheel ahead: the line runs round and round.
         let (world, ids) = line_of(flat_loop(10.0), &[0.0, 2.5, 5.0, 7.5], &[1, 1, 1, 1]);
@@ -2423,6 +2437,34 @@ mod tests {
         let thin = physics::air_density_at(&params, 2000.0) / params.air_density;
         let r = world.rider(rider).unwrap();
         assert!((r.drag_factor - thin).abs() < 1e-12, "{} vs {thin}", r.drag_factor);
+    }
+
+    #[test]
+    fn high_up_the_pass_logic_compares_in_the_same_thin_air() {
+        // Equal riders at equal speed, the follower too far back to give the
+        // leader any shelter: once the leader speeds up as it would alone in
+        // the thin air, the follower has no surplus to pass with.
+        let elevation = 2000.0;
+        let mut world = empty_world(crate::route::tests::flat_loop_at(10_000.0, elevation));
+        let leader = world.join_human("Leader", 75.0);
+        let follower = world.join_human("Follower", 75.0);
+        put(&mut world, leader, 105.0, 1, 8.0);
+        put(&mut world, follower, 100.0, 1, 8.0);
+        let params = PhysicsParams::default();
+        let alone = StepInput {
+            rider_mass_kg: 75.0,
+            body: Body::bike(&params, 75.0),
+            speed: 8.0,
+            power_watts: 200.0,
+            grade_percent: 0.0,
+            cda_factor: physics::air_density_at(&params, elevation) / params.air_density,
+        };
+        world.riders.get_mut(&leader).unwrap().accel = physics::acceleration(&params, &alone);
+
+        ride(&mut world, DT, &[(leader, 200.0), (follower, 200.0)]);
+
+        let urge = world.rider(follower).unwrap().pass_urge;
+        assert!(urge.abs() < 1e-12, "{urge}");
     }
 
     #[test]
@@ -3478,6 +3520,33 @@ mod tests {
         assert!(rider.off_route.is_none());
         assert_eq!(rider.route, 1);
         assert!((1005.0..1030.0).contains(&rider.position));
+    }
+
+    #[test]
+    fn off_route_the_air_thins_with_the_road_ridden() {
+        let mut world = junction_world();
+        let me = world.join_human("Me", 75.0);
+        // Off-route, back down c-d, 10 m from d: about 14 m up, where the
+        // route's own position would put the rider at sea level.
+        let network = world.network.as_ref().unwrap();
+        let cd = network.edge_index("cd").unwrap();
+        let elevation = network.elevation((cd, -1), 10.0);
+        {
+            let rider = world.riders.get_mut(&me).unwrap();
+            rider.off_route = Some(OffRoute {
+                road: (cd, -1),
+                offset: 10.0,
+            });
+            rider.position = 5000.0;
+            rider.speed = 10.0;
+        }
+
+        cruise(&mut world, me, DT);
+
+        let params = PhysicsParams::default();
+        let thin = physics::air_density_at(&params, elevation) / params.air_density;
+        let factor = world.rider(me).unwrap().drag_factor;
+        assert!((factor - thin).abs() < 1e-12, "{factor} vs {thin}");
     }
 
     #[test]
