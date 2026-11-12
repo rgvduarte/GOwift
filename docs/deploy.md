@@ -23,12 +23,19 @@ credit card is needed, and HTTPS, so Bluetooth, works from the start.
    service's *Environment*.
 4. Optional, landing page: set the repository variable `GOINDOOR_PUBLIC_URL`
    (Settings → Secrets and variables → Actions → Variables) to the service's
-   address, so the GitHub Pages site's *Ride now* buttons open it.
+   address, so the GitHub Pages site's *Ride now* buttons open it. The page
+   then tells visitors that the first start can take a minute and wakes the
+   server while they read (one request to `/healthz`, see
+   [ADR 0025](adr/0025-landing-facts-and-wake-up.md)); set
+   `GOINDOOR_LANDING_COLD_START` and `GOINDOOR_LANDING_PREWARM` to `false` for a
+   server that never sleeps.
 
 What the free plan means for riders:
 
 - **It sleeps after 15 minutes without riders** and takes about a minute to
-  wake on the next visit. Riding keeps it awake.
+  wake on the next visit. Riding keeps it awake. The landing page says so
+  next to its buttons and starts the wake-up while visitors read, so the
+  wait is mostly over by the time they click.
 - **Nothing is kept across restarts:** no disk on the free plan, so Strava
   logins (`/app/data`) are lost when it sleeps or redeploys; riders connect
   Strava again. Rides themselves are saved in each rider's browser.

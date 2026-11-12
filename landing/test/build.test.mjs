@@ -35,3 +35,11 @@ test("every link and image stays under the base path", { skip }, () => {
     assert.deepEqual(outside, [], `${page} links outside ${base}`);
   }
 });
+
+test("a wake-up request only ever goes to the server's health check", { skip }, () => {
+  const targets = [...read("index.html").matchAll(/\sdata-wake="([^"]*)"/g)].map((m) => m[1]);
+  assert.deepEqual(
+    targets.filter((url) => !/^https?:\/\/[^/]+\/healthz$/.test(url)),
+    [],
+  );
+});

@@ -42,6 +42,8 @@ the base path.
 | --- | --- | --- |
 | `PUBLIC_SITE_URL` | `https://rgvduarte.github.io/GOwift` | canonical links, sitemap, Open Graph; its path is the base path of every link |
 | `PUBLIC_APP_URL` | – | every *Ride now* button; without it they lead to the self-hosting quick start |
+| `PUBLIC_APP_COLD_START` | – | `true` for a server that sleeps while nobody rides (Render's free plan): the buttons and the FAQ say the first start can take a minute |
+| `PUBLIC_APP_PREWARM` | – | `true` sends one request to the server's `/healthz` once a *Ride* button is on screen, so a sleeping server is awake by the click ([ADR 0025](../docs/adr/0025-landing-facts-and-wake-up.md)); it reveals the visitor's IP address to the server's host, so mention it in your privacy policy |
 | `PUBLIC_DISCORD_URL` | – | Discord link; without it the page points to GitHub issues |
 | `PUBLIC_PRIVACY_URL` | – | privacy policy link in the footer (the app's `GOINDOOR_PRIVACY_URL`); without it no link is shown |
 | `PUBLIC_IMPRINT_URL` | – | imprint (legal notice) link in the footer, e.g. a page from online-impressum.de; without it no link is shown |
@@ -61,4 +63,8 @@ touches it and publishes it at <https://rgvduarte.github.io/GOwift/>. Turn it
 on once under *Settings → Pages → Source: GitHub Actions*. The workflow takes
 `PUBLIC_SITE_URL` from Pages itself and `PUBLIC_APP_URL` from the repository
 variable `GOINDOOR_PUBLIC_URL`, or the public server on Render
-(`https://goindoor.onrender.com`) when it is unset.
+(`https://goindoor.onrender.com`) when it is unset. That server is on the free
+plan, so the workflow also sets `PUBLIC_APP_COLD_START` and
+`PUBLIC_APP_PREWARM`; the repository variables `GOINDOOR_LANDING_COLD_START`
+and `GOINDOOR_LANDING_PREWARM` set to `false` turn them off, e.g. for a server
+that is always on.

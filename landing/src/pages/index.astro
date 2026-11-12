@@ -2,7 +2,7 @@
 import { Picture } from "astro:assets";
 import Base from "../layouts/Base.astro";
 import Profile from "../components/Profile.astro";
-import { site, appHost, hasApp } from "../site";
+import { site, appHost, hasApp, coldStart, wakeUrl } from "../site";
 import { startLabel } from "../lib/app";
 import hero from "../assets/hero.png";
 import ride from "../assets/ride.png";
@@ -49,6 +49,9 @@ const features = [
   },
 ];
 
+// Shown next to the buttons when the server sleeps while nobody rides.
+const coldStartNote = "The free server naps when nobody rides, so the first start can take up to a minute.";
+
 const faq = [
   {
     q: "Is it really free?",
@@ -70,6 +73,14 @@ const faq = [
     q: "Who are the other riders?",
     a: "People, and bots marked as bots. Bots keep the roads busy when few people are online, chase drafts and race, and leave as more humans join.",
   },
+  ...(coldStart
+    ? [
+        {
+          q: "Why does the first start take a minute?",
+          a: "The public server runs on a free plan that sleeps after 15 minutes without riders. The next visit wakes it, which takes about a minute; while people ride, it stays awake.",
+        },
+      ]
+    : []),
 ];
 ---
 
@@ -93,7 +104,7 @@ const faq = [
         Open source, no subscription.
       </p>
       <div class="actions">
-        <a class="button primary large" href={startUrl}>{start}</a>
+        <a class="button primary large" href={startUrl} data-wake={wakeUrl}>{start}</a>
         {
           hasApp ? (
             <a class="button large" href="#host">Host your own server</a>
@@ -102,7 +113,14 @@ const faq = [
           )
         }
       </div>
-      {hasApp && <p class="cta-note">Opens {appHost} in Chrome or Edge. No download, no account.</p>}
+      {
+        hasApp && (
+          <p class="cta-note">
+            Opens {appHost} in Chrome or Edge. No download, no account.
+            {coldStart && <span class="cold-start">{coldStartNote}</span>}
+          </p>
+        )
+      }
     </div>
     <div class="hero-ground">
       <Profile route="col-de-la-forge" />
@@ -228,7 +246,7 @@ make up</code></pre>
   <section class="section last-call" aria-label="Start riding">
     <div class="wrap last-call-inner">
       <p class="last-call-line">The road is open.</p>
-      <a class="button primary large" href={startUrl}>{start}</a>
+      <a class="button primary large" href={startUrl} data-wake={wakeUrl}>{start}</a>
       <p class="community muted">
         {
           site.discordUrl ? (
@@ -313,6 +331,9 @@ make up</code></pre>
     margin-top: 0.75rem;
     font-size: 0.875rem;
     color: var(--muted);
+  }
+  .cold-start {
+    display: block;
   }
   .hero-ground {
     margin-bottom: -1px;

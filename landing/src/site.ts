@@ -3,6 +3,7 @@
 // the page for their own domains.
 
 import { appHostOf } from "./lib/app";
+import { prewarmUrl } from "./lib/prewarm";
 
 const env = import.meta.env;
 
@@ -16,6 +17,11 @@ export const site = {
   // The game server riders open. Empty while there is no public server: the
   // *Ride now* buttons then lead to the self-hosting quick start.
   appUrl: env.PUBLIC_APP_URL || "",
+  // "true" when that server sleeps while nobody rides and takes about a
+  // minute to wake, like Render's free plan: the page then says so.
+  appColdStart: env.PUBLIC_APP_COLD_START === "true",
+  // "true" wakes that server with one request while visitors read (ADR 0025).
+  appPrewarm: env.PUBLIC_APP_PREWARM === "true",
   githubUrl,
   owner: "GD",
   ownerUrl: "https://github.com/rgvduarte",
@@ -38,6 +44,12 @@ export const hasApp = site.appUrl !== "";
 
 /** Where the *Ride now* buttons go: the server, or the self-hosting quick start. */
 export const rideUrl = hasApp ? site.appUrl : `${githubUrl}#quick-start`;
+
+/** Whether the first start can take a minute while the server wakes. */
+export const coldStart = hasApp && site.appColdStart;
+
+/** Where to send the wake-up request, or null for no request at all. */
+export const wakeUrl = hasApp && site.appPrewarm ? prewarmUrl(site.appUrl) : null;
 
 /** The app's address without the scheme, for captions. */
 export const appHost = hasApp ? appHostOf(site.appUrl) : "your own server";
