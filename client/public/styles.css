@@ -6,9 +6,9 @@
   --border: #2a313b;
   --text: #e8ecf1;
   --muted: #8a94a3;
-  --accent: #ff7a1a;
-  --accent-text: #1a0d02;
-  --lemon: #ffd21f;
+  --accent: #2ee88a;
+  --accent-text: #04140b;
+  --brand: #2ee88a;
   --danger: #ff5d5d;
   --grid: #3a434f;
   --road: #2b3139;
@@ -129,7 +129,7 @@ kbd {
   min-height: 100vh;
   padding: 0 24px 40px;
   background:
-    radial-gradient(1200px 500px at 15% -10%, rgba(255, 122, 26, 0.14), transparent 60%),
+    radial-gradient(1200px 500px at 15% -10%, rgba(46, 232, 138, 0.14), transparent 60%),
     radial-gradient(900px 500px at 100% 0%, rgba(76, 195, 255, 0.08), transparent 60%),
     var(--bg);
 }
@@ -242,7 +242,7 @@ kbd {
 .start.world-ready .route-card[aria-pressed="true"] {
   background: rgba(31, 26, 22, 0.9);
   border-color: var(--accent);
-  box-shadow: 0 0 0 1px var(--accent) inset, 0 8px 30px rgba(255, 122, 26, 0.16);
+  box-shadow: 0 0 0 1px var(--accent) inset, 0 8px 30px rgba(46, 232, 138, 0.16);
 }
 
 /* The window the drone camera looks through: the map until the island is ready. */
@@ -466,7 +466,7 @@ kbd {
 }
 
 .activity-tab:focus-visible {
-  outline: 2px solid var(--lemon);
+  outline: 2px solid var(--brand);
   outline-offset: 2px;
 }
 
@@ -596,7 +596,7 @@ kbd {
   gap: 12px;
 }
 
-/* The lemon tucks into the aero position on hover. */
+/* The mark leans forward on hover: GO. */
 .brand-mark {
   height: 54px;
   width: auto;
@@ -616,7 +616,7 @@ kbd {
 
 .brand-word span,
 .hud-brand span {
-  color: var(--lemon);
+  color: var(--brand);
 }
 
 .server-status {
@@ -669,7 +669,7 @@ kbd {
   padding: 8px 8px 8px 16px;
   font-size: 14px;
   background: var(--surface);
-  border: 1px solid var(--lemon);
+  border: 1px solid var(--brand);
   border-radius: 999px;
   box-shadow: 0 8px 28px rgba(0, 0, 0, 0.4);
 }
@@ -681,8 +681,8 @@ kbd {
 .update-reload {
   padding: 6px 14px;
   border-radius: 999px;
-  background: var(--lemon);
-  border-color: var(--lemon);
+  background: var(--brand);
+  border-color: var(--brand);
   color: #1a1a1a;
   font-weight: 700;
 }
@@ -757,7 +757,7 @@ kbd {
 
 .route-card[aria-pressed="true"] {
   border-color: var(--accent);
-  box-shadow: 0 0 0 1px var(--accent) inset, 0 8px 30px rgba(255, 122, 26, 0.12);
+  box-shadow: 0 0 0 1px var(--accent) inset, 0 8px 30px rgba(46, 232, 138, 0.12);
 }
 
 .route-head {
@@ -897,8 +897,8 @@ label output {
   margin: 0;
   padding: 10px;
   border-radius: 8px;
-  background: rgba(255, 122, 26, 0.1);
-  border: 1px solid rgba(255, 122, 26, 0.4);
+  background: rgba(46, 232, 138, 0.1);
+  border: 1px solid rgba(46, 232, 138, 0.4);
   font-size: 14px;
 }
 
@@ -1065,7 +1065,7 @@ label output {
 .mode-card[aria-checked="true"] {
   border-color: var(--accent);
   box-shadow: 0 0 0 1px var(--accent) inset;
-  background: rgba(255, 122, 26, 0.1);
+  background: rgba(46, 232, 138, 0.1);
 }
 
 .mode-card[aria-checked="true"] svg {
@@ -1196,8 +1196,8 @@ label output {
 
 .device-line[data-state="pending"] .device-dot,
 .device-line[data-state="reconnecting"] .device-dot {
-  border-color: var(--lemon);
-  background: var(--lemon);
+  border-color: var(--brand);
+  background: var(--brand);
   animation: device-breathe 1.4s ease-in-out infinite;
 }
 
@@ -1222,8 +1222,8 @@ label output {
 
 /* Connected but silent (asleep, taken by another app), or a connect that failed: what to try, in full. */
 .device-line[data-state="silent"] .device-dot {
-  border-color: var(--lemon);
-  background: var(--lemon);
+  border-color: var(--brand);
+  background: var(--brand);
 }
 
 .device-line[data-state="error"] .device-dot {
@@ -1237,7 +1237,7 @@ label output {
 }
 
 .device-line[data-state="silent"] .device-status {
-  color: var(--lemon);
+  color: var(--brand);
 }
 
 .device-line[data-state="error"] {
@@ -1291,8 +1291,8 @@ button.small {
   margin: 0;
   padding: 12px 14px;
   border-radius: 10px;
-  border: 1px solid rgba(255, 210, 31, 0.35);
-  background: rgba(255, 210, 31, 0.08);
+  border: 1px solid rgba(46, 232, 138, 0.35);
+  background: rgba(46, 232, 138, 0.08);
   font-size: 14px;
   line-height: 1.45;
   color: var(--muted);
@@ -1300,7 +1300,7 @@ button.small {
 
 .bluetooth-note strong {
   display: block;
-  color: var(--lemon);
+  color: var(--brand);
   margin-bottom: 2px;
 }
 
@@ -1870,7 +1870,7 @@ body.riding {
   color: #ff8a7a;
 }
 
-/* A personal milestone: a lemon-yellow banner across the top for a few seconds. */
+/* A personal milestone: a brand-green banner across the top for a few seconds. */
 .milestone-banner {
   position: absolute;
   top: 18%;
@@ -2119,7 +2119,7 @@ body.riding {
 }
 
 .nearby .rider.me {
-  background: rgba(255, 122, 26, 0.18);
+  background: rgba(46, 232, 138, 0.18);
 }
 
 .canvas-minimap {
@@ -2451,7 +2451,7 @@ body.riding {
 }
 
 .group-list li.mine {
-  background: rgba(255, 122, 26, 0.18);
+  background: rgba(46, 232, 138, 0.18);
   font-weight: 700;
 }
 
@@ -2676,8 +2676,8 @@ body.riding {
 }
 
 .menu-nav-item[aria-current="true"] {
-  background: rgba(255, 122, 26, 0.14);
-  border-color: rgba(255, 122, 26, 0.28);
+  background: rgba(46, 232, 138, 0.14);
+  border-color: rgba(46, 232, 138, 0.28);
   color: var(--accent);
 }
 
@@ -2811,9 +2811,9 @@ body.riding {
 
 .menu-foot .finish-confirm {
   padding: 12px 14px;
-  border: 1px solid rgba(255, 122, 26, 0.35);
+  border: 1px solid rgba(46, 232, 138, 0.35);
   border-radius: var(--radius);
-  background: rgba(255, 122, 26, 0.08);
+  background: rgba(46, 232, 138, 0.08);
 }
 
 .menu-foot .finish-confirm[hidden] {
@@ -3954,7 +3954,7 @@ body.riding {
 
 .junction-option[aria-pressed="true"] {
   border-color: var(--accent);
-  background: rgba(255, 122, 26, 0.22);
+  background: rgba(46, 232, 138, 0.22);
 }
 
 .junction-arrow {
@@ -3994,7 +3994,7 @@ body.riding {
   padding: 8px 8px 8px 16px;
   font-size: 15px;
   white-space: nowrap;
-  border-color: rgba(255, 122, 26, 0.6);
+  border-color: rgba(46, 232, 138, 0.6);
   z-index: 2;
 }
 
@@ -4435,7 +4435,7 @@ body:not(.riding)::after {
   }
 
   .lane-button:active {
-    background: rgba(255, 122, 26, 0.35);
+    background: rgba(46, 232, 138, 0.35);
     border-color: var(--accent);
   }
 
@@ -4490,7 +4490,7 @@ body:not(.riding)::after {
   }
 
   .sim-stepper button:active {
-    background: rgba(255, 122, 26, 0.45);
+    background: rgba(46, 232, 138, 0.45);
   }
 
   .sim-readout {
@@ -4886,11 +4886,11 @@ body:not(.riding)::after {
 
 /* The paddle to tap next glows: the rhythm reads at a glance. */
 .paddle.next {
-  background: linear-gradient(to top, rgba(255, 122, 26, 0.38), rgba(255, 122, 26, 0.06));
+  background: linear-gradient(to top, rgba(46, 232, 138, 0.38), rgba(46, 232, 138, 0.06));
 }
 
 .paddle.next .paddle-label {
-  color: rgba(255, 210, 31, 0.55);
+  color: rgba(46, 232, 138, 0.55);
 }
 
 .paddle.hit .paddle-label {
@@ -4908,7 +4908,7 @@ body:not(.riding)::after {
   height: 140px;
   margin: -70px 0 0 -70px;
   border-radius: 50%;
-  border: 3px solid rgba(255, 210, 31, 0.8);
+  border: 3px solid rgba(46, 232, 138, 0.8);
   pointer-events: none;
   animation: paddle-ripple 0.45s ease-out forwards;
 }
@@ -4916,7 +4916,7 @@ body:not(.riding)::after {
 @keyframes paddle-hit {
   from {
     transform: scale(1.35);
-    color: var(--lemon);
+    color: var(--brand);
   }
 }
 
@@ -4988,7 +4988,7 @@ body:not(.riding)::after {
   font-family: var(--num);
   font-weight: 700;
   font-size: 15px;
-  color: var(--lemon);
+  color: var(--brand);
 }
 
 .paddle-combo.milestone {
@@ -5015,7 +5015,7 @@ body:not(.riding)::after {
   display: block;
   height: 100%;
   width: 100%;
-  background: linear-gradient(to right, #3ddc97, var(--lemon));
+  background: linear-gradient(to right, #3ddc97, var(--brand));
   transition: width 0.25s linear;
 }
 
@@ -5768,7 +5768,7 @@ body.working-out #paddles {
 
 .workout-card.selected .workout-card-body {
   border-color: var(--accent);
-  box-shadow: 0 0 0 1px var(--accent) inset, 0 8px 30px rgba(255, 122, 26, 0.12);
+  box-shadow: 0 0 0 1px var(--accent) inset, 0 8px 30px rgba(46, 232, 138, 0.12);
 }
 
 .block-strip {
@@ -5884,7 +5884,7 @@ body.working-out #paddles {
 }
 .strava-upload[data-tone="success"] .upload-action::after { content: "↗"; }
 .strava-upload[data-tone="error"] .upload-action { color: var(--danger); border-color: var(--danger); }
-.strava-upload[data-tone="warning"] .upload-action { color: var(--lemon); border-color: var(--lemon); }
+.strava-upload[data-tone="warning"] .upload-action { color: var(--brand); border-color: var(--brand); }
 .strava-upload:is([data-tone="error"], [data-tone="warning"]) .upload-action:first-child::before {
   content: "!";
   display: inline-grid;

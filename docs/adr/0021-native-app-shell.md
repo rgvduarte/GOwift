@@ -27,11 +27,11 @@ CoreBluetooth.
   whole UI is web. Flutter only becomes worth it if the UI is rewritten
   natively.
 - The app **loads the client from a server** (`server.url`, by default
-  https://app.openradlr.com) and does not bundle it. The page keeps its origin,
+  https://app.gowift.example) and does not bundle it. The page keeps its origin,
   so these work unchanged: the WebSocket URL, the same-origin `/api` calls,
   the Strava session cookie and the OAuth redirect. The client in the app is
   always the version its server speaks. A self-hosted server is set at build
-  time with `OPENRADLR_APP_URL`.
+  time with `GOWIFT_APP_URL`.
 - `ble/nativeBluetooth.js` is a **polyfill**: it provides the part of Web
   Bluetooth that we use on top of the raw plugin (`Capacitor.Plugins`, which
   the native bridge injects into any page, so there is no npm import and no
@@ -57,6 +57,6 @@ CoreBluetooth.
 - Strava signs in through the system sign-in sheet (`ASWebAuthenticationSession`
   on iOS, a Custom Tab on Android), because Google and Apple block sign-in in
   embedded web views. The sheet has its own cookies, so the server hands the
-  session over: the web view holds a secret, the `openradlr://` callback
+  session over: the web view holds a secret, the `gowift://` callback
   brings a one-time ticket, and claiming the session needs both
   ([app](../app.md#strava-sign-in)). The browser login is unchanged.

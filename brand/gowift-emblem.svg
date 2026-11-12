@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 560" width="640" height="560" role="img" aria-label="GOwift">
+  <title>GOwift</title>
+  <rect width="640" height="560" rx="72" fill="#080a0e"/>
+  <g transform="translate(116.62 46.22) scale(0.8439)"><defs>
+    <linearGradient id="go" gradientUnits="userSpaceOnUse" x1="180" y1="70" x2="440" y2="330">
+      <stop offset="0" stop-color="#7dffbe"/>
+      <stop offset="0.55" stop-color="#2ee88a"/>
+      <stop offset="1" stop-color="#0fb866"/>
+    </linearGradient>
+  </defs>
+  <g transform="translate(0 200) skewX(-10) translate(0 -200)" fill="none" stroke-linecap="round">
+    <path d="M64 140 H128" stroke="#2ee88a" stroke-width="28" opacity="0.55"/>
+    <path d="M28 200 H118" stroke="#2ee88a" stroke-width="28"/>
+    <path d="M64 260 H128" stroke="#2ee88a" stroke-width="28" opacity="0.55"/>
+    <path d="M391.6 100.4 A130 130 0 1 0 438 200" stroke="url(#go)" stroke-width="58"/>
+    <path d="M438 200 H322" stroke="url(#go)" stroke-width="58"/>
+  </g></g>
+  <text x="300" y="470" text-anchor="middle" font-family="'Inter Display', Inter, 'Segoe UI', system-ui, sans-serif" font-weight="900" font-size="132" letter-spacing="-2.6" transform="translate(82.7 0) skewX(-10)"><tspan fill="#2ee88a">GO</tspan><tspan fill="#ffffff">wift</tspan></text>
+</svg>

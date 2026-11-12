@@ -3,8 +3,8 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-    <meta name="description" content="OpenRadlr — open-source indoor cycling with friends and bots." data-i18n-attr="content:app.description" />
-    <title>OpenRadlr</title>
+    <meta name="description" content="GOwift — open-source indoor cycling with friends and bots." data-i18n-attr="content:app.description" />
+    <title>GOwift</title>
     <meta name="theme-color" content="#0f1216" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -178,7 +178,7 @@
         <header class="start-head">
           <div class="brand">
             <img class="brand-mark" src="icons/brand-mark.png" alt="" width="69" height="54" />
-            <span class="brand-word">Open<span>Radlr</span></span>
+            <span class="brand-word"><span>GO</span>wift</span>
           </div>
           <select id="lang-select" class="lang-select" aria-label="Language" data-i18n-attr="aria-label:menu.language"></select>
           <div class="server-status" aria-live="polite">
@@ -329,10 +329,10 @@
                 </div>
               </div>
               <div class="mode-panel trainer-only" data-for="paddles" hidden>
-                <p id="paddle-note" class="field-hint" data-i18n="start.rideWithYourThumbs">Ride with your thumbs: tap the left and right paddles in turn, like pedal strokes. A steady rhythm keeps you rolling, sprinting drains your energy. Paddle rides stay in OpenRadlr: no Strava upload and no ride files.</p>
+                <p id="paddle-note" class="field-hint" data-i18n="start.rideWithYourThumbs">Ride with your thumbs: tap the left and right paddles in turn, like pedal strokes. A steady rhythm keeps you rolling, sprinting drains your energy. Paddle rides stay in GOwift: no Strava upload and no ride files.</p>
               </div>
               <div class="mode-panel trainer-only" data-for="sim" hidden>
-                <p class="field-hint" data-i18n="start.setPower">Set your power with ↑/↓ (or on-screen buttons). For trying OpenRadlr out: no Strava upload.</p>
+                <p class="field-hint" data-i18n="start.setPower">Set your power with ↑/↓ (or on-screen buttons). For trying GOwift out: no Strava upload.</p>
               </div>
 
               <!-- Optional Bluetooth add-ons -->
@@ -413,6 +413,8 @@
         <footer class="build-line">
           <button type="button" id="build-label" class="build-label" title="Copy the build details" data-nav-skip data-i18n-attr="title:menu.build.copy"></button>
           <a id="privacy-link" class="build-label" target="_blank" rel="noopener" data-nav-skip hidden data-i18n="menu.privacy">Privacy</a>
+          <!-- AGPL-3.0 section 13: a modified server must offer its riders the source. -->
+          <a id="source-link" class="build-label" href="https://github.com/rgvduarte/GOwift" target="_blank" rel="noopener" data-nav-skip data-i18n="menu.source">Source code (AGPL-3.0)</a>
         </footer>
 
         <!-- A newer build is live: a toast over the page, not a line to hunt for -->
@@ -503,7 +505,7 @@
         <div class="hud" id="hud">
           <!-- Shared: route info, actions, gear, status, ticker -->
           <div class="hud-info glass">
-            <span class="hud-brand">Open<span>Radlr</span></span>
+            <span class="hud-brand"><span>GO</span>wift</span>
             <span class="hud-route" id="hud-route" data-i18n="ride.route">Route</span>
             <span class="hud-numbers"><span data-m="distance">0.00</span> <span data-unit="distance">km</span> · <span data-m="time">0:00</span> · <span data-m="avg-speed">–</span> <span data-unit="speed">km/h</span> <span data-i18n="ride.avg">avg</span></span>
             <span class="hud-vehicle" id="hud-vehicle" data-m="vehicle" hidden></span>

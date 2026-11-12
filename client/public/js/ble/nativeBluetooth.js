@@ -1,6 +1,6 @@
 /**
- * Web Bluetooth, the part OpenRadlr uses, on top of the BLE plugin of the
- * OpenRadlr app (@capacitor-community/bluetooth-le, see docs/app.md). No
+ * Web Bluetooth, the part GOwift uses, on top of the BLE plugin of the
+ * GOwift app (@capacitor-community/bluetooth-le, see docs/app.md). No
  * browser on iOS has Web Bluetooth, so inside the app `navigator.bluetooth`
  * is this and the trainer, heart rate and controller code runs unchanged.
  *
@@ -15,7 +15,7 @@
  */
 
 const BASE_UUID = "-0000-1000-8000-00805f9b34fb";
-const GRANTED_KEY = "openradlr.nativeDevices";
+const GRANTED_KEY = "gowift.nativeDevices";
 /** Remembered devices are few (trainer, strap, two controllers); a few spare ones are kept. */
 const MAX_GRANTED = 8;
 const CONNECT_TIMEOUT_MS = 10000;

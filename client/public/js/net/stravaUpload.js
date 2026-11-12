@@ -1,6 +1,6 @@
 /** A ride's Strava submission and its resumable processing receipt. No DOM or timers. */
 export const uploadKey = (athleteId, firstSampleTime) => `${athleteId}:${firstSampleTime}`;
-const PREFIX = "openradlr.strava-upload.";
+const PREFIX = "gowift.strava-upload.";
 const initial = () => ({ phase: "idle", uploadId: null, activityId: null, error: null, code: null });
 const positiveId = (id) => Number.isSafeInteger(id) && id > 0;
 

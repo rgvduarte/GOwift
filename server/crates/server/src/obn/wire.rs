@@ -133,10 +133,10 @@ mod tests {
     fn hello_matches_the_spec_shape() {
         let msg = AppMessage::Hello {
             app: AppInfo {
-                id: "openradlr".into(),
+                id: "gowift".into(),
                 version: "0.3.1".into(),
-                name: Some("OpenRadlr".into()),
-                url: Some("https://openradlr.com".into()),
+                name: Some("GOwift".into()),
+                url: Some("https://rgvduarte.github.io/GOwift".into()),
             },
         };
         let value = serde_json::to_value(&msg).unwrap();
@@ -144,7 +144,7 @@ mod tests {
             value,
             serde_json::json!({
                 "type": "hello",
-                "app": {"id": "openradlr", "version": "0.3.1", "name": "OpenRadlr", "url": "https://openradlr.com"}
+                "app": {"id": "gowift", "version": "0.3.1", "name": "GOwift", "url": "https://rgvduarte.github.io/GOwift"}
             })
         );
     }

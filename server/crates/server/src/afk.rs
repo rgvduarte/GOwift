@@ -14,7 +14,7 @@ use std::sync::Arc;
 /// Warnings that offer "Stay" before the final, leave-only warning.
 pub const AFK_STAYS: u32 = 3;
 
-/// One step of the AFK flow, as counted by `openradlr_afk_events_total`.
+/// One step of the AFK flow, as counted by `gowift_afk_events_total`.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum AfkOutcome {
     /// A warning was sent.

@@ -156,7 +156,7 @@
 - Modify: `docs/routes.md` (bundled list, `geo` row in the field table, "On the map" paragraph on per-route origins, a "Converting a GPX" section with the CLI, an "Attribution" section with both strings), `README.md` credits if it has a credits/licence section (else `docs/routes.md` only), `CHANGELOG.md` (Added entry)
 - Possibly modify: minimap / profile view / picker if the check finds them illegible at 180 km
 
-- [ ] **Step 1: Run the server and client in Docker** (Playwright recipe from memory) with `OPENRADLR_ROUTES_DIR=../routes`. Check: picker lists IRONMAN Lanzarote with 180 km and its climbing; ride starts; 3D renders; minimap and profile legible; grade sent to the trainer follows the profile (fake trainer in tests or the HUD grade).
+- [ ] **Step 1: Run the server and client in Docker** (Playwright recipe from memory) with `GOWIFT_ROUTES_DIR=../routes`. Check: picker lists IRONMAN Lanzarote with 180 km and its climbing; ride starts; 3D renders; minimap and profile legible; grade sent to the trainer follows the profile (fake trainer in tests or the HUD grade).
 - [ ] **Step 2: Fix any illegible view** with the smallest change (e.g. profile window rather than whole route) and a unit test for it.
 - [ ] **Step 3: Screenshots:** picker, 3D on Femés and on the Mirador del Río climb (seek by setting the rider distance via the dev hooks the tests use), minimap. Publish as an Artifact page for review and the colleague's course check, with the waypoint list and a "what to check" note.
 - [ ] **Step 4: Docs + CHANGELOG**, then full test + lint run.

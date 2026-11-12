@@ -4,7 +4,7 @@
 //! same rider.
 
 use crate::secure_random::random_token;
-use openradlr_sim::RiderId;
+use gowift_sim::RiderId;
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 

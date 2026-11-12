@@ -25,10 +25,10 @@ export function serverStatus(info) {
   return { text, full, phoneFull, online: true };
 }
 
-/** The server's name for the status pill, empty for the default "OpenRadlr" (the logo says it already). */
+/** The server's name for the status pill, empty for the default "GOwift" (the logo says it already). */
 export function serverName(info) {
   const name = info?.name;
-  return name && name !== "OpenRadlr" ? name : "";
+  return name && name !== "GOwift" ? name : "";
 }
 
 /**

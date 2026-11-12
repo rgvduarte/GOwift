@@ -1,4 +1,4 @@
-OpenRadlr is indoor cycling for your smart trainer: ride an island world together with friends, strangers and bots. No subscription, no account, no ads, and the code is open source.
+GOwift is indoor cycling for your smart trainer: ride an island world together with friends, strangers and bots. No subscription, no account, no ads, and the code is open source.
 
 CONNECTS OVER BLUETOOTH
 • Smart trainers that speak Bluetooth FTMS or Cycling Power, like a Wahoo KICKR Core or a Van Rysel D500. A power meter on a classic trainer works too.
@@ -33,4 +33,4 @@ Finish a ride and upload it to Strava as a virtual ride, with its climbing and a
 PRIVATE BY DESIGN
 Your profile, ride history and settings stay on your phone. Your heart rate only leaves it inside a ride you upload to Strava. What a ride needs is kept in the server's memory and forgotten when you leave.
 
-The app opens app.openradlr.com and needs an internet connection. Want your own server for your club or your home? OpenRadlr runs in a single Docker container: github.com/Lethonium/OpenRadlr
+The app opens app.gowift.example and needs an internet connection. Want your own server for your club or your home? GOwift runs in a single Docker container: github.com/rgvduarte/GOwift

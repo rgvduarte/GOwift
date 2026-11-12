@@ -1,6 +1,6 @@
 # Café workouts
 
-OpenRadlr can run a bodyweight workout without a bike: pick **Workout** on the
+GOwift can run a bodyweight workout without a bike: pick **Workout** on the
 start screen, pick a workout card, and do a timed circuit at the outdoor gym of
 its café while your avatar does the exercise on the mat. Everyone passing the
 café sees you work out. Design:
@@ -206,7 +206,7 @@ before any exercise block leaves no record. Everything stays in the browser
 ## Not yet
 
 - **FIT export and Strava upload** (a strength sub-sport); a workout stays in
-  OpenRadlr like a paddle ride.
+  GOwift like a paddle ride.
 - **The workout studio and the cross studio** (server-side plans, a timetable,
   a coach) and **the circuit mode** (exercise blocks inside a ride, the in-ride
   entry).

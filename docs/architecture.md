@@ -1,6 +1,6 @@
 # Architecture
 
-OpenRadlr follows the model of games like Minecraft: the same server software
+GOwift follows the model of games like Minecraft: the same server software
 runs on a laptop, a home server or a public VPS. Clients connect to whichever
 server they like. Central services (accounts, server directory) are optional
 and come after the proof of concept.
@@ -10,11 +10,11 @@ and come after the proof of concept.
           │ Bluetooth LE
           ▼
  ┌──────────────────────┐   WebSocket (JSON)   ┌───────────────────────────────┐
- │ Browser client       │ ───────────────────► │ openradlr-server               │
+ │ Browser client       │ ───────────────────► │ gowift-server               │
  │ devices · 2D views   │ ◄─────────────────── │ http · connection · runtime   │
  └──────────────────────┘                      │ game core                     │
                                                │ ┌───────────────────────────┐ │
-                                               │ │ openradlr-sim (pure Rust)  │ │
+                                               │ │ gowift-sim (pure Rust)  │ │
                                                │ │ world · physics · bots    │ │
                                                │ └───────────────────────────┘ │
                                                └───────────────────────────────┘
@@ -34,14 +34,14 @@ From the outside in. Each layer only depends on the ones below it.
 | Runtime | `runtime.rs` | One Tokio task owns the game (anything implementing `Game`); timer ticks and a command channel drive it |
 | Game core | `game.rs`, `studio.rs` | Connected clients, state culled per client to the riders in view, events per route, resistance updates, input validation; `studio.rs` does the same per studio room |
 | Protocol | `protocol.rs` | Message types and mapping from simulation state |
-| OpenBikeNet | `obn/` | Optional link to an OpenBikeNet server (`OPENRADLR_OBN_URL`): wire format, outbox, remote riders and the reconnecting link; remote riders live in the game core, not the sim |
+| OpenBikeNet | `obn/` | Optional link to an OpenBikeNet server (`GOWIFT_OBN_URL`): wire format, outbox, remote riders and the reconnecting link; remote riders live in the game core, not the sim |
 | Vehicles | `vehicle_codes.rs` | Boarding codes of all worlds, so a code finds its world |
 | Reconnecting | `resume.rs` | Resume tokens of all worlds, so a token finds its rider's world; per game the detached riders and their grace period |
 | Simulation | `crates/sim` | Route, physics, drafting, lanes, bots, races, shared vehicles, the studio's timetable and rooms — deterministic, no I/O |
 
 Each map's game is owned by a single task, so there are no locks around game
-state. Worlds are independent; only the player caps (`OPENRADLR_MAX_PLAYERS` for trainers,
-`OPENRADLR_MAX_PADDLE_PLAYERS` for phone paddles) are shared, as one seat per
+state. Worlds are independent; only the player caps (`GOWIFT_MAX_PLAYERS` for trainers,
+`GOWIFT_MAX_PADDLE_PLAYERS` for phone paddles) are shared, as one seat per
 joined connection.
 Connections send commands through a channel and receive messages through
 their own bounded channel; a slow client loses state updates rather than
@@ -86,7 +86,7 @@ that died after its rider was taken over by a new one can't touch the rider.
    captain's road, then copies speed, position and lane to every seat.
 5. Lanes move towards their target lane (one lane per second).
 6. Finishers are recorded; the race completes when every participant finished.
-7. Bots are spawned or removed to keep `OPENRADLR_TARGET_RIDERS` riders on every route. Each human keeps a few of them around: far bots make room, and groups spawn out of sight, ahead to chase or behind to come by (#64, ADR 0022).
+7. Bots are spawned or removed to keep `GOWIFT_TARGET_RIDERS` riders on every route. Each human keeps a few of them around: far bots make room, and groups spawn out of sight, ahead to chase or behind to come by (#64, ADR 0022).
 8. The game core sends events to their route, every fifth tick each client the
    state of the riders around them, and new resistance
    whenever a rider's grade changed by at least 0.1 %.
@@ -95,7 +95,7 @@ that died after its rider was taken over by a new one can't touch the rider.
 
 Local profiles stay the default. A server can add "Connect with Strava":
 the server does the OAuth exchange, keeps tokens in memory and gives the
-browser only an HttpOnly session cookie. With `OPENRADLR_REQUIRE_STRAVA` the
+browser only an HttpOnly session cookie. With `GOWIFT_REQUIRE_STRAVA` the
 WebSocket upgrade needs that cookie and one athlete can hold one connection —
 the account is the bot hurdle. Uploading a ride stays the rider's choice after
 each ride (the client builds a TCX file; the server forwards it). See

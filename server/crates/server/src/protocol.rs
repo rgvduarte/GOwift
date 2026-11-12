@@ -4,17 +4,17 @@
 //! for the full description. Bump [`PROTOCOL_VERSION`] on breaking changes.
 
 use crate::obn::remote::RemoteRider;
-use openradlr_sim::events::{EventInfo, EventKind, EventLength, EventNotice, EventResult, EventView};
-use openradlr_sim::physics::RiderPhysics;
-use openradlr_sim::race::{RaceEvent, RacePhase, RaceResult};
-use openradlr_sim::schedule::Phase;
-use openradlr_sim::sharing::Flow;
-use openradlr_sim::studio::{Studio, StudioEvent};
-use openradlr_sim::vehicle::Vehicle;
-use openradlr_sim::vehicle::{shares, VehicleId};
-use openradlr_sim::world::VehicleChange;
-use openradlr_sim::world::{Controller, Rider};
-use openradlr_sim::{RiderId, RouteIndex, World, WorldEvent};
+use gowift_sim::events::{EventInfo, EventKind, EventLength, EventNotice, EventResult, EventView};
+use gowift_sim::physics::RiderPhysics;
+use gowift_sim::race::{RaceEvent, RacePhase, RaceResult};
+use gowift_sim::schedule::Phase;
+use gowift_sim::sharing::Flow;
+use gowift_sim::studio::{Studio, StudioEvent};
+use gowift_sim::vehicle::Vehicle;
+use gowift_sim::vehicle::{shares, VehicleId};
+use gowift_sim::world::VehicleChange;
+use gowift_sim::world::{Controller, Rider};
+use gowift_sim::{RiderId, RouteIndex, World, WorldEvent};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
@@ -1536,10 +1536,10 @@ mod tests {
 
     #[test]
     fn bots_carry_their_team_style_and_move_and_humans_none() {
-        use openradlr_sim::bot::{RidingStyle, Team};
-        use openradlr_sim::rng::SplitMix64;
-        use openradlr_sim::route::{Point, Route, RouteSpec};
-        use openradlr_sim::SimConfig;
+        use gowift_sim::bot::{RidingStyle, Team};
+        use gowift_sim::rng::SplitMix64;
+        use gowift_sim::route::{Point, Route, RouteSpec};
+        use gowift_sim::SimConfig;
         let route = Route::new(RouteSpec {
             id: "r".into(),
             name: "R".into(),

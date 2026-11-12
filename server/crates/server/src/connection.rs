@@ -11,7 +11,7 @@ use crate::runtime::{ChannelSink, Command, GameHandle};
 use crate::session::{Action, Phase, PlayerCommand, Session};
 use axum::extract::ws::{Message, WebSocket};
 use futures_util::{SinkExt, StreamExt};
-use openradlr_sim::RiderId;
+use gowift_sim::RiderId;
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 use tokio::sync::mpsc;

@@ -5,7 +5,7 @@
 
 use std::collections::HashMap;
 
-use openradlr_sim::RiderId;
+use gowift_sim::RiderId;
 
 use crate::game::clean_foreign_name;
 

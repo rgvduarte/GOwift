@@ -18,7 +18,7 @@ const PHOTO = "photo:";
  * and values. Every call opens the database again; autosaves are rare.
  * @returns {{get: (key: string) => Promise<any>, put: (key: string, value: any) => Promise<void>, delete: (key: string) => Promise<void>, keys: () => Promise<string[]>}}
  */
-export function indexedDbStore(name = "openradlr-autosave") {
+export function indexedDbStore(name = "gowift-autosave") {
   const open = () =>
     new Promise((resolve, reject) => {
       const request = indexedDB.open(name, 1);

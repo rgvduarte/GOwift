@@ -1,4 +1,4 @@
-package com.openradlr.app;
+package io.github.rgvduarte.gowift;
 
 import com.getcapacitor.BridgeActivity;
 

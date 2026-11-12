@@ -1,6 +1,6 @@
-//! # openradlr-server
+//! # gowift-server
 //!
-//! Network adapter around the `openradlr-sim` core. Layers, from the outside in:
+//! Network adapter around the `gowift-sim` core. Layers, from the outside in:
 //!
 //! * [`http`] — axum router: health check, info, routes, WebSocket, static client
 //! * [`connection`] — drives one WebSocket with a [`session::Session`]
@@ -48,7 +48,7 @@ pub mod studio;
 pub mod vehicle_codes;
 pub mod worlds;
 
-/// Which build is running: set by the Docker build (`OPENRADLR_BUILD_SHA`, `OPENRADLR_BUILD_DATE`).
+/// Which build is running: set by the Docker build (`GOWIFT_BUILD_SHA`, `GOWIFT_BUILD_DATE`).
 #[derive(Debug, Clone, PartialEq, Eq, serde::Serialize)]
 pub struct BuildInfo {
     pub sha: String,
@@ -70,8 +70,8 @@ impl BuildInfo {
 
     pub fn from_env() -> Self {
         Self::new(
-            std::env::var("OPENRADLR_BUILD_SHA").ok(),
-            std::env::var("OPENRADLR_BUILD_DATE").ok(),
+            std::env::var("GOWIFT_BUILD_SHA").ok(),
+            std::env::var("GOWIFT_BUILD_DATE").ok(),
         )
     }
 }

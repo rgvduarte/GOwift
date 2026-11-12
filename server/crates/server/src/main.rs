@@ -1,5 +1,5 @@
-use openradlr_server::config::Config;
-use openradlr_server::{app, healthcheck, players};
+use gowift_server::config::Config;
+use gowift_server::{app, healthcheck, players};
 use std::process::ExitCode;
 use tracing_subscriber::EnvFilter;
 

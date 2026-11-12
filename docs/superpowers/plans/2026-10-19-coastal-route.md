@@ -113,6 +113,6 @@ Expected: no changes in `routes/`.
 - Modify: `CHANGELOG.md` (Unreleased → Added: Cape Loop, Beach Café, guard rails on cliffs; Changed: Island Tour rides the coast)
 
 - [ ] **Step 1: Update the docs and changelog.**
-- [ ] **Step 2: 3D check with Playwright** per the memory recipe (server with `OPENRADLR_ROUTES_DIR=../routes`): Cape Loop in the menu; screenshots at the start (Beach Café), on the beach stretch, on the cliff with its rail; Island Tour passing Beach Café. Publish them on an Artifact page; clean up the containers.
+- [ ] **Step 2: 3D check with Playwright** per the memory recipe (server with `GOWIFT_ROUTES_DIR=../routes`): Cape Loop in the menu; screenshots at the start (Beach Café), on the beach stretch, on the cliff with its rail; Island Tour passing Beach Café. Publish them on an Artifact page; clean up the containers.
 - [ ] **Step 3: Run all checks once more** (client, server).
 - [ ] **Step 4: Commit and push** `feat/coastal-route`; open the PR against `feat/more-routes` (or `main` once #92 is merged), "Part of #28" (boats, a lighthouse and a harbour village stay open), assigned to RalfLeonFasler. Never merge.

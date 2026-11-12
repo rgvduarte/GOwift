@@ -7,8 +7,8 @@ use crate::protocol::{studio_event_message, studio_state_message, DeviceKind, Ph
 use crate::resume::{Attachments, JoinedRider, ResumeTokens};
 use crate::runtime::Game;
 use crate::stats::DistanceStats;
-use openradlr_sim::studio::Studio;
-use openradlr_sim::RiderId;
+use gowift_sim::studio::Studio;
+use gowift_sim::RiderId;
 use std::collections::HashMap;
 
 /// World id of the studio in `join` and `/api/info`.
@@ -270,8 +270,8 @@ impl Game for StudioCore {
 mod tests {
     use super::*;
     use crate::game::SinkClosed;
-    use openradlr_sim::rng::SplitMix64;
-    use openradlr_sim::studio::{builtin_classes, StudioConfig, Timetable, SLOT_S};
+    use gowift_sim::rng::SplitMix64;
+    use gowift_sim::studio::{builtin_classes, StudioConfig, Timetable, SLOT_S};
     use std::sync::{Arc, Mutex};
 
     #[derive(Clone, Default)]

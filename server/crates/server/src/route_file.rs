@@ -3,7 +3,7 @@
 //! The same JSON is served to clients at `/api/route`, so server and clients
 //! always work with the identical route.
 
-use openradlr_sim::route::{Marker, MarkerKind, Point, Route, RouteError, RouteSpec, WalkStep};
+use gowift_sim::route::{Marker, MarkerKind, Point, Route, RouteError, RouteSpec, WalkStep};
 use serde::{Deserialize, Serialize};
 use std::fmt;
 use std::path::Path;
@@ -449,8 +449,8 @@ mod tests {
 
     #[test]
     fn a_rider_finishes_the_180_km_lanzarote_loop() {
-        use openradlr_sim::rng::SplitMix64;
-        use openradlr_sim::{SimConfig, World};
+        use gowift_sim::rng::SplitMix64;
+        use gowift_sim::{SimConfig, World};
         let route = lanzarote().to_route().unwrap();
         let length = route.length();
         let config = SimConfig {
@@ -464,15 +464,12 @@ mod tests {
         for _ in 0..(12.0 * 3600.0 / 0.05) as usize {
             world.set_telemetry(id, 300.0, Some(90.0)).unwrap();
             world.tick(0.05);
-            if matches!(world.race(0).phase(), openradlr_sim::race::RacePhase::Finished { .. }) {
+            if matches!(world.race(0).phase(), gowift_sim::race::RacePhase::Finished { .. }) {
                 break;
             }
         }
         assert!(
-            matches!(
-                world.race(0).phase(),
-                openradlr_sim::race::RacePhase::Finished { laps: 1 }
-            ),
+            matches!(world.race(0).phase(), gowift_sim::race::RacePhase::Finished { laps: 1 }),
             "the rider did not finish {length} m: {:?}",
             world.race(0).phase()
         );
@@ -486,7 +483,7 @@ mod tests {
     }
 
     fn temp_dir(name: &str) -> std::path::PathBuf {
-        let dir = std::env::temp_dir().join(format!("openradlr-{name}-{}", std::process::id()));
+        let dir = std::env::temp_dir().join(format!("gowift-{name}-{}", std::process::id()));
         let _ = std::fs::remove_dir_all(&dir);
         std::fs::create_dir_all(&dir).unwrap();
         dir

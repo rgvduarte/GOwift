@@ -97,7 +97,7 @@ mod tests {
     use super::*;
 
     fn temp_path(name: &str) -> std::path::PathBuf {
-        let dir = std::env::temp_dir().join(format!("openradlr-stats-{name}-{}", std::process::id()));
+        let dir = std::env::temp_dir().join(format!("gowift-stats-{name}-{}", std::process::id()));
         let _ = std::fs::remove_dir_all(&dir);
         dir.join("stats.json")
     }

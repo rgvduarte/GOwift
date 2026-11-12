@@ -1,15 +1,15 @@
-# The OpenRadlr app (iOS and Android)
+# The GOwift app (iOS and Android)
 
 No browser on iOS has Web Bluetooth, so on an iPhone or iPad you can only
 connect a trainer through the app. `app/` is a [Capacitor](https://capacitorjs.com)
-project that shows the normal OpenRadlr page and connects it to native
+project that shows the normal GOwift page and connects it to native
 Bluetooth. Why we chose this approach: [ADR 0021](adr/0021-native-app-shell.md).
 
 ## How it works
 
-- The app does not bundle the client. It opens the page of an OpenRadlr server
+- The app does not bundle the client. It opens the page of a GOwift server
   (`server.url` in `app/capacitor.config.ts`, by default
-  https://app.openradlr.com), so the app always runs the client that server
+  https://app.gowift.example), so the app always runs the client that server
   serves. Shipping a new client to the server updates the app too, without an
   App Store release.
 - The page sees `window.Capacitor`, which the native shell injects.
@@ -60,7 +60,7 @@ handed over to the web view in steps:
    open, `/auth/strava?app=<id>`, and keeps a secret as a cookie in the web
    view.
 2. The sheet signs in with Strava as usual. The callback sends it to
-   `openradlr://strava?result=connected&ticket=<ticket>`, which closes the
+   `gowift://strava?result=connected&ticket=<ticket>`, which closes the
    sheet. Android routes that link back to the app with an intent filter.
 3. The page sends the ticket to `POST /auth/strava/app/claim`. The server
    checks it against the secret in the web view's cookie and sets the
@@ -69,7 +69,7 @@ handed over to the web view in steps:
 
 The ticket only reaches the phone that signed in. Someone who sends a victim
 their own login link holds the secret but never sees the ticket, and another
-app that grabs the `openradlr://` link has no secret. The server code is
+app that grabs the `gowift://` link has no secret. The server code is
 `AppLogins` in `server/crates/server/src/strava.rs`. In a browser nothing
 changes.
 
@@ -87,7 +87,7 @@ npm run android    # cap sync android + opens Android Studio
 ```
 
 In Xcode: select the *App* target → *Signing & Capabilities* → pick your
-team (change the bundle id `com.openradlr.app` if Xcode says it's taken), then
+team (change the bundle id `io.github.rgvduarte.gowift` if Xcode says it's taken), then
 run on a **real device**. The iOS simulator has no Bluetooth.
 
 Run `npx cap sync` again after changing `capacitor.config.ts` or the
@@ -97,7 +97,7 @@ restart the app.
 ### Your own server
 
 ```bash
-OPENRADLR_APP_URL=http://192.168.1.20:8080 npx cap sync
+GOWIFT_APP_URL=http://192.168.1.20:8080 npx cap sync
 ```
 
 Plain `http://` is allowed for addresses in the local network (iOS:
@@ -109,7 +109,7 @@ your Mac, use the Mac's LAN address, not `localhost`.
 
 The app icon comes from the client's maskable icon
 (`client/public/icons/icon-maskable-512.png`). The splash screen is the README
-emblem (`docs/assets/openradlr-emblem.png`), centred on the icon's dark
+emblem (`docs/assets/gowift-emblem.png`), centred on the icon's dark
 background `#080a0e`. Android 12 and later draw their own splash screen: there
 the emblem is `splash_icon` (one per density, scaled so all of it fits the
 circle Android shows) on the same colour (`res/values/styles.xml`). To regenerate every size for iOS and Android after one
@@ -121,7 +121,7 @@ npm run assets   # scripts/make-assets.mjs → app/assets/ → capacitor-assets 
 
 ### Debugging
 
-- iOS: Safari → *Develop* → your iPhone → the OpenRadlr page shows the
+- iOS: Safari → *Develop* → your iPhone → the GOwift page shows the
   page's console. Enable *Settings → Safari → Advanced → Web Inspector* on the
   phone. Debug builds are inspectable.
 - Android: `chrome://inspect` in desktop Chrome.
@@ -142,7 +142,7 @@ Create it outside the repo, with the JDK that comes with Android Studio.
 
 ```bash
 "/Applications/Android Studio.app/Contents/jbr/Contents/Home/bin/keytool" \
-  -genkeypair -v -keystore ~/keys/openradlr-upload.jks -alias upload \
+  -genkeypair -v -keystore ~/keys/gowift-upload.jks -alias upload \
   -keyalg RSA -keysize 4096 -validity 10000
 ```
 
@@ -151,14 +151,14 @@ the build where it is, in `app/android/keystore.properties`. Git ignores
 this file, and `*.jks`:
 
 ```properties
-storeFile=/Users/you/keys/openradlr-upload.jks
+storeFile=/Users/you/keys/gowift-upload.jks
 storePassword=…
 keyAlias=upload
 keyPassword=…
 ```
 
-In CI, set `OPENRADLR_UPLOAD_STORE_FILE`, `OPENRADLR_UPLOAD_STORE_PASSWORD`,
-`OPENRADLR_UPLOAD_KEY_ALIAS` and `OPENRADLR_UPLOAD_KEY_PASSWORD` instead.
+In CI, set `GOWIFT_UPLOAD_STORE_FILE`, `GOWIFT_UPLOAD_STORE_PASSWORD`,
+`GOWIFT_UPLOAD_KEY_ALIAS` and `GOWIFT_UPLOAD_KEY_PASSWORD` instead.
 
 ### Build the bundle
 
@@ -168,7 +168,7 @@ npm run android:bundle   # → android/app/build/outputs/bundle/release/app-rele
 ```
 
 The script stops if the upload key is missing, or if the app would open a
-server that is not `https://` (a leftover `OPENRADLR_APP_URL`). The client
+server that is not `https://` (a leftover `GOWIFT_APP_URL`). The client
 comes from the server, so a new bundle is only needed when the native shell
 changes: plugins, permissions, icons, Capacitor. Raise `versionCode` in
 `app/android/app/build.gradle` for every upload; Play accepts each number
@@ -177,12 +177,12 @@ because their signatures differ: uninstall the debug build first.
 
 ### In the Play Console
 
-1. **Create app**: name *OpenRadlr*, type *App*, *Free*. The package name
-   `com.openradlr.app` is fixed with the first upload.
+1. **Create app**: name *GOwift*, type *App*, *Free*. The package name
+   `io.github.rgvduarte.gowift` is fixed with the first upload.
 2. **Testing → Internal testing**: upload the `.aab`, add yourself as a
    tester, and install it from Play. When asked, accept Play App Signing.
 3. **App content** (*Policy → App content*):
-   - Privacy policy: <https://openradlr.com/privacy/>
+   - Privacy policy: the URL of your own privacy policy page (Play requires one).
    - App access: all of it works without a login (Strava is optional).
    - Ads: none.
    - Content rating: the questionnaire. Users interact (names, chat).
@@ -203,7 +203,7 @@ because their signatures differ: uninstall the debug build first.
    a 1024×500 feature graphic and 2–8 phone screenshots (9:16 or 16:9).
 5. **Production**: promote the tested release from internal testing.
 
-Play rejects apps that only wrap a website. OpenRadlr's argument is native
+Play rejects apps that only wrap a website. GOwift's argument is native
 Bluetooth to trainers, heart rate straps and controllers: put it in the
 description.
 

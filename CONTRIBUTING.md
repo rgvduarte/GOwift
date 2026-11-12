@@ -1,6 +1,6 @@
 # Contributing
 
-Thanks for helping build OpenRadlr! This guide covers how we work.
+Thanks for helping build GOwift! This guide covers how we work.
 
 ## Workflow
 

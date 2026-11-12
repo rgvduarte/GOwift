@@ -12,7 +12,7 @@ use crate::protocol::{
 };
 use crate::studio::STUDIO_ID;
 use crate::ServerInfo;
-use openradlr_sim::RiderId;
+use gowift_sim::RiderId;
 use std::sync::Arc;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

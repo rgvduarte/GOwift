@@ -1,5 +1,5 @@
 /**
- * The temperate biome: the farmland valley OpenRadlr has always drawn.
+ * The temperate biome: the farmland valley GOwift has always drawn.
  *
  * A biome only changes what the world *looks like*, never where anything is.
  * It supplies colours, the terrain shading rule, the scenery models and how

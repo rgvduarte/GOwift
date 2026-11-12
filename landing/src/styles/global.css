@@ -9,9 +9,9 @@
   --border: #2a313b;
   --text: #e8ecf1;
   --muted: #8a94a3;
-  --accent: #ff7a1a;
-  --accent-text: #1a0d02;
-  --lemon: #ffd21f;
+  --accent: #2ee88a;
+  --accent-text: #04140b;
+  --brand: #2ee88a;
   --terrain-edge: #5fb47c;
   --climb: #ff5d5d;
   --sprint: #4cc3ff;
@@ -54,7 +54,7 @@ a:hover {
 }
 
 :focus-visible {
-  outline: 2px solid var(--lemon);
+  outline: 2px solid var(--brand);
   outline-offset: 3px;
   border-radius: 4px;
 }

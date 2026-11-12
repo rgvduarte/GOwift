@@ -96,7 +96,7 @@ limit; the server has no memory across restarts.
 ### Config
 
 `grace_s` in `ConnectionLimits` next to `idle_timeout_s` (120 s), default 60 s,
-from `OPENRADLR_GRACE_S`. `0` restores today's behaviour (detach = leave).
+from `GOWIFT_GRACE_S`. `0` restores today's behaviour (detach = leave).
 
 ## Protocol (additive)
 

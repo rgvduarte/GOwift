@@ -2,20 +2,20 @@ apply plugin: 'com.android.application'
 
 // The upload key that signs release bundles for Google Play (docs/app.md#google-play).
 // It comes from app/android/keystore.properties (gitignored) or, e.g. in CI, from
-// the OPENRADLR_UPLOAD_* environment variables. Without it, release builds are unsigned.
+// the GOWIFT_UPLOAD_* environment variables. Without it, release builds are unsigned.
 def keystoreProperties = new Properties()
 def keystorePropertiesFile = rootProject.file('keystore.properties')
 if (keystorePropertiesFile.exists()) {
     keystorePropertiesFile.withInputStream { keystoreProperties.load(it) }
 }
 def uploadKey = { String name, String env -> System.getenv(env) ?: keystoreProperties.getProperty(name) }
-def uploadStoreFile = uploadKey('storeFile', 'OPENRADLR_UPLOAD_STORE_FILE')
+def uploadStoreFile = uploadKey('storeFile', 'GOWIFT_UPLOAD_STORE_FILE')
 
 android {
-    namespace = "com.openradlr.app"
+    namespace = "io.github.rgvduarte.gowift"
     compileSdk = rootProject.ext.compileSdkVersion
     defaultConfig {
-        applicationId "com.openradlr.app"
+        applicationId "io.github.rgvduarte.gowift"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         // Google Play takes every versionCode once: raise it for each upload.
@@ -33,9 +33,9 @@ android {
         if (uploadStoreFile) {
             release {
                 storeFile rootProject.file(uploadStoreFile)
-                storePassword uploadKey('storePassword', 'OPENRADLR_UPLOAD_STORE_PASSWORD')
-                keyAlias uploadKey('keyAlias', 'OPENRADLR_UPLOAD_KEY_ALIAS')
-                keyPassword uploadKey('keyPassword', 'OPENRADLR_UPLOAD_KEY_PASSWORD')
+                storePassword uploadKey('storePassword', 'GOWIFT_UPLOAD_STORE_PASSWORD')
+                keyAlias uploadKey('keyAlias', 'GOWIFT_UPLOAD_KEY_ALIAS')
+                keyPassword uploadKey('keyPassword', 'GOWIFT_UPLOAD_KEY_PASSWORD')
             }
         }
     }

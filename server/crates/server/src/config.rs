@@ -1,4 +1,4 @@
-//! Server configuration, read from `OPENRADLR_*` environment variables.
+//! Server configuration, read from `GOWIFT_*` environment variables.
 //!
 //! Parsing goes through [`Config::from_lookup`], which takes the variable
 //! lookup as a function. Production passes `std::env::var`, tests pass a map.
@@ -6,7 +6,7 @@
 use crate::guard::ConnectionLimits;
 use crate::obn::link::Heartbeat;
 use crate::strava::StravaConfig;
-use openradlr_sim::SimConfig;
+use gowift_sim::SimConfig;
 use std::fmt;
 use std::net::SocketAddr;
 use std::path::PathBuf;
@@ -27,7 +27,7 @@ impl AuthMode {
     }
 }
 
-/// Where scheduled events come from (`OPENRADLR_EVENTS`).
+/// Where scheduled events come from (`GOWIFT_EVENTS`).
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum EventsSetting {
     /// The built-in timetable on every world.
@@ -80,11 +80,11 @@ pub struct Config {
     pub public_url: Option<String>,
     /// "Connect with Strava", if a Strava API app is configured.
     pub strava: Option<StravaConfig>,
-    /// Where Strava logins are kept so they survive restarts (`OPENRADLR_DATA_DIR`, with the key).
+    /// Where Strava logins are kept so they survive restarts (`GOWIFT_DATA_DIR`, with the key).
     pub data_dir: Option<std::path::PathBuf>,
-    /// Encrypts the stored Strava refresh tokens (`OPENRADLR_SECRET_KEY`).
+    /// Encrypts the stored Strava refresh tokens (`GOWIFT_SECRET_KEY`).
     pub secret_key: Option<String>,
-    /// Where the community distance totals are kept (`OPENRADLR_STATS_FILE`,
+    /// Where the community distance totals are kept (`GOWIFT_STATS_FILE`,
     /// else `stats.json` in the data dir); `None` keeps them in memory only.
     pub stats_file: Option<std::path::PathBuf>,
     /// Only riders with a connected Strava account may join.
@@ -101,9 +101,9 @@ pub struct Config {
     pub event_lobby_s: f64,
     /// Plausible-style page analytics for the browser client; `None` (default) = none.
     pub analytics: Option<Analytics>,
-    /// The operator's privacy policy, linked from the start menu (`OPENRADLR_PRIVACY_URL`).
+    /// The operator's privacy policy, linked from the start menu (`GOWIFT_PRIVACY_URL`).
     pub privacy_url: Option<String>,
-    /// The OpenBikeNet server to share the velodrome with (`OPENRADLR_OBN_URL`); `None` = not connected.
+    /// The OpenBikeNet server to share the velodrome with (`GOWIFT_OBN_URL`); `None` = not connected.
     pub obn_url: Option<String>,
     /// Base of the reconnect delay to OpenBikeNet (no environment variable; for tests).
     pub obn_backoff_unit: Duration,
@@ -152,117 +152,117 @@ impl Config {
     pub fn from_lookup(lookup: impl Fn(&str) -> Option<String>) -> Result<Self, ConfigError> {
         let reader = Reader { lookup: &lookup };
 
-        let tick_hz: u32 = reader.parse("OPENRADLR_TICK_HZ", 20)?;
+        let tick_hz: u32 = reader.parse("GOWIFT_TICK_HZ", 20)?;
         reader.check(
-            "OPENRADLR_TICK_HZ",
+            "GOWIFT_TICK_HZ",
             tick_hz,
             (1..=120).contains(&tick_hz),
             "must be between 1 and 120",
         )?;
 
-        let broadcast_hz: u32 = reader.parse("OPENRADLR_BROADCAST_HZ", 4)?;
+        let broadcast_hz: u32 = reader.parse("GOWIFT_BROADCAST_HZ", 4)?;
         reader.check(
-            "OPENRADLR_BROADCAST_HZ",
+            "GOWIFT_BROADCAST_HZ",
             broadcast_hz,
             (1..=tick_hz).contains(&broadcast_hz),
-            "must be between 1 and OPENRADLR_TICK_HZ",
+            "must be between 1 and GOWIFT_TICK_HZ",
         )?;
 
-        let max_players: usize = reader.parse("OPENRADLR_MAX_PLAYERS", 50)?;
+        let max_players: usize = reader.parse("GOWIFT_MAX_PLAYERS", 50)?;
         reader.check(
-            "OPENRADLR_MAX_PLAYERS",
+            "GOWIFT_MAX_PLAYERS",
             max_players,
             max_players >= 1,
             "must be at least 1",
         )?;
 
-        let max_paddle_players: usize = reader.parse("OPENRADLR_MAX_PADDLE_PLAYERS", 20)?;
+        let max_paddle_players: usize = reader.parse("GOWIFT_MAX_PADDLE_PLAYERS", 20)?;
 
-        let max_visible_riders: usize = reader.parse("OPENRADLR_MAX_VISIBLE_RIDERS", 200)?;
+        let max_visible_riders: usize = reader.parse("GOWIFT_MAX_VISIBLE_RIDERS", 200)?;
         reader.check(
-            "OPENRADLR_MAX_VISIBLE_RIDERS",
+            "GOWIFT_MAX_VISIBLE_RIDERS",
             max_visible_riders,
             max_visible_riders >= 1,
             "must be at least 1",
         )?;
 
-        let target_riders: usize = reader.parse("OPENRADLR_TARGET_RIDERS", 12)?;
+        let target_riders: usize = reader.parse("GOWIFT_TARGET_RIDERS", 12)?;
         reader.check(
-            "OPENRADLR_TARGET_RIDERS",
+            "GOWIFT_TARGET_RIDERS",
             target_riders,
             target_riders <= 200,
             "must be at most 200",
         )?;
 
         // Long enough for others to see the announcement and join.
-        let race_countdown_s: f64 = reader.parse("OPENRADLR_RACE_COUNTDOWN_S", 30.0)?;
+        let race_countdown_s: f64 = reader.parse("GOWIFT_RACE_COUNTDOWN_S", 30.0)?;
         reader.check(
-            "OPENRADLR_RACE_COUNTDOWN_S",
+            "GOWIFT_RACE_COUNTDOWN_S",
             race_countdown_s,
             (0.0..=300.0).contains(&race_countdown_s),
             "must be between 0 and 300",
         )?;
 
-        let max_race_laps: u32 = reader.parse("OPENRADLR_MAX_RACE_LAPS", 20)?;
+        let max_race_laps: u32 = reader.parse("GOWIFT_MAX_RACE_LAPS", 20)?;
         reader.check(
-            "OPENRADLR_MAX_RACE_LAPS",
+            "GOWIFT_MAX_RACE_LAPS",
             max_race_laps,
             (1..=100).contains(&max_race_laps),
             "must be between 1 and 100",
         )?;
 
-        let auth_mode = match reader.raw("OPENRADLR_AUTH_MODE").as_deref() {
+        let auth_mode = match reader.raw("GOWIFT_AUTH_MODE").as_deref() {
             None | Some("open") => AuthMode::Open,
             Some(other) => {
                 return Err(ConfigError {
-                    key: "OPENRADLR_AUTH_MODE",
+                    key: "GOWIFT_AUTH_MODE",
                     value: other.to_owned(),
                     reason: "only \"open\" is supported in the proof of concept".into(),
                 })
             }
         };
 
-        let max_connections_per_ip: usize = reader.parse("OPENRADLR_MAX_CONNECTIONS_PER_IP", 4)?;
+        let max_connections_per_ip: usize = reader.parse("GOWIFT_MAX_CONNECTIONS_PER_IP", 4)?;
         reader.check(
-            "OPENRADLR_MAX_CONNECTIONS_PER_IP",
+            "GOWIFT_MAX_CONNECTIONS_PER_IP",
             max_connections_per_ip,
             (1..=1000).contains(&max_connections_per_ip),
             "must be between 1 and 1000",
         )?;
 
-        let messages_per_second: f64 = reader.parse("OPENRADLR_MESSAGES_PER_SECOND", 20.0)?;
+        let messages_per_second: f64 = reader.parse("GOWIFT_MESSAGES_PER_SECOND", 20.0)?;
         reader.check(
-            "OPENRADLR_MESSAGES_PER_SECOND",
+            "GOWIFT_MESSAGES_PER_SECOND",
             messages_per_second,
             (5.0..=1000.0).contains(&messages_per_second),
             "must be between 5 and 1000",
         )?;
 
-        let grace_s: f64 = reader.parse("OPENRADLR_GRACE_S", 60.0)?;
+        let grace_s: f64 = reader.parse("GOWIFT_GRACE_S", 60.0)?;
         reader.check(
-            "OPENRADLR_GRACE_S",
+            "GOWIFT_GRACE_S",
             grace_s,
             grace_s.is_finite() && grace_s >= 0.0,
             "must be a finite number of seconds (0 or more)",
         )?;
 
-        let afk_timeout_s: f64 = reader.parse("OPENRADLR_AFK_TIMEOUT_S", 1800.0)?;
+        let afk_timeout_s: f64 = reader.parse("GOWIFT_AFK_TIMEOUT_S", 1800.0)?;
         reader.check(
-            "OPENRADLR_AFK_TIMEOUT_S",
+            "GOWIFT_AFK_TIMEOUT_S",
             afk_timeout_s,
             afk_timeout_s.is_finite() && afk_timeout_s >= 0.0,
             "must be a finite number of seconds (0 or more)",
         )?;
-        let afk_reminder_s: f64 = reader.parse("OPENRADLR_AFK_REMINDER_S", 600.0)?;
+        let afk_reminder_s: f64 = reader.parse("GOWIFT_AFK_REMINDER_S", 600.0)?;
         reader.check(
-            "OPENRADLR_AFK_REMINDER_S",
+            "GOWIFT_AFK_REMINDER_S",
             afk_reminder_s,
             afk_reminder_s.is_finite() && afk_reminder_s > 0.0,
             "must be a finite number of seconds above 0",
         )?;
 
         let allowed_origins: Vec<String> = reader
-            .raw("OPENRADLR_ALLOWED_ORIGINS")
+            .raw("GOWIFT_ALLOWED_ORIGINS")
             .unwrap_or_default()
             .split(',')
             .map(|origin| origin.trim().trim_end_matches('/').to_owned())
@@ -270,26 +270,26 @@ impl Config {
             .collect();
 
         let public_url = reader
-            .raw("OPENRADLR_PUBLIC_URL")
+            .raw("GOWIFT_PUBLIC_URL")
             .filter(|url| !url.is_empty())
             .map(|url| url.trim_end_matches('/').to_owned());
         if let Some(url) = &public_url {
             reader.check(
-                "OPENRADLR_PUBLIC_URL",
+                "GOWIFT_PUBLIC_URL",
                 url,
                 url.starts_with("https://") || url.starts_with("http://"),
                 "must start with https:// (or http:// for local tests)",
             )?;
         }
 
-        let client_id = reader.raw("OPENRADLR_STRAVA_CLIENT_ID").filter(|v| !v.is_empty());
-        let client_secret = reader.raw("OPENRADLR_STRAVA_CLIENT_SECRET").filter(|v| !v.is_empty());
+        let client_id = reader.raw("GOWIFT_STRAVA_CLIENT_ID").filter(|v| !v.is_empty());
+        let client_secret = reader.raw("GOWIFT_STRAVA_CLIENT_SECRET").filter(|v| !v.is_empty());
         let strava = match (client_id, client_secret) {
             (None, None) => None,
             (Some(client_id), Some(client_secret)) => {
                 let Some(url) = &public_url else {
                     return Err(ConfigError {
-                        key: "OPENRADLR_PUBLIC_URL",
+                        key: "GOWIFT_PUBLIC_URL",
                         value: String::new(),
                         reason: "is required for Strava (it is the address Strava sends riders back to)".into(),
                     });
@@ -303,74 +303,69 @@ impl Config {
             }
             (Some(_), None) | (None, Some(_)) => {
                 return Err(ConfigError {
-                    key: "OPENRADLR_STRAVA_CLIENT_SECRET",
+                    key: "GOWIFT_STRAVA_CLIENT_SECRET",
                     value: String::new(),
-                    reason: "set both OPENRADLR_STRAVA_CLIENT_ID and OPENRADLR_STRAVA_CLIENT_SECRET, or neither".into(),
+                    reason: "set both GOWIFT_STRAVA_CLIENT_ID and GOWIFT_STRAVA_CLIENT_SECRET, or neither".into(),
                 })
             }
         };
         let data_dir = reader
-            .raw("OPENRADLR_DATA_DIR")
+            .raw("GOWIFT_DATA_DIR")
             .filter(|v| !v.is_empty())
             .map(std::path::PathBuf::from);
         let stats_file = reader
-            .raw("OPENRADLR_STATS_FILE")
+            .raw("GOWIFT_STATS_FILE")
             .filter(|v| !v.is_empty())
             .map(std::path::PathBuf::from)
             .or_else(|| data_dir.as_ref().map(|dir| dir.join("stats.json")));
-        let secret_key = reader.raw("OPENRADLR_SECRET_KEY").filter(|v| !v.is_empty());
+        let secret_key = reader.raw("GOWIFT_SECRET_KEY").filter(|v| !v.is_empty());
         if let Some(key) = &secret_key {
             reader.check(
-                "OPENRADLR_SECRET_KEY",
+                "GOWIFT_SECRET_KEY",
                 "(hidden)",
                 key.len() >= 16,
                 "must be at least 16 characters (try `openssl rand -hex 32`)",
             )?;
         }
-        let require_strava = reader.flag("OPENRADLR_REQUIRE_STRAVA", false)?;
+        let require_strava = reader.flag("GOWIFT_REQUIRE_STRAVA", false)?;
         if require_strava && strava.is_none() {
             return Err(ConfigError {
-                key: "OPENRADLR_REQUIRE_STRAVA",
+                key: "GOWIFT_REQUIRE_STRAVA",
                 value: "true".into(),
-                reason: "needs OPENRADLR_STRAVA_CLIENT_ID and OPENRADLR_STRAVA_CLIENT_SECRET".into(),
+                reason: "needs GOWIFT_STRAVA_CLIENT_ID and GOWIFT_STRAVA_CLIENT_SECRET".into(),
             });
         }
 
-        let server_name = reader
-            .raw("OPENRADLR_SERVER_NAME")
-            .unwrap_or_else(|| "OpenRadlr".into());
+        let server_name = reader.raw("GOWIFT_SERVER_NAME").unwrap_or_else(|| "GOwift".into());
         reader.check(
-            "OPENRADLR_SERVER_NAME",
+            "GOWIFT_SERVER_NAME",
             &server_name,
             !server_name.trim().is_empty() && server_name.chars().count() <= 64,
             "must be 1 to 64 characters",
         )?;
 
-        let events = match reader.raw("OPENRADLR_EVENTS").as_deref() {
+        let events = match reader.raw("GOWIFT_EVENTS").as_deref() {
             None | Some("" | "default") => EventsSetting::Default,
             Some("off") => EventsSetting::Off,
             Some(path) => EventsSetting::File(PathBuf::from(path)),
         };
-        let event_lobby_s: f64 = reader.parse("OPENRADLR_EVENT_LOBBY_S", 600.0)?;
+        let event_lobby_s: f64 = reader.parse("GOWIFT_EVENT_LOBBY_S", 600.0)?;
         reader.check(
-            "OPENRADLR_EVENT_LOBBY_S",
+            "GOWIFT_EVENT_LOBBY_S",
             event_lobby_s,
             (0.0..=3600.0).contains(&event_lobby_s),
             "must be between 0 and 3600",
         )?;
 
-        let analytics = match reader
-            .raw("OPENRADLR_ANALYTICS_DOMAIN")
-            .filter(|d| !d.trim().is_empty())
-        {
+        let analytics = match reader.raw("GOWIFT_ANALYTICS_DOMAIN").filter(|d| !d.trim().is_empty()) {
             None => None,
             Some(domain) => {
                 let script = reader
-                    .raw("OPENRADLR_ANALYTICS_SCRIPT")
+                    .raw("GOWIFT_ANALYTICS_SCRIPT")
                     .filter(|s| !s.trim().is_empty())
                     .unwrap_or_else(|| DEFAULT_ANALYTICS_SCRIPT.to_owned());
                 reader.check(
-                    "OPENRADLR_ANALYTICS_SCRIPT",
+                    "GOWIFT_ANALYTICS_SCRIPT",
                     &script,
                     script.starts_with("https://"),
                     "must be an https:// URL",
@@ -383,22 +378,22 @@ impl Config {
         };
 
         let privacy_url = reader
-            .raw("OPENRADLR_PRIVACY_URL")
+            .raw("GOWIFT_PRIVACY_URL")
             .map(|url| url.trim().to_owned())
             .filter(|url| !url.is_empty());
         if let Some(url) = &privacy_url {
             reader.check(
-                "OPENRADLR_PRIVACY_URL",
+                "GOWIFT_PRIVACY_URL",
                 url,
                 url.starts_with("https://") || url.starts_with("http://"),
                 "must be an http:// or https:// URL",
             )?;
         }
 
-        let obn_url = reader.raw("OPENRADLR_OBN_URL").filter(|url| !url.is_empty());
+        let obn_url = reader.raw("GOWIFT_OBN_URL").filter(|url| !url.is_empty());
         if let Some(url) = &obn_url {
             reader.check(
-                "OPENRADLR_OBN_URL",
+                "GOWIFT_OBN_URL",
                 url,
                 url.starts_with("ws://") || url.starts_with("wss://"),
                 "must be a ws:// or wss:// URL",
@@ -406,16 +401,16 @@ impl Config {
         }
 
         Ok(Self {
-            bind_addr: reader.parse("OPENRADLR_BIND", SocketAddr::from(([0, 0, 0, 0], 8080)))?,
+            bind_addr: reader.parse("GOWIFT_BIND", SocketAddr::from(([0, 0, 0, 0], 8080)))?,
             route_file: reader
-                .raw("OPENRADLR_ROUTE_FILE")
+                .raw("GOWIFT_ROUTE_FILE")
                 .map_or_else(|| PathBuf::from("routes/rolling-hills.json"), PathBuf::from),
             routes_dir: reader
-                .raw("OPENRADLR_ROUTES_DIR")
+                .raw("GOWIFT_ROUTES_DIR")
                 .filter(|s| !s.is_empty())
                 .map(PathBuf::from),
             static_dir: reader
-                .raw("OPENRADLR_STATIC_DIR")
+                .raw("GOWIFT_STATIC_DIR")
                 .filter(|s| !s.is_empty())
                 .map(PathBuf::from),
             server_name,
@@ -425,11 +420,11 @@ impl Config {
             max_paddle_players,
             max_visible_riders,
             target_riders,
-            bot_seed: reader.parse_optional("OPENRADLR_BOT_SEED")?,
+            bot_seed: reader.parse_optional("GOWIFT_BOT_SEED")?,
             race_countdown_s,
             max_race_laps,
             auth_mode,
-            trust_proxy: reader.flag("OPENRADLR_TRUST_PROXY", false)?,
+            trust_proxy: reader.flag("GOWIFT_TRUST_PROXY", false)?,
             max_connections_per_ip,
             messages_per_second,
             grace_s,
@@ -443,9 +438,9 @@ impl Config {
             secret_key,
             stats_file,
             require_strava,
-            allow_simulated_trainer: reader.flag("OPENRADLR_ALLOW_SIMULATED_TRAINER", true)?,
-            allow_paddle_mode: reader.flag("OPENRADLR_ALLOW_PADDLE_MODE", true)?,
-            studio: reader.flag("OPENRADLR_STUDIO", true)?,
+            allow_simulated_trainer: reader.flag("GOWIFT_ALLOW_SIMULATED_TRAINER", true)?,
+            allow_paddle_mode: reader.flag("GOWIFT_ALLOW_PADDLE_MODE", true)?,
+            studio: reader.flag("GOWIFT_STUDIO", true)?,
             events,
             event_lobby_s,
             analytics,
@@ -555,11 +550,11 @@ mod tests {
     #[test]
     fn values_are_read_from_the_environment() {
         let c = config(&[
-            ("OPENRADLR_BIND", "127.0.0.1:9000"),
-            ("OPENRADLR_TARGET_RIDERS", "5"),
-            ("OPENRADLR_BOT_SEED", "42"),
-            ("OPENRADLR_STATIC_DIR", "/srv/client"),
-            ("OPENRADLR_SERVER_NAME", "  Club Server  "),
+            ("GOWIFT_BIND", "127.0.0.1:9000"),
+            ("GOWIFT_TARGET_RIDERS", "5"),
+            ("GOWIFT_BOT_SEED", "42"),
+            ("GOWIFT_STATIC_DIR", "/srv/client"),
+            ("GOWIFT_SERVER_NAME", "  Club Server  "),
         ])
         .unwrap();
         assert_eq!(c.bind_addr, "127.0.0.1:9000".parse().unwrap());
@@ -573,27 +568,23 @@ mod tests {
     #[test]
     fn the_stats_file_is_explicit_or_in_the_data_dir_or_off() {
         assert_eq!(config(&[]).unwrap().stats_file, None);
-        let in_data_dir = config(&[("OPENRADLR_DATA_DIR", "/data")]).unwrap();
+        let in_data_dir = config(&[("GOWIFT_DATA_DIR", "/data")]).unwrap();
         assert_eq!(in_data_dir.stats_file, Some(PathBuf::from("/data/stats.json")));
-        let explicit = config(&[
-            ("OPENRADLR_DATA_DIR", "/data"),
-            ("OPENRADLR_STATS_FILE", "/var/km.json"),
-        ])
-        .unwrap();
+        let explicit = config(&[("GOWIFT_DATA_DIR", "/data"), ("GOWIFT_STATS_FILE", "/var/km.json")]).unwrap();
         assert_eq!(explicit.stats_file, Some(PathBuf::from("/var/km.json")));
     }
 
     #[test]
     fn empty_values_fall_back_to_defaults() {
-        let c = config(&[("OPENRADLR_BOT_SEED", ""), ("OPENRADLR_STATIC_DIR", "")]).unwrap();
+        let c = config(&[("GOWIFT_BOT_SEED", ""), ("GOWIFT_STATIC_DIR", "")]).unwrap();
         assert_eq!(c.bot_seed, None);
         assert_eq!(c.static_dir, None);
     }
 
     #[test]
     fn unparsable_values_name_the_variable() {
-        let err = config(&[("OPENRADLR_TICK_HZ", "fast")]).unwrap_err();
-        assert_eq!(err.key, "OPENRADLR_TICK_HZ");
+        let err = config(&[("GOWIFT_TICK_HZ", "fast")]).unwrap_err();
+        assert_eq!(err.key, "GOWIFT_TICK_HZ");
     }
 
     #[test]
@@ -603,48 +594,39 @@ mod tests {
         assert_eq!(c.connection_limits().afk_timeout_s, 1800.0);
         assert_eq!(c.connection_limits().afk_reminder_s, 600.0);
         assert_eq!(c.connection_limits().afk_answer_s, 120.0);
-        let off = config(&[("OPENRADLR_AFK_TIMEOUT_S", "0")]).unwrap();
+        let off = config(&[("GOWIFT_AFK_TIMEOUT_S", "0")]).unwrap();
         assert_eq!(off.afk_timeout_s, 0.0);
         assert_eq!(off.connection_limits().afk_timeout_s, 0.0);
         assert_eq!(
-            config(&[("OPENRADLR_AFK_TIMEOUT_S", "-1")]).unwrap_err().key,
-            "OPENRADLR_AFK_TIMEOUT_S"
+            config(&[("GOWIFT_AFK_TIMEOUT_S", "-1")]).unwrap_err().key,
+            "GOWIFT_AFK_TIMEOUT_S"
         );
         assert_eq!(
-            config(&[("OPENRADLR_AFK_REMINDER_S", "0")]).unwrap_err().key,
-            "OPENRADLR_AFK_REMINDER_S"
+            config(&[("GOWIFT_AFK_REMINDER_S", "0")]).unwrap_err().key,
+            "GOWIFT_AFK_REMINDER_S"
         );
     }
 
     #[test]
     fn grace_defaults_to_60_and_can_be_changed() {
         assert_eq!(config(&[]).unwrap().grace_s, 60.0);
-        assert_eq!(config(&[("OPENRADLR_GRACE_S", "0")]).unwrap().grace_s, 0.0);
-        assert_eq!(
-            config(&[("OPENRADLR_GRACE_S", "-1")]).unwrap_err().key,
-            "OPENRADLR_GRACE_S"
-        );
-        assert_eq!(
-            config(&[("OPENRADLR_GRACE_S", "abc")]).unwrap_err().key,
-            "OPENRADLR_GRACE_S"
-        );
+        assert_eq!(config(&[("GOWIFT_GRACE_S", "0")]).unwrap().grace_s, 0.0);
+        assert_eq!(config(&[("GOWIFT_GRACE_S", "-1")]).unwrap_err().key, "GOWIFT_GRACE_S");
+        assert_eq!(config(&[("GOWIFT_GRACE_S", "abc")]).unwrap_err().key, "GOWIFT_GRACE_S");
     }
 
     #[test]
     fn out_of_range_values_are_rejected() {
+        assert_eq!(config(&[("GOWIFT_TICK_HZ", "0")]).unwrap_err().key, "GOWIFT_TICK_HZ");
         assert_eq!(
-            config(&[("OPENRADLR_TICK_HZ", "0")]).unwrap_err().key,
-            "OPENRADLR_TICK_HZ"
-        );
-        assert_eq!(
-            config(&[("OPENRADLR_TICK_HZ", "10"), ("OPENRADLR_BROADCAST_HZ", "20")])
+            config(&[("GOWIFT_TICK_HZ", "10"), ("GOWIFT_BROADCAST_HZ", "20")])
                 .unwrap_err()
                 .key,
-            "OPENRADLR_BROADCAST_HZ"
+            "GOWIFT_BROADCAST_HZ"
         );
         assert_eq!(
-            config(&[("OPENRADLR_MAX_PLAYERS", "0")]).unwrap_err().key,
-            "OPENRADLR_MAX_PLAYERS"
+            config(&[("GOWIFT_MAX_PLAYERS", "0")]).unwrap_err().key,
+            "GOWIFT_MAX_PLAYERS"
         );
     }
 
@@ -658,52 +640,52 @@ mod tests {
         assert!(c.allow_simulated_trainer);
         assert_eq!(c.connection_limits().messages_per_second, 20.0);
         assert!(
-            !config(&[("OPENRADLR_ALLOW_SIMULATED_TRAINER", "false")])
+            !config(&[("GOWIFT_ALLOW_SIMULATED_TRAINER", "false")])
                 .unwrap()
                 .allow_simulated_trainer
         );
         assert!(c.allow_paddle_mode);
         assert!(
-            !config(&[("OPENRADLR_ALLOW_PADDLE_MODE", "false")])
+            !config(&[("GOWIFT_ALLOW_PADDLE_MODE", "false")])
                 .unwrap()
                 .allow_paddle_mode
         );
         assert!(config(&[]).unwrap().studio);
-        assert!(!config(&[("OPENRADLR_STUDIO", "false")]).unwrap().studio);
+        assert!(!config(&[("GOWIFT_STUDIO", "false")]).unwrap().studio);
     }
 
     #[test]
     fn privacy_url_is_optional_and_must_be_a_web_address() {
         assert_eq!(config(&[]).unwrap().privacy_url, None);
-        assert_eq!(config(&[("OPENRADLR_PRIVACY_URL", "")]).unwrap().privacy_url, None);
-        let c = config(&[("OPENRADLR_PRIVACY_URL", "https://example.org/privacy/")]).unwrap();
+        assert_eq!(config(&[("GOWIFT_PRIVACY_URL", "")]).unwrap().privacy_url, None);
+        let c = config(&[("GOWIFT_PRIVACY_URL", "https://example.org/privacy/")]).unwrap();
         assert_eq!(c.privacy_url.as_deref(), Some("https://example.org/privacy/"));
-        let err = config(&[("OPENRADLR_PRIVACY_URL", "javascript:alert(1)")]).unwrap_err();
-        assert_eq!(err.key, "OPENRADLR_PRIVACY_URL");
+        let err = config(&[("GOWIFT_PRIVACY_URL", "javascript:alert(1)")]).unwrap_err();
+        assert_eq!(err.key, "GOWIFT_PRIVACY_URL");
     }
 
     #[test]
     fn obn_url_must_be_websocket() {
         assert_eq!(config(&[]).unwrap().obn_url, None);
-        assert_eq!(config(&[("OPENRADLR_OBN_URL", "")]).unwrap().obn_url, None);
-        let c = config(&[("OPENRADLR_OBN_URL", "wss://obn.example/v0")]).unwrap();
+        assert_eq!(config(&[("GOWIFT_OBN_URL", "")]).unwrap().obn_url, None);
+        let c = config(&[("GOWIFT_OBN_URL", "wss://obn.example/v0")]).unwrap();
         assert_eq!(c.obn_url.as_deref(), Some("wss://obn.example/v0"));
-        let err = config(&[("OPENRADLR_OBN_URL", "https://x")]).unwrap_err();
-        assert_eq!(err.key, "OPENRADLR_OBN_URL");
+        let err = config(&[("GOWIFT_OBN_URL", "https://x")]).unwrap_err();
+        assert_eq!(err.key, "GOWIFT_OBN_URL");
     }
 
     #[test]
     fn analytics_is_off_unless_a_domain_is_set() {
         assert_eq!(config(&[]).unwrap().analytics, None);
-        assert_eq!(config(&[("OPENRADLR_ANALYTICS_DOMAIN", "")]).unwrap().analytics, None);
+        assert_eq!(config(&[("GOWIFT_ANALYTICS_DOMAIN", "")]).unwrap().analytics, None);
         // A script URL alone does not switch anything on.
-        let script = ("OPENRADLR_ANALYTICS_SCRIPT", "https://stats.example.org/js/script.js");
+        let script = ("GOWIFT_ANALYTICS_SCRIPT", "https://stats.example.org/js/script.js");
         assert_eq!(config(&[script]).unwrap().analytics, None);
     }
 
     #[test]
     fn analytics_defaults_to_plausible_cloud() {
-        let c = config(&[("OPENRADLR_ANALYTICS_DOMAIN", "ride.example.org")]).unwrap();
+        let c = config(&[("GOWIFT_ANALYTICS_DOMAIN", "ride.example.org")]).unwrap();
         assert_eq!(
             c.analytics,
             Some(Analytics {
@@ -716,8 +698,8 @@ mod tests {
     #[test]
     fn analytics_script_can_point_at_a_self_hosted_plausible() {
         let c = config(&[
-            ("OPENRADLR_ANALYTICS_DOMAIN", "ride.example.org"),
-            ("OPENRADLR_ANALYTICS_SCRIPT", "https://stats.example.org/js/script.js"),
+            ("GOWIFT_ANALYTICS_DOMAIN", "ride.example.org"),
+            ("GOWIFT_ANALYTICS_SCRIPT", "https://stats.example.org/js/script.js"),
         ])
         .unwrap();
         assert_eq!(c.analytics.unwrap().script, "https://stats.example.org/js/script.js");
@@ -726,24 +708,24 @@ mod tests {
     #[test]
     fn analytics_script_must_be_an_https_url() {
         let err = config(&[
-            ("OPENRADLR_ANALYTICS_DOMAIN", "ride.example.org"),
-            ("OPENRADLR_ANALYTICS_SCRIPT", "javascript:alert(1)"),
+            ("GOWIFT_ANALYTICS_DOMAIN", "ride.example.org"),
+            ("GOWIFT_ANALYTICS_SCRIPT", "javascript:alert(1)"),
         ])
         .unwrap_err();
-        assert_eq!(err.key, "OPENRADLR_ANALYTICS_SCRIPT");
+        assert_eq!(err.key, "GOWIFT_ANALYTICS_SCRIPT");
     }
 
     #[test]
     fn protection_and_proxy_settings_are_read() {
         let c = config(&[
-            ("OPENRADLR_TRUST_PROXY", "yes"),
-            ("OPENRADLR_MAX_CONNECTIONS_PER_IP", "10"),
-            ("OPENRADLR_MESSAGES_PER_SECOND", "40"),
+            ("GOWIFT_TRUST_PROXY", "yes"),
+            ("GOWIFT_MAX_CONNECTIONS_PER_IP", "10"),
+            ("GOWIFT_MESSAGES_PER_SECOND", "40"),
             (
-                "OPENRADLR_ALLOWED_ORIGINS",
+                "GOWIFT_ALLOWED_ORIGINS",
                 "https://ride.example.com/, http://localhost:8080 ,",
             ),
-            ("OPENRADLR_ROUTES_DIR", "/app/routes"),
+            ("GOWIFT_ROUTES_DIR", "/app/routes"),
         ])
         .unwrap();
         assert!(c.trust_proxy);
@@ -759,12 +741,12 @@ mod tests {
         assert_eq!(c.routes_dir, Some(PathBuf::from("/app/routes")));
 
         assert_eq!(
-            config(&[("OPENRADLR_TRUST_PROXY", "maybe")]).unwrap_err().key,
-            "OPENRADLR_TRUST_PROXY"
+            config(&[("GOWIFT_TRUST_PROXY", "maybe")]).unwrap_err().key,
+            "GOWIFT_TRUST_PROXY"
         );
         assert_eq!(
-            config(&[("OPENRADLR_MAX_CONNECTIONS_PER_IP", "0")]).unwrap_err().key,
-            "OPENRADLR_MAX_CONNECTIONS_PER_IP"
+            config(&[("GOWIFT_MAX_CONNECTIONS_PER_IP", "0")]).unwrap_err().key,
+            "GOWIFT_MAX_CONNECTIONS_PER_IP"
         );
     }
 
@@ -772,10 +754,10 @@ mod tests {
     fn strava_needs_both_secrets_and_a_public_url() {
         assert_eq!(config(&[]).unwrap().strava, None);
         let c = config(&[
-            ("OPENRADLR_STRAVA_CLIENT_ID", "123"),
-            ("OPENRADLR_STRAVA_CLIENT_SECRET", "abc"),
-            ("OPENRADLR_PUBLIC_URL", "https://ride.example.com/"),
-            ("OPENRADLR_REQUIRE_STRAVA", "true"),
+            ("GOWIFT_STRAVA_CLIENT_ID", "123"),
+            ("GOWIFT_STRAVA_CLIENT_SECRET", "abc"),
+            ("GOWIFT_PUBLIC_URL", "https://ride.example.com/"),
+            ("GOWIFT_REQUIRE_STRAVA", "true"),
         ])
         .unwrap();
         let strava = c.strava.unwrap();
@@ -785,21 +767,15 @@ mod tests {
 
         let key = |vars: &[(&str, &str)]| config(vars).unwrap_err().key;
         assert_eq!(
-            key(&[("OPENRADLR_STRAVA_CLIENT_ID", "123")]),
-            "OPENRADLR_STRAVA_CLIENT_SECRET"
+            key(&[("GOWIFT_STRAVA_CLIENT_ID", "123")]),
+            "GOWIFT_STRAVA_CLIENT_SECRET"
         );
         assert_eq!(
-            key(&[
-                ("OPENRADLR_STRAVA_CLIENT_ID", "1"),
-                ("OPENRADLR_STRAVA_CLIENT_SECRET", "2")
-            ]),
-            "OPENRADLR_PUBLIC_URL"
+            key(&[("GOWIFT_STRAVA_CLIENT_ID", "1"), ("GOWIFT_STRAVA_CLIENT_SECRET", "2")]),
+            "GOWIFT_PUBLIC_URL"
         );
-        assert_eq!(key(&[("OPENRADLR_REQUIRE_STRAVA", "true")]), "OPENRADLR_REQUIRE_STRAVA");
-        assert_eq!(
-            key(&[("OPENRADLR_PUBLIC_URL", "ride.example.com")]),
-            "OPENRADLR_PUBLIC_URL"
-        );
+        assert_eq!(key(&[("GOWIFT_REQUIRE_STRAVA", "true")]), "GOWIFT_REQUIRE_STRAVA");
+        assert_eq!(key(&[("GOWIFT_PUBLIC_URL", "ride.example.com")]), "GOWIFT_PUBLIC_URL");
     }
 
     #[test]
@@ -808,29 +784,22 @@ mod tests {
         assert_eq!(c.events, EventsSetting::Default);
         assert_eq!(c.event_lobby_s, 600.0);
         assert_eq!(
-            config(&[("OPENRADLR_EVENTS", "default")]).unwrap().events,
+            config(&[("GOWIFT_EVENTS", "default")]).unwrap().events,
             EventsSetting::Default
         );
-        assert_eq!(
-            config(&[("OPENRADLR_EVENTS", "off")]).unwrap().events,
-            EventsSetting::Off
-        );
-        let c = config(&[
-            ("OPENRADLR_EVENTS", "/etc/events.json"),
-            ("OPENRADLR_EVENT_LOBBY_S", "30"),
-        ])
-        .unwrap();
+        assert_eq!(config(&[("GOWIFT_EVENTS", "off")]).unwrap().events, EventsSetting::Off);
+        let c = config(&[("GOWIFT_EVENTS", "/etc/events.json"), ("GOWIFT_EVENT_LOBBY_S", "30")]).unwrap();
         assert_eq!(c.events, EventsSetting::File(PathBuf::from("/etc/events.json")));
         assert_eq!(c.event_lobby_s, 30.0);
         assert_eq!(
-            config(&[("OPENRADLR_EVENT_LOBBY_S", "-1")]).unwrap_err().key,
-            "OPENRADLR_EVENT_LOBBY_S"
+            config(&[("GOWIFT_EVENT_LOBBY_S", "-1")]).unwrap_err().key,
+            "GOWIFT_EVENT_LOBBY_S"
         );
     }
 
     #[test]
     fn verified_auth_is_not_available_yet() {
-        let err = config(&[("OPENRADLR_AUTH_MODE", "verified")]).unwrap_err();
-        assert_eq!(err.key, "OPENRADLR_AUTH_MODE");
+        let err = config(&[("GOWIFT_AUTH_MODE", "verified")]).unwrap_err();
+        assert_eq!(err.key, "GOWIFT_AUTH_MODE");
     }
 }

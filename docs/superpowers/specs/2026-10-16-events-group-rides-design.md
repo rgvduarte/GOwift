@@ -148,7 +148,7 @@ receive power in group rides like humans.
 
 ### Config
 
-- `OPENRADLR_EVENTS`: `default` (built-in events), `off`, or a path to a JSON
+- `GOWIFT_EVENTS`: `default` (built-in events), `off`, or a path to a JSON
   events file (same shape as the built-ins: id, name, kind, route id, laps or
   distance, every/offset/lobby/duration).
 - Built-ins:
@@ -158,7 +158,7 @@ receive power in group rides like humans.
   - The race runs on a different route from that hour's group ride. A server
     with a single route has no room for both, so there the race replaces the
     group ride every 2 h (at :00) instead.
-- `OPENRADLR_EVENT_LOBBY_S` (default 600) and `OPENRADLR_EVENT_SPEEDUP`
+- `GOWIFT_EVENT_LOBBY_S` (default 600) and `GOWIFT_EVENT_SPEEDUP`
   (development only: divides every duration and lobby, for e2e tests).
 - Validation at start (clear error, like other config errors): unknown route,
   zero length or duration, overlapping occurrences on one route. Two
@@ -231,7 +231,7 @@ joined.
   the studio's class clock.
 
 **Recording:** the FIT file keeps real measured power, game speed and distance.
-The ride is named after the event (*OpenRadlr group ride · Riverside Flats*)
+The ride is named after the event (*GOwift group ride · Riverside Flats*)
 for the FIT file and the Strava title.
 
 ## Testing
@@ -249,7 +249,7 @@ for the FIT file and the Strava title.
 - Client (Node test runner): level estimate rules; events list formatting and
   countdown; sharing line text.
 - E2E (scratch Playwright, not committed): server with
-  `OPENRADLR_EVENT_SPEEDUP`, join from the menu, lobby, start, results.
+  `GOWIFT_EVENT_SPEEDUP`, join from the menu, lobby, start, results.
 
 ## Delivery
 

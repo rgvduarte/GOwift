@@ -6,7 +6,7 @@
 
 **Architecture:** Seats stay ordinary `Rider`s in the sim; a `Vehicle` links them and runs one physics step per tick, copying the result to every seat. The server adds three messages, a `vehicle_code` on `join` and a cross-world code registry. The client groups riders by `vehicle.id` and draws one vehicle model.
 
-**Tech Stack:** Rust (crates `openradlr-sim`, `openradlr-server`, axum/tokio), plain ES modules client with `node --test`, own WebGL renderer.
+**Tech Stack:** Rust (crates `gowift-sim`, `gowift-server`, axum/tokio), plain ES modules client with `node --test`, own WebGL renderer.
 
 **Spec:** `docs/superpowers/specs/2026-10-17-shared-vehicles-design.md`
 
@@ -15,7 +15,7 @@
 - Branch `feat/beer-bike`, one PR, one commit per task, messages end with `(#55)` and the `Co-Authored-By` line.
 - Rust checks only via Docker, repo root mounted at `/w`:
   `docker run --rm -v "$PWD":/w -w /w/server rust:1 sh -c 'rustup component add rustfmt clippy >/dev/null 2>&1; cargo fmt --check && cargo clippy --all-targets -- -D warnings && cargo test'`
-  (narrow with `cargo test -p openradlr-sim <filter>` while iterating). Referred to below as **RUST(cmd)**.
+  (narrow with `cargo test -p gowift-sim <filter>` while iterating). Referred to below as **RUST(cmd)**.
 - Client checks only via Docker: `docker run --rm -v "$PWD":/app -w /app/client node:22 sh -c 'node --test "test/**/*.test.js"; npx eslint .'` — referred to as **NODE**.
 - `crates/sim` stays dependency-free and deterministic (randomness only through `RandomSource`).
 - Kinds: `Tandem` = 2 seats; `BeerBike` seats ∈ {5, 7, 9} (captain + an even number of riders); anything else is invalid.
@@ -64,7 +64,7 @@
   - `codes_use_the_alphabet`: 100 draws with `SplitMix64::new(7)` are 6 chars, all in `CODE_ALPHABET`.
   - `beer_bike_cruises_near_20_kmh` (physics.rs): step `step_speed` for 120 s at 1200 W, `rider_mass_kg` 600, `body` beer bike 9 seats, grade 0 → final speed in 5.0..=6.5 m/s.
   - Existing physics tests stay unchanged except for adding `body: Body::bike(&params)`.
-- [ ] **Step 2:** RUST(`cargo test -p openradlr-sim`) → compile failure (no `vehicle`, no `Body`).
+- [ ] **Step 2:** RUST(`cargo test -p gowift-sim`) → compile failure (no `vehicle`, no `Body`).
 - [ ] **Step 3:** Implement the interfaces above; update the three `StepInput` callers to `body: Body::bike(&config.physics)`.
 - [ ] **Step 4:** RUST(full check) → all green, including every pre-existing sim and studio test.
 - [ ] **Step 5:** Commit `Sim: vehicle model and per-body physics (#55)`.
@@ -105,7 +105,7 @@ Rules (from the spec): boarding takes the first empty seat, else replaces the fi
   - `leaving_the_vehicle_rides_on_solo`: ride 20 s at 200 W each, then `leave_vehicle(ben)` → Ben keeps the vehicle's position, lane and speed (> 4 m/s), `turns_locked` false. (Review Focus 2)
   - `seat_bots_are_not_population`: `target_riders` 12, beer bike 9 with bots → route still has exactly 12 non-seated riders after 200 ticks, seat bots untouched.
   - `codes_avoid_taken_ones`: `code_taken` rejecting the first drawn code → a different code is stored.
-- [ ] **Step 2:** RUST(`cargo test -p openradlr-sim vehicles`) → fails to compile.
+- [ ] **Step 2:** RUST(`cargo test -p gowift-sim vehicles`) → fails to compile.
 - [ ] **Step 3:** Implement as above.
 - [ ] **Step 4:** RUST(full check) → green.
 - [ ] **Step 5:** Commit `Sim: create, board and leave vehicles with seat bots (#55)`.
@@ -133,7 +133,7 @@ Tick order: (1) power for everyone as today; (2) physics only for riders not in 
   - `boarding_off_route_joins_the_vehicle_there`: vehicle already off-route; a new human boards → their `off_route` equals the captain's (Review Focus 1).
   - `solo_physics_is_unchanged`: one human 200 W for 60 s → odometer equals the value from before this task (record it from `main` in the test as a literal).
   - `huge_power_is_capped`: 9 seats at 2500 W → speed ≤ `physics.max_speed`.
-- [ ] **Step 2:** RUST(`cargo test -p openradlr-sim vehicles`) → new tests fail.
+- [ ] **Step 2:** RUST(`cargo test -p gowift-sim vehicles`) → new tests fail.
 - [ ] **Step 3:** Implement as above.
 - [ ] **Step 4:** RUST(full check) → green.
 - [ ] **Step 5:** Commit `Sim: one physics step per vehicle, the captain steers (#55)`.
@@ -163,7 +163,7 @@ Seats are culled together for free (they share a position); `state_message` also
   - protocol.rs: `create_vehicle_parses` (`{"type":"create_vehicle","kind":"beer_bike","seats":7}` → bots defaults true), `board_vehicle_parses`, `join_takes_a_vehicle_code`, `state_with_a_vehicle_serialises` (JSON contains `"vehicle":{"id":…,"code":"ABC234",…}` and seated riders carry `"cadence"`), `solo_riders_have_no_vehicle_field` (no `"vehicle"` / `"cadence"` keys).
   - vehicle_codes.rs: `insert_lookup_remove`.
   - game.rs: `creating_a_vehicle_sends_its_state` (next `State.vehicle.code` is 6 chars, `codes.world_of` = world id), `boarding_by_code` (second client boards; both states list two human seats), `unknown_codes_are_refused` (`unknown_vehicle`), `codes_of_other_worlds_point_there` (code inserted for `"other-route"` → `vehicle_elsewhere`, message `route:other-route`), `invalid_kinds_are_refused` (`invalid_vehicle` for seats 6), `racers_get_in_event`, `non_captain_lane_input_is_ignored` (no error message, lane unchanged), `boarding_events_reach_the_route` (`vehicle_boarded` event), `a_dissolved_vehicle_frees_its_code` (both leave → `codes.world_of` is `None`) (Review Focus 3).
-- [ ] **Step 2:** RUST(`cargo test -p openradlr-server vehicle`) → fails.
+- [ ] **Step 2:** RUST(`cargo test -p gowift-server vehicle`) → fails.
 - [ ] **Step 3:** Implement; map `WorldError` → wire code in one `fn vehicle_error_code(&WorldError) -> &'static str` in game.rs.
 - [ ] **Step 4:** RUST(full check) → green.
 - [ ] **Step 5:** Commit `Server: vehicle messages, codes and state (#55)`.
@@ -185,7 +185,7 @@ Seats are culled together for free (they share a position); `state_message` also
   - game.rs `joining_with_a_stale_code_leaves_nothing_behind` (code of a dissolved vehicle → `Err(UnknownVehicle)`, `player_count()` unchanged, no rider named Ben in the world) (Review Focus 4).
   - game.rs `joining_a_full_vehicle_fails` (`VehicleFull`, no rider left behind).
   - worlds.rs `codes_find_their_world`.
-- [ ] **Step 2:** RUST(`cargo test -p openradlr-server join`) → fails.
+- [ ] **Step 2:** RUST(`cargo test -p gowift-server join`) → fails.
 - [ ] **Step 3:** Implement. In `connection.rs`, when `vehicle_code` is set: `state.worlds.vehicle_world(code)` → that entry's game and route; unknown → reply `unknown_vehicle` without taking a seat permit.
 - [ ] **Step 4:** RUST(full check) → green.
 - [ ] **Step 5:** Commit `Server: join straight onto a vehicle with its code (#55)`.

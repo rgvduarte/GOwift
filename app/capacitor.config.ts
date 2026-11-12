@@ -2,18 +2,18 @@ import type { CapacitorConfig } from "@capacitor/cli";
 import { writeFileSync } from "node:fs";
 
 /**
- * The app loads the client from a running OpenRadlr server, so it is always
+ * The app loads the client from a running GOwift server, so it is always
  * the version that server speaks (docs/app.md). Point it at your own server
- * with `OPENRADLR_APP_URL=http://192.168.1.20:8080 npx cap sync`.
+ * with `GOWIFT_APP_URL=http://192.168.1.20:8080 npx cap sync`.
  */
-const url = process.env.OPENRADLR_APP_URL ?? "https://app.openradlr.com";
+const url = process.env.GOWIFT_APP_URL ?? "https://app.gowift.example";
 
 // The offline page's "Try again" goes back to the same server.
 writeFileSync("www/server.js", `export const SERVER_URL = ${JSON.stringify(url)};\n`);
 
 const config: CapacitorConfig = {
-  appId: "com.openradlr.app",
-  appName: "OpenRadlr",
+  appId: "io.github.rgvduarte.gowift",
+  appName: "GOwift",
   // Only shown when the server can't be reached.
   webDir: "www",
   // The splash screen's colour, so there is no white flash before the page has loaded.

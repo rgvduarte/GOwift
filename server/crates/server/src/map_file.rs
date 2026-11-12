@@ -3,8 +3,8 @@
 //! the cafés) and get it unchanged at `/api/map`; the server reads its
 //! places and roads, so riders can turn at junctions (#15).
 
-use openradlr_sim::network::{EdgeSpec, Network, NodeSpec};
-use openradlr_sim::route::Point;
+use gowift_sim::network::{EdgeSpec, Network, NodeSpec};
+use gowift_sim::route::Point;
 use serde::Deserialize;
 use std::collections::HashMap;
 use std::path::Path;
@@ -157,7 +157,7 @@ mod tests {
 
     #[test]
     fn load_maps_keeps_good_files_and_skips_the_rest() {
-        let dir = std::env::temp_dir().join(format!("openradlr-maps-{}", std::process::id()));
+        let dir = std::env::temp_dir().join(format!("gowift-maps-{}", std::process::id()));
         std::fs::create_dir_all(&dir).unwrap();
         std::fs::write(dir.join("a.json"), tiny("valley")).unwrap();
         std::fs::write(dir.join("b.json"), tiny("valley")).unwrap();
@@ -172,7 +172,7 @@ mod tests {
 
     #[test]
     fn a_missing_directory_means_no_maps() {
-        let (maps, warnings) = load_maps(Path::new("/nonexistent/openradlr/maps"));
+        let (maps, warnings) = load_maps(Path::new("/nonexistent/gowift/maps"));
         assert!(maps.is_empty());
         assert!(warnings.is_empty());
     }

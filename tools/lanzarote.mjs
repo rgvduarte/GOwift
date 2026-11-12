@@ -59,7 +59,7 @@ async function cached(file, url, binary) {
   const path = CACHE + file;
   if (!existsSync(path)) {
     if (offline) throw new Error(`${file} is not cached and --offline was given`);
-    const response = await fetch(url, { headers: { "user-agent": "openradlr-tools/1.0" } });
+    const response = await fetch(url, { headers: { "user-agent": "gowift-tools/1.0" } });
     if (!response.ok) throw new Error(`${url}: ${response.status}`);
     writeFileSync(path, Buffer.from(await response.arrayBuffer()));
   }
@@ -103,7 +103,7 @@ const missing = points.filter((p) => !Number.isFinite(p.ele)).length;
 if (missing) throw new Error(`${missing} track points have no DEM elevation`);
 
 const gpx = `<?xml version="1.0" encoding="UTF-8"?>
-<gpx version="1.1" creator="openradlr tools/lanzarote.mjs" xmlns="http://www.topografix.com/GPX/1/1">
+<gpx version="1.1" creator="gowift tools/lanzarote.mjs" xmlns="http://www.topografix.com/GPX/1/1">
   <metadata>
     <name>Lanzarote Lava 180 bike course</name>
     <desc>${OSM}. ${DEM}. Course order unconfirmed: built from public guides, pending a check by someone who knows it.</desc>

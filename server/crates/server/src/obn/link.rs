@@ -108,10 +108,10 @@ fn resets_backoff(end: &End) -> bool {
 fn hello() -> AppMessage {
     AppMessage::Hello {
         app: AppInfo {
-            id: "openradlr".into(),
+            id: "gowift".into(),
             version: env!("CARGO_PKG_VERSION").into(),
-            name: Some("OpenRadlr".into()),
-            url: Some("https://openradlr.com".into()),
+            name: Some("GOwift".into()),
+            url: Some("https://rgvduarte.github.io/GOwift".into()),
         },
     }
 }

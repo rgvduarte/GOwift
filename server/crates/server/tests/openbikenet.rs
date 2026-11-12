@@ -1,9 +1,9 @@
 //! End-to-end tests of the OpenBikeNet link against a fake OpenBikeNet server.
 
 use futures_util::{SinkExt, StreamExt};
-use openradlr_server::app;
-use openradlr_server::config::{Config, EventsSetting};
-use openradlr_server::obn::link::Heartbeat;
+use gowift_server::app;
+use gowift_server::config::{Config, EventsSetting};
+use gowift_server::obn::link::Heartbeat;
 use serde_json::Value;
 use std::net::SocketAddr;
 use std::path::PathBuf;
@@ -127,7 +127,7 @@ async fn http_get(addr: SocketAddr, path: &str) -> String {
 async fn expect_hello_and_subscribe(fake: &mut Fake) {
     let hello = recv(fake).await;
     assert_eq!(hello["type"], "hello");
-    assert_eq!(hello["app"]["id"], "openradlr");
+    assert_eq!(hello["app"]["id"], "gowift");
     let subscribe = recv(fake).await;
     assert_eq!(subscribe["type"], "subscribe");
     assert_eq!(subscribe["route"], "velodrome-250");

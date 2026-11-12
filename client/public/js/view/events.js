@@ -62,7 +62,7 @@ export function groupGapLine(gapS) {
 }
 
 export function eventRideName(kind, routeName) {
-  return `OpenRadlr ${kind === "race" ? "race" : "group ride"} · ${routeName}`; // i18n-ok (ride name in exported files)
+  return `GOwift ${kind === "race" ? "race" : "group ride"} · ${routeName}`; // i18n-ok (ride name in exported files)
 }
 
 /** One text line per result. */

@@ -4,8 +4,8 @@ Date: 2026-10-23 · Status: accepted
 
 ## Context
 
-OpenRadlr is going public (#12). It is a game server that anyone can host,
-next to an official server at openradlr.com. Under the MIT licence the project started with, anyone
+GOwift is going public (#12). It is a game server that anyone can host,
+next to an official server. Under the MIT licence the project started with, anyone
 could take the server, improve it and run it as a closed, paid service, with
 none of the improvements coming back. GPL-3.0 and MPL-2.0 don't change that:
 their copyleft applies when the software is distributed, not when it runs as a
@@ -21,7 +21,7 @@ awkward fit, and the name needs protection a copyright licence can't give.
 - **Contributions:** inbound = outbound, no CLA.
 
 The switch happens before the first public release, so no MIT version of
-OpenRadlr is ever published.
+GOwift is ever published.
 
 ## Consequences
 

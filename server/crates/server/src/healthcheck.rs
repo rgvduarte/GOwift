@@ -1,4 +1,4 @@
-//! `openradlr-server healthcheck` — a tiny HTTP probe for Docker's
+//! `gowift-server healthcheck` — a tiny HTTP probe for Docker's
 //! `HEALTHCHECK`, so the runtime image needs no curl or wget.
 
 use std::io::{Read, Write};

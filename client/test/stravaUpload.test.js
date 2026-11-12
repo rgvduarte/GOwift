@@ -166,7 +166,7 @@ test("an invalid upload response never counts as success", async () => {
 
 test("a corrupt stored receipt is ignored without calling the storage unavailable", () => {
   const disk = storage();
-  disk.setItem("openradlr.strava-upload.7:1000", "{not json");
+  disk.setItem("gowift.strava-upload.7:1000", "{not json");
   const receipts = new UploadReceipts({ storage: disk });
   assert.equal(receipts.load("7:1000"), null);
   assert.equal(receipts.available, true);

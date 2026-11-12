@@ -15,7 +15,7 @@ labels: bug
 
 ## Environment
 
-- OpenRadlr version / commit (start menu footer or `/api/info`):
+- GOwift version / commit (start menu footer or `/api/info`):
 - Browser and OS:
 - Trainer / device (or simulated trainer / phone paddles):
 - Self-hosted or a public server:

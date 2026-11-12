@@ -17,7 +17,7 @@
         {
           "type": "toml",
           "path": "server/Cargo.lock",
-          "jsonpath": "$.package[?(@.name.value == 'openradlr-server' || @.name.value == 'openradlr-sim')].version"
+          "jsonpath": "$.package[?(@.name.value == 'gowift-server' || @.name.value == 'gowift-sim')].version"
         },
         {
           "type": "json",

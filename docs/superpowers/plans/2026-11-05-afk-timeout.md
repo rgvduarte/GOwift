@@ -13,14 +13,14 @@
 ## Global Constraints
 
 - Away = every `telemetry` since then had `power == 0` (raw power; pause counts as away). Back = any `telemetry` with `power > 0`: resets clock, warning count, closes an open warning.
-- First warning after `OPENRADLR_AFK_TIMEOUT_S` (default 1800) away; after Stay the next after `OPENRADLR_AFK_REMINDER_S` (default 600). `OPENRADLR_AFK_TIMEOUT_S=0` turns it all off.
+- First warning after `GOWIFT_AFK_TIMEOUT_S` (default 1800) away; after Stay the next after `GOWIFT_AFK_REMINDER_S` (default 600). `GOWIFT_AFK_TIMEOUT_S=0` turns it all off.
 - Answer window 120 s per warning; no answer → `afk_timeout`.
 - Three warnings with `can_stay: true`; the fourth has `can_stay: false`; `stay` is ignored then and when no warning is open.
 - Removal = `Command::Leave` (no grace, no resume). Workout riders (`device: workout`) are exempt.
 - Wire format: server `{ "type": "afk_warning", "leave_in_s": 120, "can_stay": true }`; client `{ "type": "stay" }`; error code `afk_timeout`. Additive, `PROTOCOL_VERSION` stays 2.
-- Metric `openradlr_afk_events_total{event}` with `event` ∈ `warning`, `stayed`, `left`, `timeout`; all four printed from 0.
+- Metric `gowift_afk_events_total{event}` with `event` ∈ `warning`, `stayed`, `left`, `timeout`; all four printed from 0.
 - UI text in `js/i18n/en.js` and `de.js` (ADR 0017). No sleeps in unit tests (CONTRIBUTING.md).
-- Run Rust via Docker from the repo root: `docker run --rm -v "$PWD":/w -w /w/server rust:1 sh -c 'rustup component add rustfmt clippy >/dev/null 2>&1; cargo test -p openradlr-server <filter>'`. Node: `docker run --rm -v "$PWD":/app -w /app/client node:22 sh -c 'node --test "test/**/*.test.js"; npx eslint .'`.
+- Run Rust via Docker from the repo root: `docker run --rm -v "$PWD":/w -w /w/server rust:1 sh -c 'rustup component add rustfmt clippy >/dev/null 2>&1; cargo test -p gowift-server <filter>'`. Node: `docker run --rm -v "$PWD":/app -w /app/client node:22 sh -c 'node --test "test/**/*.test.js"; npx eslint .'`.
 
 ## Review Focus
 
@@ -62,7 +62,7 @@
   - `power_during_final_warning_resets`: reach the final warning, `on_power(80.0, t)`, `!warning_open()`, `poll(t + 120.0) == None`, next `Warn` at `t + 1800.0` has `can_stay: true`.
   - `zero_timeout_is_inert`: `AfkWatch::new(0.0, 600.0, 120.0, 0.0).poll(1e9) == None`; same for `AfkWatch::inert()`.
 
-- [ ] **Step 2: Run** `cargo test -p openradlr-server afk::` → FAIL (module missing).
+- [ ] **Step 2: Run** `cargo test -p gowift-server afk::` → FAIL (module missing).
 
 - [ ] **Step 3: Implement `AfkWatch`.** Fields: the three durations, `since_s` (start of the current away stretch), `threshold_s` (timeout, or reminder after a Stay), `stays: u32`, `open: Option<(f64 /*opened_s*/, bool /*can_stay*/)>`, `inert: bool`. A warning opens when `now - since >= threshold`, with `can_stay = stays < AFK_STAYS`. `on_stay` accepted: `stays += 1`, `since = now`, `threshold = reminder`, close. `on_power(p > 0)`: `since = now`, `threshold = timeout`, `stays = 0`, close. `leave_in_s` = `answer_s.round() as u32`. Module doc comment: what counts as away, pointing at the spec.
 
@@ -82,8 +82,8 @@
   - `#[derive(Debug, Clone, Copy, Default, PartialEq)] pub struct AfkCounts { pub warning: u64, pub stayed: u64, pub left: u64, pub timeout: u64 }`
   - `AppState.afk: AfkStats`; `metrics_body(..., afk: AfkCounts)` as last parameter.
 
-- [ ] **Step 1: Write failing tests.** In `afk.rs`: `stats_count_each_outcome_and_share_one_total` — clone a `AfkStats`, record `Warning` twice on one handle and `Timeout` on the clone; `snapshot() == AfkCounts { warning: 2, timeout: 1, ..Default::default() }`. In `http.rs` `metrics_tests`: extend `metrics_export_only_aggregate_operational_stats` to pass `AfkCounts { warning: 3, stayed: 2, left: 1, timeout: 0 }` and assert the output contains `# TYPE openradlr_afk_events_total counter\n` and the four lines `openradlr_afk_events_total{event="warning"} 3\n`, `…{event="stayed"} 2\n`, `…{event="left"} 1\n`, `…{event="timeout"} 0\n`.
-- [ ] **Step 2: Run** `cargo test -p openradlr-server afk:: metrics_tests` → FAIL (compile).
+- [ ] **Step 1: Write failing tests.** In `afk.rs`: `stats_count_each_outcome_and_share_one_total` — clone a `AfkStats`, record `Warning` twice on one handle and `Timeout` on the clone; `snapshot() == AfkCounts { warning: 2, timeout: 1, ..Default::default() }`. In `http.rs` `metrics_tests`: extend `metrics_export_only_aggregate_operational_stats` to pass `AfkCounts { warning: 3, stayed: 2, left: 1, timeout: 0 }` and assert the output contains `# TYPE gowift_afk_events_total counter\n` and the four lines `gowift_afk_events_total{event="warning"} 3\n`, `…{event="stayed"} 2\n`, `…{event="left"} 1\n`, `…{event="timeout"} 0\n`.
+- [ ] **Step 2: Run** `cargo test -p gowift-server afk:: metrics_tests` → FAIL (compile).
 - [ ] **Step 3: Implement.** HELP text: `AFK warnings and their outcomes since the server started.` Fix every `AppState { .. }` literal the compiler points at (app.rs, test helpers) with `afk: AfkStats::default()`.
 - [ ] **Step 4: Run** the same → PASS.
 - [ ] **Step 5: Commit** `"Export AFK events as a Prometheus counter"`
@@ -97,14 +97,14 @@
 - Consumes: Task 1 `AfkWatch`, `AfkEvent`.
 - Produces:
   - `ConnectionLimits` gains `afk_timeout_s: f64` (1800.0), `afk_reminder_s: f64` (600.0), `afk_answer_s: f64` (120.0).
-  - `Config` gains `afk_timeout_s`, `afk_reminder_s` (from `OPENRADLR_AFK_TIMEOUT_S`, `OPENRADLR_AFK_REMINDER_S`) and `afk_answer_s` (no env var, default 120.0, for tests); `connection_limits()` copies all three.
+  - `Config` gains `afk_timeout_s`, `afk_reminder_s` (from `GOWIFT_AFK_TIMEOUT_S`, `GOWIFT_AFK_REMINDER_S`) and `afk_answer_s` (no env var, default 120.0, for tests); `connection_limits()` copies all three.
   - `Session::joined(&mut self, rider_id: RiderId, device: DeviceKind, now_s: f64)` — starts a fresh `AfkWatch` (inert for `DeviceKind::Workout`).
   - `Session::poll_afk(&mut self, now_s: f64) -> Option<AfkEvent>`, `Session::afk_warning_open(&self) -> bool`.
   - `Action::Stayed` — returned for an accepted `stay`; a rejected `stay` returns `Action::Ignore`.
 
 - [ ] **Step 1: Write failing tests.**
   - protocol.rs: `{"type":"stay"}` parses to `ClientMessage::Stay`; `ServerMessage::AfkWarning { leave_in_s: 120, can_stay: false }.to_json()` equals `{"type":"afk_warning","leave_in_s":120,"can_stay":false}`.
-  - config.rs (next to the `grace_s` asserts at :552): defaults 1800.0 / 600.0; `OPENRADLR_AFK_TIMEOUT_S=0` accepted; `OPENRADLR_AFK_TIMEOUT_S=-1` and `OPENRADLR_AFK_REMINDER_S=0` are errors with that key; `connection_limits().afk_timeout_s` mirrors the config.
+  - config.rs (next to the `grace_s` asserts at :552): defaults 1800.0 / 600.0; `GOWIFT_AFK_TIMEOUT_S=0` accepted; `GOWIFT_AFK_TIMEOUT_S=-1` and `GOWIFT_AFK_REMINDER_S=0` are errors with that key; `connection_limits().afk_timeout_s` mirrors the config.
   - session.rs, with limits `afk_timeout_s: 30.0, afk_reminder_s: 10.0, afk_answer_s: 5.0`:
     - `zero_power_telemetry_warns_after_the_timeout`: join, `joined(id, Trainer, 0.0)`, telemetry `power 0` at 10.0; `poll_afk(30.0)` is a `Warn`.
     - `pedalling_postpones_the_warning`: telemetry `power 120` at 20.0; `poll_afk(30.0) == None`.
@@ -112,8 +112,8 @@
     - `workout_riders_never_warn`: `joined(id, Workout, 0.0)`; `poll_afk(1e6) == None`.
     - `reattached_rider_gets_a_fresh_clock`: `joined(id, Trainer, 0.0)`, then `joined(id, Trainer, 100.0)`; `poll_afk(129.0) == None`, `poll_afk(130.0)` is a `Warn`.
   - Update existing callers of `joined(rider_id)` in session tests.
-- [ ] **Step 2: Run** `cargo test -p openradlr-server session:: config:: protocol::` → FAIL.
-- [ ] **Step 3: Implement.** Validation messages like `grace_s`: timeout "must be a finite number of seconds (0 or more)", reminder "must be a finite number of seconds above 0". `Session` feeds `afk.on_power(power, now_s)` in the `Telemetry` arm before forwarding, and handles `(Phase::Joined(_), ClientMessage::Stay)`. Before `joined`, `poll_afk` returns `None` (`AfkWatch::inert()` from `new`). Add both env vars, commented, to `.env.example` next to `OPENRADLR_GRACE_S`.
+- [ ] **Step 2: Run** `cargo test -p gowift-server session:: config:: protocol::` → FAIL.
+- [ ] **Step 3: Implement.** Validation messages like `grace_s`: timeout "must be a finite number of seconds (0 or more)", reminder "must be a finite number of seconds above 0". `Session` feeds `afk.on_power(power, now_s)` in the `Telemetry` arm before forwarding, and handles `(Phase::Joined(_), ClientMessage::Stay)`. Before `joined`, `poll_afk` returns `None` (`AfkWatch::inert()` from `new`). Add both env vars, commented, to `.env.example` next to `GOWIFT_GRACE_S`.
 - [ ] **Step 4: Run** → PASS; also `cargo clippy --all-targets -- -D warnings` clean except the not-yet-updated `connection.rs` call sites, which Task 4 fixes — if the crate doesn't compile, update the two `session.joined(...)` calls in `connection.rs` here with the `device` from `Action::Join` and `now()`.
 - [ ] **Step 5: Commit** `"Watch for riders who stopped pedalling in the session"`
 
@@ -127,9 +127,9 @@
 - Consumes: `Session::poll_afk`, `Session::afk_warning_open`, `Action::Stayed`, `AfkStats::record`, `ServerMessage::AfkWarning`, `Config.afk_*`.
 
 - [ ] **Step 1: Write failing e2e tests** using `test_config(0)` with `afk_timeout_s: 0.5, afk_reminder_s: 0.5, afk_answer_s: 0.5` and `expect_type`/`http_get`:
-  - `afk_rider_is_warned_then_removed_without_grace`: Anna joins and sends nothing; `expect_type("afk_warning")` has `can_stay == true`; then `expect_type("error")` has `code == "afk_timeout"`; Ben connects and joins; his first `state` lists no rider named `"Anna"`; `/internal/metrics` contains `openradlr_afk_events_total{event="timeout"} 1` and `{event="warning"} 1`.
+  - `afk_rider_is_warned_then_removed_without_grace`: Anna joins and sends nothing; `expect_type("afk_warning")` has `can_stay == true`; then `expect_type("error")` has `code == "afk_timeout"`; Ben connects and joins; his first `state` lists no rider named `"Anna"`; `/internal/metrics` contains `gowift_afk_events_total{event="timeout"} 1` and `{event="warning"} 1`.
   - `stay_then_leave_counts_each_outcome`: warning → send `{"type":"stay"}` → a second `afk_warning` → send `{"type":"leave"}`; metrics show `warning` 2, `stayed` 1, `left` 1, `timeout` 0.
-- [ ] **Step 2: Run** `cargo test -p openradlr-server --test websocket_flow afk` → FAIL.
+- [ ] **Step 2: Run** `cargo test -p gowift-server --test websocket_flow afk` → FAIL.
 - [ ] **Step 3: Implement** in the tick arm, after `expired()`: `match session.poll_afk(now())` — `Warn { leave_in_s, can_stay }` → `state.afk.record(Warning)`, send `ServerMessage::AfkWarning`; `Expire` → `record(Timeout)`, send `ServerMessage::error("afk_timeout", "no pedalling for too long")`, `leaving = true`, `break`. `Action::Stayed` → `record(Stayed)`. `Action::Leave` → `record(Left)` if `session.afk_warning_open()` before setting `leaving`. Log `tracing::info!` on timeout (no rider name).
 - [ ] **Step 4: Run** the e2e filter, then the full server suite + fmt + clippy → PASS.
 - [ ] **Step 5: Commit** `"Warn and remove AFK riders on the connection"`
@@ -180,7 +180,7 @@
 
 - [ ] **Step 3: Wire `main.js`.** In ride start (next to `initFinish()` at :1908) create `app.afkPrompt = new AfkPrompt({ stay: () => app.connection?.stay(), leave: () => finishRide(), now: () => Date.now() })` and hook the two buttons. In `wireConnection`: `on("afk_warning", (m) => { app.afkPrompt.open(m); $("afk-stay").focus() /* or #afk-leave when !can_stay */ })`. In the ride loop at :1915 call `renderAfkPrompt()` after `draw()`: feeds `app.session?.latest.power` to `power()`, toggles `#afk-prompt` hidden and `#afk-stay` hidden by `canStay`, writes `afk.body`/`afk.finalBody` with `formatDuration(secondsLeft())`. In the `on("error")` handler, first: `if (code === "afk_timeout") { app.afkPrompt?.pressLeave(); notify(t("afk.removed"), "error"); return; }` — `finishRide()` clears `app.connection` before the socket's `close`, so `connectionLost` does not reconnect; confirm by reading `connectionLost` and `finishRide`, and if the close still reconnects, guard `connectionLost` with `if (lost !== app.connection) return`.
 - [ ] **Step 4: Run** node tests + eslint (i18nParity/i18nHtml tests cover the keys) → PASS.
-- [ ] **Step 5: UI check.** Start `make dev` with `OPENRADLR_AFK_TIMEOUT_S=5` (via `.env.dev`), ride with the simulated trainer at 0 W, take a screenshot per AGENTS.md (Playwright Docker recipe) of the warning, and of the final one after pressing Stay three times with `OPENRADLR_AFK_REMINDER_S=5`. Not committed.
+- [ ] **Step 5: UI check.** Start `make dev` with `GOWIFT_AFK_TIMEOUT_S=5` (via `.env.dev`), ride with the simulated trainer at 0 W, take a screenshot per AGENTS.md (Playwright Docker recipe) of the warning, and of the final one after pressing Stay three times with `GOWIFT_AFK_REMINDER_S=5`. Not committed.
 - [ ] **Step 6: Commit** `"Show the AFK warning and end the ride on afk_timeout"`
 
 ### Task 7: Docs, changelog and PR
@@ -195,8 +195,8 @@
 ### Task 8: Grafana panels (Monitoring repo, separate PR)
 
 **Files:**
-- Modify: `../Monitoring/grafana/dashboards/openradlr.json` on a new branch `feat/openradlr-afk-panels` from `origin/main` (the local checkout sits on stale `fix/grafana-port`; check `git status` is clean first)
+- Modify: `../Monitoring/grafana/dashboards/gowift.json` on a new branch `feat/gowift-afk-panels` from `origin/main` (the local checkout sits on stale `fix/grafana-port`; check `git status` is clean first)
 
-- [ ] **Step 1: Add two panels** below the existing ones (`y: 21`): id 9, `stat`, "AFK removals · selected range", `w: 6, h: 8`, expr `increase(openradlr_afk_events_total{event="timeout"}[$__range])`; id 10, `timeseries`, "AFK warnings and outcomes", `x: 6, w: 18, h: 8`, expr `sum by (event) (increase(openradlr_afk_events_total[1h]))`, `legendFormat: "{{event}}"`. Match the existing panels' `datasource` and `fieldConfig` style.
-- [ ] **Step 2: Validate** `python3 -m json.tool grafana/dashboards/openradlr.json >/dev/null` → no output.
-- [ ] **Step 3: Commit, push, open the PR** (mention it shows "No data" until OpenRadlr with the counter is deployed; link the OpenRadlr PR), assign `RalfLeonFasler`, do not merge.
+- [ ] **Step 1: Add two panels** below the existing ones (`y: 21`): id 9, `stat`, "AFK removals · selected range", `w: 6, h: 8`, expr `increase(gowift_afk_events_total{event="timeout"}[$__range])`; id 10, `timeseries`, "AFK warnings and outcomes", `x: 6, w: 18, h: 8`, expr `sum by (event) (increase(gowift_afk_events_total[1h]))`, `legendFormat: "{{event}}"`. Match the existing panels' `datasource` and `fieldConfig` style.
+- [ ] **Step 2: Validate** `python3 -m json.tool grafana/dashboards/gowift.json >/dev/null` → no output.
+- [ ] **Step 3: Commit, push, open the PR** (mention it shows "No data" until GOwift with the counter is deployed; link the GOwift PR), assign `RalfLeonFasler`, do not merge.

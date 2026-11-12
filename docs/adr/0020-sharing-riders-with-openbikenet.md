@@ -7,7 +7,7 @@ Date: 2026-11-06 · Status: accepted
 [OpenBikeNet](https://github.com/OpenBikeNet/protocol) (protocol v0, "Level 0")
 lets indoor-cycling apps show each other's riders: each app keeps its own
 physics and worlds, and a server relays name, position, speed, power and
-cadence per shared route. Riders of OpenRadlr and of other apps could meet,
+cadence per shared route. Riders of GOwift and of other apps could meet,
 but a shared route needs a place that looks the same everywhere and a clear
 promise about what leaves the server.
 
@@ -16,7 +16,7 @@ promise about what leaves the server.
 - **One new route, `velodrome`**: a flat 250 m oval, a world of its own. Its
   route file names the shared route (`"openbikenet": "velodrome-250"`). A world
   with such a route has no bots, so every app sees the same riders.
-- **Off unless configured.** `OPENRADLR_OBN_URL` turns the link on. Without it
+- **Off unless configured.** `GOWIFT_OBN_URL` turns the link on. Without it
   the velodrome is an ordinary local track and nothing leaves the server.
 - **Picking the route is the opt-in.** With the link on, the start menu marks
   the velodrome *Shared* and says what is sent. No other route is ever shared.

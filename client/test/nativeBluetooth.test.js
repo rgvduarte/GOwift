@@ -212,7 +212,7 @@ test("a remembered device keeps its name when the phone returns it without one",
 
 test("devices remembered before names were stored still come back", async () => {
   const { fake, storage } = setup([strapDevice("strap-1", "Google Fitbit Air")]);
-  storage.setItem("openradlr.nativeDevices", JSON.stringify(["strap-1"]));
+  storage.setItem("gowift.nativeDevices", JSON.stringify(["strap-1"]));
   const [device] = await new NativeBluetooth({ plugin: fake.plugin, storage }).getDevices();
   assert.equal(device.id, "strap-1");
 });
@@ -284,9 +284,9 @@ test("only the features with native plugins are offered", () => {
 
 test("iOS signs in through the system sheet and hands back its URL", async () => {
   const starts = [];
-  const WebAuth = { start: async (options) => (starts.push(options), { url: "openradlr://strava?result=connected&ticket=t" }) };
-  assert.equal(await systemSignIn({ WebAuth }, "https://app.openradlr.com/auth/strava?app=1"), "openradlr://strava?result=connected&ticket=t");
-  assert.deepEqual(starts, [{ url: "https://app.openradlr.com/auth/strava?app=1", callbackScheme: "openradlr" }]);
+  const WebAuth = { start: async (options) => (starts.push(options), { url: "gowift://strava?result=connected&ticket=t" }) };
+  assert.equal(await systemSignIn({ WebAuth }, "https://app.gowift.example/auth/strava?app=1"), "gowift://strava?result=connected&ticket=t");
+  assert.deepEqual(starts, [{ url: "https://app.gowift.example/auth/strava?app=1", callbackScheme: "gowift" }]);
 });
 
 test("closing the iOS sign-in sheet is an AbortError", async () => {
@@ -323,9 +323,9 @@ test("Android signs in in a Custom Tab and gets the link back through the app", 
   android.fire("appUrlOpen", { url: "https://elsewhere" });
   // The tab closes as the app comes back, just before the link arrives.
   android.fire("browserFinished");
-  android.fire("appUrlOpen", { url: "openradlr://strava?result=connected&ticket=t" });
+  android.fire("appUrlOpen", { url: "gowift://strava?result=connected&ticket=t" });
   android.timers.forEach((fn) => fn());
-  assert.equal(await signedIn, "openradlr://strava?result=connected&ticket=t");
+  assert.equal(await signedIn, "gowift://strava?result=connected&ticket=t");
   await new Promise((resolve) => setTimeout(resolve, 0));
   assert.deepEqual(android.removed.sort(), ["appUrlOpen", "browserFinished"]);
 });

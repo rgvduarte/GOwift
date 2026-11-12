@@ -1,4 +1,4 @@
-//! `openradlr-server players` — who is riding right now, for the Makefile's
+//! `gowift-server players` — who is riding right now, for the Makefile's
 //! guard before `update`, `restart` and `down`. Probes `/api/info` like
 //! `healthcheck` does, so the runtime image still needs no curl.
 

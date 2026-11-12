@@ -17,7 +17,7 @@ see-through rider replays it from the line, and the HUD shows the live gap
 | When a lap is dropped | Leaving the route, switching routes, a jump of more than 60 m or a step backwards between frames (rejoin, teleport) |
 | Time | The ride clock, which stands still while paused, so a pause doesn't cost the lap |
 | Crossing time | Interpolated within the frame that crosses the line |
-| What is kept | The best lap per route: duration and a trace with a point about every second (time, route metres, lane), in IndexedDB (`openradlr-ghosts`). A faster lap replaces it at once and the ghost rides it from the next lap |
+| What is kept | The best lap per route: duration and a trace with a point about every second (time, route metres, lane), in IndexedDB (`gowift-ghosts`). A faster lap replaces it at once and the ghost rides it from the next lap |
 | Gap | My lap time now minus the time the best lap reached my position: + behind, − ahead; minutes from a minute on |
 | Ghost's lane | The lane I rode then, so it replays lane changes too |
 | Where not | Routes that aren't loops, off the routes, the studio and workouts. Hidden (gap too) while I'm in a race or event; laps still count |

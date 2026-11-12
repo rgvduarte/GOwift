@@ -1,5 +1,5 @@
 /**
- * The OpenRadlr app (docs/app.md) loads the very same page as the browser,
+ * The GOwift app (docs/app.md) loads the very same page as the browser,
  * in a web view that lacks a few things: Web Bluetooth, a working screen
  * wake lock and downloads. Its native plugins fill them in, so the rest of
  * the client never needs to know where it runs.
@@ -13,8 +13,8 @@ export function nativePlugins(win = globalThis) {
   return capacitor?.isNativePlatform?.() ? (capacitor.Plugins ?? {}) : null;
 }
 
-/** The app's own URL scheme: the system sign-in sheet hands back with `openradlr://…`. */
-export const APP_SCHEME = "openradlr";
+/** The app's own URL scheme: the system sign-in sheet hands back with `gowift://…`. */
+export const APP_SCHEME = "gowift";
 
 /**
  * Puts the native stand-ins in place: `navigator.bluetooth`,
@@ -51,9 +51,9 @@ const aborted = () => Object.assign(new Error("Sign-in canceled."), { name: "Abo
 /**
  * Opens `url` in the system sign-in sheet, where Google and Apple sign-in
  * work (they block embedded web views), and resolves with the
- * `openradlr://` URL the sheet ends on. Closing the sheet is an AbortError.
+ * `gowift://` URL the sheet ends on. Closing the sheet is an AbortError.
  * iOS: ASWebAuthenticationSession (the app's WebAuth plugin). Android: a
- * Custom Tab, whose `openradlr://` link comes back through the App plugin.
+ * Custom Tab, whose `gowift://` link comes back through the App plugin.
  */
 export function systemSignIn({ WebAuth, Browser, App }, url, { setTimeout = globalThis.setTimeout } = {}) {
   if (WebAuth) {

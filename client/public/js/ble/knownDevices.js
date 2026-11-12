@@ -7,7 +7,7 @@
 
 import { t } from "../i18n/i18n.js";
 
-const STORAGE_KEY = "openradlr.devices";
+const STORAGE_KEY = "gowift.devices";
 const KINDS = ["trainer", "hr", "controller"];
 /** A Zwift Play is two devices; a third controller pushes out the oldest. */
 export const MAX_CONTROLLERS = 2;

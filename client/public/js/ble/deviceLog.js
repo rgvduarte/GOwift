@@ -68,7 +68,7 @@ export class DeviceLog extends Emitter {
 
   report(extra = {}) {
     const header = [
-      `OpenRadlr device diagnostics`, // i18n-ok
+      `GOwift device diagnostics`, // i18n-ok
       ...(extra.build ? [`Build: ${extra.build}`] : []), // i18n-ok
       `User agent: ${extra.userAgent ?? "unknown"}`, // i18n-ok
       `Packets: ${JSON.stringify(this.packets)}`, // i18n-ok

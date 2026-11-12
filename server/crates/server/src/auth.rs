@@ -49,7 +49,7 @@ impl Strava {
     ) -> Result<Self, reqwest::Error> {
         let http = reqwest::Client::builder()
             .timeout(Duration::from_secs(30))
-            .user_agent(concat!("OpenRadlr/", env!("CARGO_PKG_VERSION")))
+            .user_agent(concat!("GOwift/", env!("CARGO_PKG_VERSION")))
             .build()?;
         Ok(Self {
             config,
@@ -244,7 +244,7 @@ pub async fn app_login(State(state): State<AppState>) -> Response {
 
 #[derive(Debug, Deserialize)]
 pub struct ClaimRequest {
-    /// From the `openradlr://` URL the sign-in sheet ended on.
+    /// From the `gowift://` URL the sign-in sheet ended on.
     pub ticket: String,
 }
 
@@ -356,7 +356,7 @@ pub async fn upload(
     };
     let name: String = query
         .name
-        .unwrap_or_else(|| "OpenRadlr".into())
+        .unwrap_or_else(|| "GOwift".into())
         .chars()
         .filter(|c| !c.is_control())
         .take(100)
@@ -372,7 +372,7 @@ pub async fn upload(
             );
         }
     };
-    let external_id = format!("openradlr-{}-{}", account.athlete_id, now_s());
+    let external_id = format!("gowift-{}-{}", account.athlete_id, now_s());
     match strava_api::upload(
         &strava.http,
         &access_token,

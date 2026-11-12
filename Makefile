@@ -1,4 +1,4 @@
-# OpenRadlr — common tasks. Run `make` to see all targets.
+# GOwift — common tasks. Run `make` to see all targets.
 #
 # Rust and Node are optional on the host: if `cargo` or `npm` is missing,
 # the targets run the tools in throwaway Docker containers instead.
@@ -12,13 +12,13 @@ NODE_IMAGE ?= node:22-alpine
 HEALTH_TIMEOUT ?= 90
 
 # Build number shown in the menu and /api/info (compose passes these as build args).
-export OPENRADLR_BUILD_SHA ?= $(shell git rev-parse --short HEAD 2>/dev/null || echo dev)
-export OPENRADLR_BUILD_DATE ?= $(shell date -u +%Y-%m-%dT%H:%MZ)
+export GOWIFT_BUILD_SHA ?= $(shell git rev-parse --short HEAD 2>/dev/null || echo dev)
+export GOWIFT_BUILD_DATE ?= $(shell date -u +%Y-%m-%dT%H:%MZ)
 
 ifneq ($(shell command -v cargo 2>/dev/null),)
   CARGO := cd server && cargo
 else
-  CARGO := docker run --rm -t -v "$(CURDIR)":/src -w /src/server -v openradlr-cargo-registry:/usr/local/cargo/registry -v openradlr-cargo-target:/src/server/target $(RUST_IMAGE) sh -c 'rustup component add clippy rustfmt >/dev/null 2>&1; cargo "$$@"' cargo
+  CARGO := docker run --rm -t -v "$(CURDIR)":/src -w /src/server -v gowift-cargo-registry:/usr/local/cargo/registry -v gowift-cargo-target:/src/server/target $(RUST_IMAGE) sh -c 'rustup component add clippy rustfmt >/dev/null 2>&1; cargo "$$@"' cargo
 endif
 
 ifneq ($(shell command -v node 2>/dev/null),)
@@ -50,7 +50,7 @@ setup: ## Create .env from .env.example, or add settings that are new there
 up: setup ## Build and start in the background, then wait until healthy
 	$(COMPOSE) up -d --build --remove-orphans
 	@$(MAKE) --no-print-directory health
-	@echo "OpenRadlr is running: http://localhost:$$(grep -E '^OPENRADLR_HTTP_PORT=' .env | cut -d= -f2 | grep . || echo 8080)"
+	@echo "GOwift is running: http://localhost:$$(grep -E '^GOWIFT_HTTP_PORT=' .env | cut -d= -f2 | grep . || echo 8080)"
 
 .PHONY: down
 down: guard ## Stop and remove the containers (asks first if riders are on; FORCE=1 skips)
@@ -67,7 +67,7 @@ logs: ## Follow the logs
 .PHONY: guard
 guard: # Ask before dropping riders: used by update, restart and down (FORCE=1 skips it)
 	@if [ -n "$(FORCE)" ]; then exit 0; fi; \
-	out=$$($(COMPOSE) exec -T server openradlr-server players 2>/dev/null) || { echo "No running server to check for riders — continuing."; exit 0; }; \
+	out=$$($(COMPOSE) exec -T server gowift-server players 2>/dev/null) || { echo "No running server to check for riders — continuing."; exit 0; }; \
 	n=$$(printf '%s\n' "$$out" | head -1); \
 	case "$$n" in ''|*[!0-9]*) echo "Could not read the rider count — continuing."; exit 0;; esac; \
 	[ "$$n" -gt 0 ] || exit 0; \
@@ -87,7 +87,7 @@ ps: ## Show container status
 health: ## Wait until the server reports healthy
 	@echo -n "Waiting for the server to become healthy"; \
 	for i in $$(seq 1 $(HEALTH_TIMEOUT)); do \
-		if $(COMPOSE) exec -T server openradlr-server healthcheck >/dev/null 2>&1; then echo " ok"; exit 0; fi; \
+		if $(COMPOSE) exec -T server gowift-server healthcheck >/dev/null 2>&1; then echo " ok"; exit 0; fi; \
 		echo -n "."; sleep 1; \
 	done; \
 	echo " timed out"; $(COMPOSE) logs --tail=50 server; exit 1
@@ -115,10 +115,10 @@ build: ## Build the Docker image without starting it
 .PHONY: dev
 dev: ## Run the server locally with cargo on http://localhost:8080 (reads .env.dev, Strava keys from .env)
 	cd server && set -a && { [ ! -f ../.env.dev ] || . ../.env.dev; } && \
-		{ [ -n "$${OPENRADLR_STRAVA_CLIENT_ID:-}" ] || [ ! -f ../.env ] || eval "$$(grep -E '^OPENRADLR_STRAVA_CLIENT_(ID|SECRET)=' ../.env)"; } && \
-		{ [ -z "$${OPENRADLR_STRAVA_CLIENT_ID:-}" ] || OPENRADLR_PUBLIC_URL="$${OPENRADLR_PUBLIC_URL:-http://localhost:8080}"; } && set +a && \
-		OPENRADLR_STATIC_DIR=../client/public OPENRADLR_ROUTE_FILE=../routes/rolling-hills.json \
-		OPENRADLR_BIND=127.0.0.1:8080 RUST_LOG=$${RUST_LOG:-info,openradlr_server=debug} cargo run --bin openradlr-server
+		{ [ -n "$${GOWIFT_STRAVA_CLIENT_ID:-}" ] || [ ! -f ../.env ] || eval "$$(grep -E '^GOWIFT_STRAVA_CLIENT_(ID|SECRET)=' ../.env)"; } && \
+		{ [ -z "$${GOWIFT_STRAVA_CLIENT_ID:-}" ] || GOWIFT_PUBLIC_URL="$${GOWIFT_PUBLIC_URL:-http://localhost:8080}"; } && set +a && \
+		GOWIFT_STATIC_DIR=../client/public GOWIFT_ROUTE_FILE=../routes/rolling-hills.json \
+		GOWIFT_BIND=127.0.0.1:8080 RUST_LOG=$${RUST_LOG:-info,gowift_server=debug} cargo run --bin gowift-server
 
 .PHONY: test
 test: test-server test-client ## Run all tests

@@ -59,8 +59,8 @@ jobs:
         with:
           context: .
           push: false
-          tags: openradlr-server:ci
+          tags: gowift-server:ci
           build-args: |
-            OPENRADLR_BUILD_SHA=${{ github.sha }}
+            GOWIFT_BUILD_SHA=${{ github.sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max

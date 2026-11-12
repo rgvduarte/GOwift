@@ -31,9 +31,9 @@ connection that sends nothing for 120 s is closed (`handshake_timeout`,
 this only catches dead connections. A workout client sends no telemetry:
 it repeats its current `workout` message every 30 s as a keepalive.
 
-A rider who sends only 0 W telemetry for `OPENRADLR_AFK_TIMEOUT_S` seconds
+A rider who sends only 0 W telemetry for `GOWIFT_AFK_TIMEOUT_S` seconds
 (default 1800; 0 turns this off) is warned with `afk_warning`. Each warning
-allows 120 s to answer: `stay` restarts the clock with `OPENRADLR_AFK_REMINDER_S`
+allows 120 s to answer: `stay` restarts the clock with `GOWIFT_AFK_REMINDER_S`
 (default 600) until the next warning; `leave` ends the ride at once. Three
 warnings can be stayed, the fourth only allows leaving. An unanswered warning
 ends the connection with `afk_timeout` and removes the rider as `leave` does,
@@ -48,7 +48,7 @@ Workout riders are exempt.
 | `join` | `name` (1–24 chars), `weight_kg` (30–200), `route_id`?, `ftp_w`?, `level_w`?, `device`?, `vehicle_code`?, `public_key`? | after `welcome`; `ftp_w` sets the studio's targets (default 2.5 W/kg); `level_w` is the riding level the event bots are matched to; `device` is `trainer` (default), `sim`, `paddle` (phone paddles) or `workout` (no bike: a parked bodyweight workout at the route start; the studio refuses it with `unknown_route`, and `vehicle_code` and `resume` are ignored); `vehicle_code` boards that vehicle on joining (the server picks the world from it, `route_id` is ignored); `resume_token` and `resume` (`route_id`, `distance_m`) come back after a dropped connection, see [Reconnecting](#reconnecting) |
 | `telemetry` | `power`, `cadence`? | about 4 Hz |
 | `input` | `action`: `lane_left` \| `lane_right` | on key or button press |
-| `start_race` | `laps` (1–`OPENRADLR_MAX_RACE_LAPS`) | any rider on a route, when no race is running there |
+| `start_race` | `laps` (1–`GOWIFT_MAX_RACE_LAPS`) | any rider on a route, when no race is running there |
 | `join_race` / `leave_race` | – | enter or leave the race whose countdown runs |
 | `join_event` | `event_id` | enter an event whose lobby is open (a running group ride too) |
 | `leave_event` | – | withdraw from the event |
@@ -78,7 +78,7 @@ Workout riders are exempt.
 | `error` | `code`, `message` |
 
 `riders[]` holds the riders on the server, whatever their route or distance, up
-to `OPENRADLR_MAX_VISIBLE_RIDERS` (default 200). You, your vehicle's seats and
+to `GOWIFT_MAX_VISIBLE_RIDERS` (default 200). You, your vehicle's seats and
 everyone entered in your route's race are always in; the rest fill up with
 humans first and then bots, nearest first. Entries: `id`,
 `name`, `is_bot`, `route` (the route's id; `null` off every route after a
@@ -173,7 +173,7 @@ belongs to another world; `message` is `route:<id>` to rejoin with), `not_captai
 
 A connection that drops without `leave` (closed socket, network gone,
 `idle_timeout`) doesn't end the ride straight away. The server keeps the rider
-for `grace_s` seconds (`OPENRADLR_GRACE_S`, default 60): they coast at 0 W and
+for `grace_s` seconds (`GOWIFT_GRACE_S`, default 60): they coast at 0 W and
 keep their place, race or event entry and vehicle seat. A dropped rider holds
 no place under the player cap. After the grace period they leave as if they
 had sent `leave`.
@@ -194,12 +194,12 @@ to continue for 12 hours.
 
 ## Limits
 
-Messages beyond the per-connection rate (`OPENRADLR_MESSAGES_PER_SECOND`,
+Messages beyond the per-connection rate (`GOWIFT_MESSAGES_PER_SECOND`,
 default 20 per second with a burst of twice that) are dropped; after 200
 dropped messages the connection is closed with `rate_limited`. Frames are
 at most 16 KiB. The WebSocket upgrade itself is refused with HTTP 429 when an
-IP address already has `OPENRADLR_MAX_CONNECTIONS_PER_IP` connections, with 403
-when `OPENRADLR_ALLOWED_ORIGINS` is set and the page's origin isn't listed, and
+IP address already has `GOWIFT_MAX_CONNECTIONS_PER_IP` connections, with 403
+when `GOWIFT_ALLOWED_ORIGINS` is set and the page's origin isn't listed, and
 — on servers that require Strava — with 401 without a connected account or
 409 when that account is already riding.
 
@@ -208,14 +208,14 @@ when `OPENRADLR_ALLOWED_ORIGINS` is set and the page's origin isn't listed, and
 | Route | Response |
 | --- | --- |
 | `GET /healthz` | `ok` |
-| `GET /api/info` | name, version, protocol version, auth mode, `players` (all routes, phone riders included), `phone_players` (of those, on phone paddles), `max_players` (seats for the others) and `max_phone_players` (seats for phone riders, counted apart), `routes[]` (`id`, `name`, `description`, `length_m`, `elevation_gain_m`, `players` riding it and `phone_players` among them, `shared`: true on a route shared with other apps through OpenBikeNet, left out otherwise; default first), `route` (the default, for older clients), `studio` (`id`, `name`, `players`, `class` and `next` with `class_id`, `name`, `starts_at_s`; missing when closed), `strava` (`enabled`, `required`), `privacy_url` (the operator's privacy policy; missing unless `OPENRADLR_PRIVACY_URL` is set), `analytics` (`domain`, `script`: the page analytics the client loads, #12; missing unless the operator set `OPENRADLR_ANALYTICS_DOMAIN`), `distance_m` (`trainer`, `paddle`: metres ridden on this server in total, see below), `now_s` (the server clock, Unix time) and `events[]` (soonest first: `id`, `name`, `kind`, `route_id`, `lobby_opens_at_s`, `starts_at_s`, `phase` `upcoming` \| `lobby` \| `running`, `entrants`) |
+| `GET /api/info` | name, version, protocol version, auth mode, `players` (all routes, phone riders included), `phone_players` (of those, on phone paddles), `max_players` (seats for the others) and `max_phone_players` (seats for phone riders, counted apart), `routes[]` (`id`, `name`, `description`, `length_m`, `elevation_gain_m`, `players` riding it and `phone_players` among them, `shared`: true on a route shared with other apps through OpenBikeNet, left out otherwise; default first), `route` (the default, for older clients), `studio` (`id`, `name`, `players`, `class` and `next` with `class_id`, `name`, `starts_at_s`; missing when closed), `strava` (`enabled`, `required`), `privacy_url` (the operator's privacy policy; missing unless `GOWIFT_PRIVACY_URL` is set), `analytics` (`domain`, `script`: the page analytics the client loads, #12; missing unless the operator set `GOWIFT_ANALYTICS_DOMAIN`), `distance_m` (`trainer`, `paddle`: metres ridden on this server in total, see below), `now_s` (the server clock, Unix time) and `events[]` (soonest first: `id`, `name`, `kind`, `route_id`, `lobby_opens_at_s`, `starts_at_s`, `phase` `upcoming` \| `lobby` \| `running`, `entrants`) |
 | `GET /api/route?id=…` | a route file (see [routes](routes.md)); the default route without `id`, 404 for unknown ids |
 | `GET /api/map?id=…` | a shared map's road network file, unchanged (see [routes](routes.md#road-networks)); 404 for maps without one |
 | `GET /api/studio` | the spin studio: `slot_s` (1800), `lobby_s` (300), `seats_per_room`, `classes[]` (`id`, `name`, `description`, `duration_s`, `segments[]` with `duration_s`, `from`/`to` as a fraction of FTP, `cadence` `[lo, hi]`, `cue`), `schedule[]` (the current slot and the next five: `class_id`, `name`, `starts_at_s`); 404 when the studio is closed |
 | `GET /auth/strava` | starts "Connect with Strava" (redirect) |
-| `GET /auth/strava/callback` | Strava sends the rider back here; sets the `openradlr_session` cookie |
+| `GET /auth/strava/callback` | Strava sends the rider back here; sets the `gowift_session` cookie |
 | `POST /auth/strava/app` | the app starts a login in the system sign-in sheet: `{url}` to open, its secret as a cookie ([app](app.md#strava-sign-in)) |
-| `POST /auth/strava/app/claim` | `{ticket}` from the `openradlr://strava` URL; sets `openradlr_session` in the app's web view |
+| `POST /auth/strava/app/claim` | `{ticket}` from the `gowift://strava` URL; sets `gowift_session` in the app's web view |
 | `POST /auth/logout` | forgets the session |
 | `GET /api/me` | `athlete_id`, `name`, `can_upload` — or 401 |
 | `POST /api/strava/upload?name=…` | body: a FIT file (the client marks it a virtual ride) or a TCX file; uploads it, answers Strava's upload status (`id`, `status`, `error`, `activity_id`) |
@@ -227,7 +227,7 @@ simulated trainer (`sim`) and bots count toward neither; spin studio rides count
 like any other. Only metres are kept, no rider names, ids or keys. The device is
 the client's own claim and the server can't check it, so treat the numbers as a
 vanity counter. Each server counts its own; the totals are saved in
-`OPENRADLR_STATS_FILE` (default `stats.json` in `OPENRADLR_DATA_DIR`) every
+`GOWIFT_STATS_FILE` (default `stats.json` in `GOWIFT_DATA_DIR`) every
 minute and on shutdown, and start from zero when neither is set.
 
 The Strava routes answer 404 (`strava_disabled`) when the server has no Strava

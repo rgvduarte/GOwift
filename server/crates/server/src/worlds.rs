@@ -7,7 +7,7 @@ use crate::route_file::RouteFile;
 use crate::runtime::GameHandle;
 use crate::studio::STUDIO_ID;
 use crate::vehicle_codes::VehicleCodes;
-use openradlr_sim::studio::Timetable;
+use gowift_sim::studio::Timetable;
 use std::sync::Arc;
 
 pub struct WorldEntry {
@@ -143,8 +143,8 @@ mod tests {
     use crate::game::{GameCore, GameSettings};
     use crate::route_file::RouteFile;
     use crate::runtime::spawn_game;
-    use openradlr_sim::rng::SplitMix64;
-    use openradlr_sim::{SimConfig, World};
+    use gowift_sim::rng::SplitMix64;
+    use gowift_sim::{SimConfig, World};
 
     fn route_file(id: &str) -> RouteFile {
         RouteFile::parse(&format!(

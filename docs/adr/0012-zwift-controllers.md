@@ -21,7 +21,7 @@ the clear.
   logic does not change (see ADR 0006).
 - Use only the **unencrypted mode**. We implement from public descriptions,
   ship no Zwift code or keys, and use the protocol solely so riders can use
-  hardware they own with OpenRadlr (interoperability; this is not legal advice).
+  hardware they own with GOwift (interoperability; this is not legal advice).
   The name "Zwift" is used only to say which devices work.
 - Navigate menus by moving the **DOM focus**, so every button already on
   screen becomes reachable without per-screen controller code. A two-button

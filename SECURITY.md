@@ -8,7 +8,7 @@ repository. Include what you found, how to reproduce it and what you think
 the impact is.
 
 We aim to acknowledge a report within a few days and to tell you what we plan
-to do about it. OpenRadlr is maintained by volunteers, so please allow for that.
+to do about it. GOwift is maintained by volunteers, so please allow for that.
 Once a fix is released we credit you in the changelog unless you prefer not to
 be named.
 
@@ -24,4 +24,4 @@ install malicious software on their own machine.
 
 ## Supported versions
 
-OpenRadlr is a proof of concept. Only the latest release and `main` get fixes.
+GOwift is a proof of concept. Only the latest release and `main` get fixes.
