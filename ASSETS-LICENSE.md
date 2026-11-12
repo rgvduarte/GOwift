@@ -1,9 +1,10 @@
 # Artwork licence
 
 The code of GOindoor is licensed under the [GNU AGPL v3](LICENSE). The
-artwork is licensed separately, under the
+artwork is licensed separately: under the
 [Creative Commons Attribution-ShareAlike 4.0 International licence](https://creativecommons.org/licenses/by-sa/4.0/)
-(CC BY-SA 4.0).
+(CC BY-SA 4.0), except the logo and icons, which are reserved (see *Who made
+what*).
 
 ## What counts as artwork
 
@@ -14,17 +15,23 @@ The image files in:
 - `landing/public/` and `landing/src/assets/` (landing page images and icons)
 - `app/assets/` and the generated icons and splash screens under `app/android/`
   and `app/ios/`
-- `brand/` (the logo sources)
+- `brand/*.svg` (the logo sources)
 
 The 3D world, riders and vehicles are drawn by code in `client/public/js/`
 and fall under the AGPL like the rest of the code.
 
 ## Who made what
 
-- **GOindoor logo, icons, favicons, splash screens and brand mark**
-  (`brand/`, `docs/assets/goindoor-emblem.png`, `client/public/icons/`,
-  `landing/public/icons/`, `app/assets/` and the generated app icons):
-  © 2026 [rgvduarte](https://github.com/rgvduarte), CC BY-SA 4.0.
+- **GOindoor logo, the GD monogram, icons, favicons, splash screens and
+  brand mark** (`brand/*.svg`, `docs/assets/goindoor-emblem.png`,
+  `client/public/icons/`, `landing/public/icons/`, `app/assets/` and the app
+  icons and splash screens generated from them under `app/android/` and
+  `app/ios/`): © 2026 [rgvduarte](https://github.com/rgvduarte). **All rights
+  reserved, not under CC BY-SA.** They are original works, not based on
+  OpenRadlr artwork; the GD monogram is rgvduarte's personal mark. You may
+  pass them on unchanged as part of GOindoor, but not use or adapt them for
+  anything else. A fork replaces them with its own (see
+  [TRADEMARKS.md](TRADEMARKS.md)).
 - **Screenshots of GOindoor** (`docs/assets/screenshot-*.png`,
   `landing/src/assets/ride.png`, `landing/src/assets/studio.png`):
   © 2026 rgvduarte, CC BY-SA 4.0. They show the 3D world drawn by the
@@ -38,7 +45,7 @@ and fall under the AGPL like the rest of the code.
 
 ## What you may do
 
-Use, copy, change and share the artwork, also commercially and in forks, as
+Use, copy, change and share the CC BY-SA artwork, also commercially and in forks, as
 long as you:
 
 - **credit it** as listed above ("Artwork © rgvduarte (GOindoor), CC BY-SA 4.0"

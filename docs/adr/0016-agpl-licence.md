@@ -2,6 +2,11 @@
 
 Date: 2026-10-23 · Status: accepted
 
+> Decided by the OpenRadlr project before the fork
+> ([Lethonium/OpenRadlr#12](https://github.com/Lethonium/OpenRadlr/issues/12));
+> GOindoor inherits it, with product names updated. GOindoor's own logo and
+> icons are reserved instead of CC BY-SA (see ASSETS-LICENSE.md).
+
 ## Context
 
 GOindoor is going public (#12). It is a game server that anyone can host,

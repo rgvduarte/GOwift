@@ -2424,7 +2424,9 @@ function updateStudioPanels() {
       ...board.map((row) => {
         const item = document.createElement("li");
         if (row.me) item.className = "me";
-        const name = Object.assign(document.createElement("span"), { className: "board-name", textContent: `${row.rank}. ${row.name}` });
+        // The name truncates on its own, so a long one never hides the bot pill.
+        const name = Object.assign(document.createElement("span"), { className: "board-name" });
+        name.append(Object.assign(document.createElement("span"), { className: "board-text", textContent: `${row.rank}. ${row.name}` }));
         if (row.isBot) name.append(Object.assign(document.createElement("span"), { className: "badge", textContent: t("panels.bot") }));
         item.append(name, Object.assign(document.createElement("span"), { textContent: row.onTarget }));
         return item;

@@ -1,6 +1,6 @@
 <p align="center">
   <img src="docs/assets/goindoor-emblem.png" width="220"
-       alt="GOindoor logo: a green wheel shaped like a G, with speed lines">
+       alt="GOindoor logo: the white GD monogram above the GOindoor wordmark on a dark glass card">
 </p>
 
 <h1 align="center">GOindoor</h1>

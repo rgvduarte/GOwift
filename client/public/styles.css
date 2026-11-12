@@ -159,9 +159,9 @@ kbd {
   z-index: -2;
   pointer-events: none;
   background:
-    radial-gradient(40% 35% at 25% 20%, rgba(255, 140, 50, 0.16), transparent 70%),
-    radial-gradient(45% 40% at 80% 15%, rgba(76, 195, 255, 0.12), transparent 70%),
-    radial-gradient(60% 50% at 50% 95%, rgba(22, 58, 78, 0.55), transparent 75%);
+    radial-gradient(40% 35% at 25% 20%, rgba(138, 138, 142, 0.16), transparent 70%),
+    radial-gradient(45% 40% at 80% 15%, rgba(107, 107, 112, 0.12), transparent 70%),
+    radial-gradient(60% 50% at 50% 95%, rgba(40, 40, 44, 0.55), transparent 75%);
   animation: dusk-drift 26s ease-in-out infinite alternate;
 }
 
@@ -188,8 +188,8 @@ kbd {
   position: absolute;
   inset: 0;
   background:
-    linear-gradient(180deg, rgba(15, 18, 22, 0.6) 0%, rgba(15, 18, 22, 0.05) 28%, rgba(15, 18, 22, 0.15) 55%, rgba(15, 18, 22, 0.88) 100%),
-    linear-gradient(90deg, rgba(15, 18, 22, 0.35) 0%, transparent 40%, transparent 60%, rgba(15, 18, 22, 0.55) 100%);
+    linear-gradient(180deg, rgba(11, 11, 12, 0.6) 0%, rgba(11, 11, 12, 0.05) 28%, rgba(11, 11, 12, 0.15) 55%, rgba(11, 11, 12, 0.88) 100%),
+    linear-gradient(90deg, rgba(11, 11, 12, 0.6) 0%, transparent 50%, transparent 60%, rgba(11, 11, 12, 0.55) 100%);
 }
 
 .start.world-ready .menu-world {
@@ -239,7 +239,7 @@ kbd {
 }
 
 .start.world-ready .lede {
-  color: #c9d1db;
+  color: var(--text);
 }
 
 .start.world-ready .route-card:hover {
@@ -247,7 +247,7 @@ kbd {
 }
 
 .start.world-ready .route-card[aria-pressed="true"] {
-  background: rgba(31, 26, 22, 0.9);
+  background: rgba(24, 24, 26, 0.9);
   border-color: var(--accent);
   box-shadow: 0 0 0 1px var(--accent) inset, 0 8px 30px rgba(255, 255, 255, 0.16);
 }
@@ -1887,7 +1887,7 @@ body.riding {
   color: #ff8a7a;
 }
 
-/* A personal milestone: a brand-green banner across the top for a few seconds. */
+/* A personal milestone: a white GD pill across the top for a few seconds. */
 .milestone-banner {
   position: absolute;
   top: 18%;
@@ -1897,8 +1897,8 @@ body.riding {
   margin: 0;
   padding: 12px 28px;
   border-radius: 999px;
-  background: linear-gradient(90deg, #ffd21a, #ffe774);
-  color: #1d1d20;
+  background: var(--accent);
+  color: var(--accent-text);
   font-size: clamp(18px, 3vw, 30px);
   font-weight: 800;
   text-align: center;
@@ -4112,9 +4112,14 @@ body.riding {
 }
 
 .label3d.coach {
-  --label-bg: #ffd23a;
-  color: #1a1400;
+  --label-bg: var(--accent);
+  color: var(--accent-text);
   font-weight: 700;
+}
+
+.label3d.coach .badge {
+  color: var(--accent-text);
+  border-color: rgba(11, 11, 12, 0.35);
 }
 
 .studio-cue {
@@ -4155,7 +4160,7 @@ body.riding {
 }
 
 .studio-countdown.soon {
-  color: #ffd23a;
+  color: var(--warning);
 }
 
 .studio-next {
@@ -4208,12 +4213,20 @@ body.riding {
 }
 
 .board-list .board-name {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+}
+
+.board-list .board-text {
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .board-list .badge {
+  flex: none;
   margin-left: 6px;
 }
 
@@ -4693,7 +4706,7 @@ body:not(.riding)::after {
   }
 
   .num-l {
-    font-size: 28px;
+    font-size: clamp(22px, 6.5vw, 28px);
   }
 
   .num-m {

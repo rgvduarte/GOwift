@@ -9,6 +9,8 @@ GOindoor is a fork of [OpenRadlr](https://github.com/Lethonium/OpenRadlr)
 ([NOTICE.md](NOTICE.md)). The releases up to and including 0.1.0 below are
 OpenRadlr's; their issue and pull request numbers (#12, #64, …) refer to
 [Lethonium/OpenRadlr](https://github.com/Lethonium/OpenRadlr/issues).
+Product, variable and metric names in those entries were updated to
+GOindoor's.
 
 ## 0.1.0 (2026-11-11)
 

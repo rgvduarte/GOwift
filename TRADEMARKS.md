@@ -1,11 +1,12 @@
 # Name and logo
 
-"GOindoor" and the GOindoor logo (the green G-shaped wheel with speed lines)
-identify this project, owned and developed by
+"GOindoor", the GOindoor logo (the white GD monogram and the GOindoor
+wordmark, whose "GO" is drawn in the monogram's letterforms) and the GD
+monogram itself identify this project, owned and developed by
 [rgvduarte](https://github.com/rgvduarte), and its official site at
 <https://rgvduarte.github.io/GOwift/>. The code licence (AGPL) and the artwork
-licence (CC BY-SA) give you broad rights to the code and the image files; they
-do not give you the right to use the name or logo as the name or logo of your
+licence (CC BY-SA, for the artwork it covers) give you broad rights to the code
+and those image files; they do not give you the right to use the name or logo as the name or logo of your
 own product or service.
 
 ## Fine without asking

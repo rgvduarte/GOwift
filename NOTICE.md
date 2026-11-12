@@ -23,8 +23,10 @@ The full OpenRadlr history is part of this repository, so `git log` and
 
 - New name, identifiers and branding: the product, crates, environment
   variables (`GOINDOOR_*`), metrics, app IDs and storage keys are called GOindoor.
-- New logo, icons and colours. The OpenRadlr name and lemon logo are not used
-  as GOindoor's brand ([TRADEMARKS.md](TRADEMARKS.md)).
+- New logo, icons and colours (the GD design system). The OpenRadlr name and
+  lemon logo are not used as GOindoor's brand ([TRADEMARKS.md](TRADEMARKS.md)).
+- Documentation written for OpenRadlr (the ADRs, the CHANGELOG up to 0.1.0)
+  was kept, with product names updated.
 - A GitHub Pages site for the landing page.
 
 GOindoor is not affiliated with or endorsed by the OpenRadlr project.
