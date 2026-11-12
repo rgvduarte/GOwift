@@ -2,6 +2,7 @@
 //! machine (see [`crate::session`]) and carries out what it decides.
 
 use crate::afk::{AfkEvent, AfkOutcome};
+use crate::frames::{Frame, FrameEncoder};
 use crate::game::JoinError;
 use crate::guard::SlotPermit;
 use crate::http::AppState;
@@ -56,8 +57,14 @@ pub async fn serve(socket: WebSocket, state: AppState) {
     let (outbox, mut outgoing) = mpsc::channel::<ServerMessage>(256);
 
     let mut write_task = tokio::spawn(async move {
+        // Text frames, or raw-deflated binary ones once the welcome agreed to it.
+        let mut encoder = FrameEncoder::new();
         while let Some(message) = outgoing.recv().await {
-            if writer.send(Message::Text(message.to_json().into())).await.is_err() {
+            let frame = match encoder.encode(&message) {
+                Frame::Text(text) => Message::Text(text.into()),
+                Frame::Binary(bytes) => Message::Binary(bytes.into()),
+            };
+            if writer.send(frame).await.is_err() {
                 break;
             }
         }

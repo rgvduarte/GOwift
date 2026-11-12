@@ -29,7 +29,7 @@ From the outside in. Each layer only depends on the ones below it.
 | HTTP | `http.rs` | Routes `/healthz`, `/api/info`, `/api/route`, `/api/map`, `/api/studio`, `/ws`, static client; origin, per-IP and Strava checks before the WebSocket upgrade |
 | Accounts | `auth.rs`, `strava.rs`, `strava_api.rs` | Optional "Connect with Strava": OAuth, in-memory sessions, ride uploads |
 | Protection | `guard.rs` | Token buckets, counted slots (player cap, per IP, per athlete), client IP behind a proxy |
-| Connection | `connection.rs`, `session.rs` | Per-socket state machine `AwaitingHello → AwaitingJoin → Joined`, message and chat rate limits, timeouts |
+| Connection | `connection.rs`, `session.rs`, `frames.rs` | Per-socket state machine `AwaitingHello → AwaitingJoin → Joined`, message and chat rate limits, timeouts; outgoing frames as JSON text or, when the client offered it, raw-deflated binary |
 | Worlds | `worlds.rs` | One game per map (shared by its routes; a route without a map is its own) plus the spin studio; a join picks a route by `route_id` |
 | Runtime | `runtime.rs` | One Tokio task owns the game (anything implementing `Game`); timer ticks and a command channel drive it |
 | Game core | `game.rs`, `studio.rs` | Connected clients, state culled per client to the riders in view, events per route, resistance updates, input validation; `studio.rs` does the same per studio room |

@@ -41,6 +41,9 @@ pub enum ClientMessage {
         protocol_version: u32,
         #[serde(default)]
         client_version: String,
+        /// Frame compressions the client can decode, as offers (unknown ones are ignored).
+        #[serde(default)]
+        compression: Vec<String>,
     },
     Join {
         name: String,
@@ -244,6 +247,10 @@ pub enum ServerMessage {
         /// Seconds a rider lingers after their socket dies before being
         /// removed; `0` removes at once.
         grace_s: f64,
+        /// The compression of every later frame, picked from the client's
+        /// offer in `hello`; left out for JSON text frames (see `frames`).
+        #[serde(skip_serializing_if = "Option::is_none")]
+        compression: Option<FrameCompression>,
     },
     /// The rider has sent 0 W for a long time. Answer with `stay` (if
     /// `can_stay`) or the ride ends in `leave_in_s` seconds with `afk_timeout`.
@@ -314,6 +321,24 @@ impl ServerMessage {
 }
 
 /// The viewer's vehicle with every seat (`None`: empty seat).
+/// How the server compresses the frames after `welcome`.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+pub enum FrameCompression {
+    /// Binary frames on one raw-deflate stream for the whole connection,
+    /// sync-flushed after each message (browsers: `DecompressionStream("deflate-raw")`).
+    #[serde(rename = "deflate-raw")]
+    DeflateRaw,
+}
+
+impl FrameCompression {
+    /// The first compression in the client's offer that this server speaks.
+    pub fn pick(offered: &[String]) -> Option<FrameCompression> {
+        offered
+            .iter()
+            .find_map(|name| (name == "deflate-raw").then_some(FrameCompression::DeflateRaw))
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Serialize)]
 pub struct VehicleState {
     pub id: VehicleId,
@@ -1095,7 +1120,18 @@ mod tests {
             ClientMessage::parse(r#"{"type":"hello","protocol_version":2,"client_version":"web-0.1"}"#).unwrap(),
             ClientMessage::Hello {
                 protocol_version: 2,
-                client_version: "web-0.1".into()
+                client_version: "web-0.1".into(),
+                compression: vec![],
+            }
+        );
+        // Formats this server doesn't know still parse: they are only offers.
+        assert_eq!(
+            ClientMessage::parse(r#"{"type":"hello","protocol_version":2,"compression":["zstd","deflate-raw"]}"#)
+                .unwrap(),
+            ClientMessage::Hello {
+                protocol_version: 2,
+                client_version: String::new(),
+                compression: vec!["zstd".into(), "deflate-raw".into()],
             }
         );
         assert_eq!(
@@ -1435,9 +1471,26 @@ mod tests {
             auth_mode: "open".into(),
             route_id: "loop".into(),
             grace_s: 60.0,
+            compression: None,
         }
         .to_json();
         assert!(json.contains(r#""grace_s":60.0"#));
+        assert!(!json.contains("compression"), "{json}");
+    }
+
+    #[test]
+    fn welcome_names_the_agreed_compression() {
+        let json = ServerMessage::Welcome {
+            protocol_version: PROTOCOL_VERSION,
+            server_name: "Club".into(),
+            server_version: "1.0.0".into(),
+            auth_mode: "open".into(),
+            route_id: "loop".into(),
+            grace_s: 60.0,
+            compression: Some(FrameCompression::DeflateRaw),
+        }
+        .to_json();
+        assert!(json.contains(r#""compression":"deflate-raw""#), "{json}");
     }
 
     #[test]

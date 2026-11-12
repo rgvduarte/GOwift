@@ -534,6 +534,7 @@ version = "0.1.0"
 dependencies = [
  "aes-gcm",
  "axum",
+ "flate2",
  "futures-util",
  "goindoor-sim",
  "reqwest",

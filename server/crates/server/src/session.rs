@@ -8,7 +8,8 @@
 use crate::afk::{AfkEvent, AfkWatch};
 use crate::guard::{ConnectionLimits, TokenBucket};
 use crate::protocol::{
-    ClientMessage, DeviceKind, Exercise, InputAction, ResumePoint, ServerMessage, Side, PROTOCOL_VERSION,
+    ClientMessage, DeviceKind, Exercise, FrameCompression, InputAction, ResumePoint, ServerMessage, Side,
+    PROTOCOL_VERSION,
 };
 use crate::studio::STUDIO_ID;
 use crate::ServerInfo;
@@ -183,7 +184,14 @@ impl Session {
         };
 
         match (self.phase, message) {
-            (Phase::AwaitingHello, ClientMessage::Hello { protocol_version, .. }) => {
+            (
+                Phase::AwaitingHello,
+                ClientMessage::Hello {
+                    protocol_version,
+                    compression,
+                    ..
+                },
+            ) => {
                 if protocol_version != PROTOCOL_VERSION {
                     return Action::ReplyAndClose(ServerMessage::error(
                         "protocol_mismatch",
@@ -198,6 +206,7 @@ impl Session {
                     auth_mode: self.info.auth_mode.clone(),
                     route_id: self.info.route_id.clone(),
                     grace_s: self.info.grace_s,
+                    compression: FrameCompression::pick(&compression),
                 })
             }
             (Phase::AwaitingHello, _) => Action::Reply(ServerMessage::error("hello_required", "send hello first")),
@@ -353,6 +362,33 @@ mod tests {
 
     fn is_error(action: &Action, wanted: &str) -> bool {
         matches!(action, Action::Reply(ServerMessage::Error { code, .. }) | Action::ReplyAndClose(ServerMessage::Error { code, .. }) if code == wanted)
+    }
+
+    fn welcome_compression(action: Action) -> Option<FrameCompression> {
+        match action {
+            Action::Reply(ServerMessage::Welcome { compression, .. }) => compression,
+            other => panic!("expected welcome, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn a_hello_offering_deflate_raw_gets_it_in_the_welcome() {
+        let hello = r#"{"type":"hello","protocol_version":2,"compression":["zstd","deflate-raw"]}"#;
+        assert_eq!(
+            welcome_compression(session().on_text(hello, 0.0)),
+            Some(FrameCompression::DeflateRaw)
+        );
+    }
+
+    #[test]
+    fn a_hello_without_compression_gets_text_frames() {
+        assert_eq!(welcome_compression(session().on_text(HELLO, 0.0)), None);
+    }
+
+    #[test]
+    fn a_hello_offering_only_unknown_formats_gets_text_frames() {
+        let hello = r#"{"type":"hello","protocol_version":2,"compression":["zstd"]}"#;
+        assert_eq!(welcome_compression(session().on_text(hello, 0.0)), None);
     }
 
     #[test]

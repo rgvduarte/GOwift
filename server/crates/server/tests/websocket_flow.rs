@@ -565,6 +565,66 @@ async fn a_websocket_upgrade_that_offers_compression_still_connects() {
     hello(&mut socket).await;
 }
 
+/// Inflates binary frames on the connection's raw-deflate stream until a message of the given type arrives.
+async fn expect_deflated_type(socket: &mut Socket, stream: &mut flate2::Decompress, wanted: &str) -> Value {
+    let deadline = Duration::from_secs(5);
+    tokio::time::timeout(deadline, async {
+        loop {
+            let message = socket.next().await.expect("socket open").expect("valid frame");
+            let Message::Binary(bytes) = message else {
+                panic!("expected only binary frames after a deflate-raw welcome, got {message:?}");
+            };
+            let mut out = Vec::with_capacity(256 * 1024);
+            stream
+                .decompress_vec(&bytes, &mut out, flate2::FlushDecompress::Sync)
+                .expect("valid deflate data");
+            let text = String::from_utf8(out).expect("UTF-8");
+            let line = text.strip_suffix('\n').expect("one JSON line per frame");
+            let value: Value = serde_json::from_str(line).expect("server sends JSON");
+            if value["type"] == wanted {
+                return value;
+            }
+        }
+    })
+    .await
+    .unwrap_or_else(|_| panic!("no {wanted} message within {deadline:?}"))
+}
+
+#[tokio::test]
+async fn a_client_that_offers_deflate_raw_gets_deflated_frames_after_the_welcome() {
+    let addr = start_server(3).await;
+    let mut socket = connect(addr).await;
+    send(
+        &mut socket,
+        r#"{"type":"hello","protocol_version":2,"compression":["deflate-raw"]}"#,
+    )
+    .await;
+    let welcome = expect_type(&mut socket, "welcome").await;
+    assert_eq!(welcome["compression"], "deflate-raw");
+    send(&mut socket, r#"{"type":"join","name":"Anna","weight_kg":70}"#).await;
+    let mut stream = flate2::Decompress::new(false);
+    let joined = expect_deflated_type(&mut socket, &mut stream, "joined").await;
+    let state = expect_deflated_type(&mut socket, &mut stream, "state").await;
+    let riders = state["riders"].as_array().unwrap();
+    assert!(riders.iter().any(|r| r["id"] == joined["rider_id"]), "{state}");
+}
+
+#[tokio::test]
+async fn a_client_that_offers_no_compression_gets_text_frames() {
+    let addr = start_server(3).await;
+    let mut socket = connect(addr).await;
+    send(&mut socket, r#"{"type":"hello","protocol_version":2}"#).await;
+    let welcome = expect_type(&mut socket, "welcome").await;
+    assert!(welcome.get("compression").is_none(), "{welcome}");
+    send(&mut socket, r#"{"type":"join","name":"Anna","weight_kg":70}"#).await;
+    let message = tokio::time::timeout(Duration::from_secs(5), socket.next())
+        .await
+        .expect("a message")
+        .expect("socket open")
+        .expect("valid frame");
+    assert!(matches!(message, Message::Text(_)), "{message:?}");
+}
+
 #[tokio::test]
 async fn every_response_carries_security_headers() {
     let config = Config {

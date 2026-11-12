@@ -16,6 +16,7 @@
 //! * [`studio`] — the spin studio's game core: rooms, class state
 //! * [`vehicle_codes`] — registry of boarding codes across worlds
 //! * [`protocol`] — JSON message types and mapping from the simulation
+//! * [`frames`] — server messages as WebSocket frames, raw-deflated when the client asks
 //!
 //! [`app::build`] composes everything; it is the composition root used by
 //! `main.rs` and by the integration tests.
@@ -26,6 +27,7 @@ pub mod auth;
 pub mod config;
 pub mod connection;
 pub mod events_file;
+pub mod frames;
 pub mod game;
 pub mod guard;
 pub mod headers;

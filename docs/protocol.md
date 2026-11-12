@@ -1,6 +1,7 @@
 # Protocol (version 2)
 
-JSON text frames over a WebSocket at `/ws`. Every message has a `type`.
+JSON text frames over a WebSocket at `/ws` (the server's can be compressed, see
+[Compression](#compression)). Every message has a `type`.
 Distances are metres, speeds m/s, power watts, times seconds, grades percent.
 
 ## Handshake
@@ -44,7 +45,7 @@ Workout riders are exempt.
 
 | `type` | Fields | When |
 | --- | --- | --- |
-| `hello` | `protocol_version`, `client_version` | first message |
+| `hello` | `protocol_version`, `client_version`, `compression`? (frame compressions the client decodes, e.g. `["deflate-raw"]`, see [Compression](#compression)) | first message |
 | `join` | `name` (1–24 chars), `weight_kg` (30–200), `route_id`?, `ftp_w`?, `level_w`?, `device`?, `vehicle_code`?, `public_key`? | after `welcome`; `ftp_w` sets the studio's targets (default 2.5 W/kg); `level_w` is the riding level the event bots are matched to; `device` is `trainer` (default), `sim`, `paddle` (phone paddles) or `workout` (no bike: a parked bodyweight workout at the route start; the studio refuses it with `unknown_route`, and `vehicle_code` and `resume` are ignored); `vehicle_code` boards that vehicle on joining (the server picks the world from it, `route_id` is ignored); `resume_token` and `resume` (`route_id`, `distance_m`) come back after a dropped connection, see [Reconnecting](#reconnecting) |
 | `telemetry` | `power`, `cadence`? | about 4 Hz |
 | `input` | `action`: `lane_left` \| `lane_right` | on key or button press |
@@ -67,7 +68,7 @@ Workout riders are exempt.
 
 | `type` | Fields |
 | --- | --- |
-| `welcome` | `protocol_version`, `server_name`, `server_version`, `auth_mode`, `route_id`, `grace_s` (how long a dropped rider is kept) |
+| `welcome` | `protocol_version`, `server_name`, `server_version`, `auth_mode`, `route_id`, `grace_s` (how long a dropped rider is kept), `compression`? (`deflate-raw` when every later frame is compressed, left out for text frames; see [Compression](#compression)) |
 | `joined` | `rider_id`, `resume_token` (send it back in `join` after a dropped connection), `physics` (`mass_kg` rider plus bike, `cda_m2`, `crr`, `air_density`: what the server rides you with on a solo bike) |
 | `state` | `tick`, `riders[]` (the riders around you), `race` (your route's, see below), `route_riders` (`humans`, `bots`, `remote`?: everyone on your route; `remote` counts riders of other apps, see below, and is left out when 0), `event`? (your route's scheduled event, see below), `vehicle`? (your own vehicle, see below) — about 4 Hz |
 | `studio_state` | spin studio only, for the rider's room: `tick`, `room` (0-based), `rooms`, `class` (`id`, `name`, `starts_at_s` Unix time, `elapsed_s` — negative in the lobby), `riders[]` — about 4 Hz |
@@ -192,6 +193,29 @@ the new rider at that spot on that route, at 0 m/s in the default lane.
 race, event or vehicle. The browser keeps its ride in IndexedDB and only offers
 to continue for 12 hours.
 
+## Compression
+
+State is most of the traffic, and most of it repeats from one state to the
+next, so the server can compress its frames ([ADR 25](adr/0025-deflated-state-frames.md)).
+A client that can decode them offers `compression: ["deflate-raw"]` in
+`hello`. If the server agrees, `welcome` carries `compression: "deflate-raw"`
+and is the last text frame: every later server message comes as a **binary
+frame** holding the message's JSON and a newline (`\n`), compressed with raw
+deflate (RFC 1951) on **one stream for the whole connection** and ended with a
+sync flush (`00 00 ff ff`). A frame may refer back to the data of earlier
+frames, so decode them in order with one decompressor; each frame then
+yields exactly one message. In a browser that is one
+`DecompressionStream("deflate-raw")` for the connection (`binaryType =
+"arraybuffer"`). Client messages stay JSON text frames.
+
+Without the offer (or with only formats the server doesn't know) every frame
+stays JSON text. This is the WebSocket permessage-deflate extension done by
+the application, because the server's WebSocket library doesn't implement the
+extension; it doesn't use the RSV1 bit or `Sec-WebSocket-Extensions`. With all
+bundled routes and one rider, state shrinks from about 91 KB/s to 7.8 KB/s
+with the default settings and from 16.6 KB/s to 1.5 KB/s with 6 bots per road
+and at most 15 riders per state.
+
 ## Limits
 
 Messages beyond the per-connection rate (`GOINDOOR_MESSAGES_PER_SECOND`,
@@ -237,6 +261,10 @@ app configured.
 
 Additive changes (new optional fields, new message types that old peers can
 ignore) keep the version. Anything else bumps `PROTOCOL_VERSION` on both sides.
+
+Compression added `compression` to `hello` and `welcome` within version 2:
+only a client that offers it gets binary frames, and a server that doesn't
+know it leaves `welcome.compression` out.
 
 Shared vehicles (#55) added `create_vehicle`, `board_vehicle`, `leave_vehicle`,
 `vehicle_code` in `join`, `state.vehicle`, `riders[].vehicle` and `cadence`, the

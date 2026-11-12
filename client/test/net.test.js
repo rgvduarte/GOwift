@@ -2,10 +2,12 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { ClientMessages, PROTOCOL_VERSION, defaultServerUrl, parseServerMessage } from "../public/js/net/protocol.js";
 import { GameConnection } from "../public/js/net/connection.js";
-import { FakeSocket } from "./helpers.js";
+import { FakeSocket, deflateRawFrames } from "./helpers.js";
 
 test("builds protocol messages", () => {
   assert.equal(ClientMessages.hello().protocol_version, PROTOCOL_VERSION);
+  assert.equal("compression" in ClientMessages.hello(), false);
+  assert.deepEqual(ClientMessages.hello(["deflate-raw"]).compression, ["deflate-raw"]);
   assert.deepEqual(ClientMessages.join({ name: "Anna", weightKg: 70 }), { type: "join", name: "Anna", weight_kg: 70 });
   assert.equal(ClientMessages.join({ name: "Anna", weightKg: 70, routeId: "col" }).route_id, "col");
   assert.equal(ClientMessages.join({ name: "Anna", weightKg: 70, routeId: "spin-studio", ftp: 240 }).ftp_w, 240);
@@ -64,13 +66,19 @@ test("derives the websocket url from the page location", () => {
   assert.equal(defaultServerUrl({ protocol: "https:", host: "ride.example.org" }), "wss://ride.example.org/ws");
 });
 
-function connectionWithSocket() {
+function connectionWithSocket(options = {}) {
   let socket;
   const connection = new GameConnection({
     url: "ws://test/ws",
     createSocket: (url) => (socket = new FakeSocket(url)),
+    ...options,
   });
   return { connection, socket: () => socket };
+}
+
+/** Resolves with the next `type` message the connection emits. */
+function next(connection, type) {
+  return new Promise((resolve) => connection.on(type, resolve));
 }
 
 test("performs the hello and join handshake", async () => {
@@ -196,4 +204,50 @@ test("physics is null when the server sends none", async () => {
   socket().receive({ type: "joined", rider_id: 7 });
   await joined;
   assert.equal(connection.physics, null);
+});
+
+test("offers deflate-raw frames when the browser can inflate them", () => {
+  const { connection, socket } = connectionWithSocket({ canInflate: true });
+  connection.join({ name: "Anna", weightKg: 70 });
+  socket().open();
+  assert.deepEqual(socket().sent[0].compression, ["deflate-raw"]);
+  assert.equal(socket().binaryType, "arraybuffer");
+});
+
+test("asks for text frames when the browser can't inflate", () => {
+  const { connection, socket } = connectionWithSocket({ canInflate: false });
+  connection.join({ name: "Anna", weightKg: 70 });
+  socket().open();
+  assert.equal("compression" in socket().sent[0], false);
+});
+
+test("after a deflate-raw welcome, binary frames are inflated into messages", async () => {
+  const deflate = deflateRawFrames();
+  const { connection, socket } = connectionWithSocket({ canInflate: true });
+  const joined = connection.join({ name: "Anna", weightKg: 70 });
+  socket().open();
+  socket().receive({ type: "welcome", compression: "deflate-raw" });
+  assert.equal(socket().sent[1].type, "join");
+  socket().receiveBinary(await deflate({ type: "joined", rider_id: 7 }));
+  assert.equal(await joined, 7);
+  const state = next(connection, "state");
+  socket().receiveBinary(await deflate({ type: "state", tick: 9, riders: [] }));
+  assert.equal((await state).tick, 9);
+});
+
+test("a close waits for the frames before it, so their error is the reason", async () => {
+  const deflate = deflateRawFrames();
+  const { connection, socket } = connectionWithSocket({ canInflate: true });
+  const joined = connection.join({ name: "Anna", weightKg: 70 });
+  socket().open();
+  socket().receive({ type: "welcome", compression: "deflate-raw" });
+  const events = [];
+  connection.on("error", (e) => events.push(e.code));
+  connection.on("close", () => events.push("close"));
+  const closed = next(connection, "close");
+  socket().receiveBinary(await deflate({ type: "error", code: "handshake_timeout", message: "too slow" }));
+  socket().close();
+  await assert.rejects(joined, /handshake_timeout/);
+  await closed;
+  assert.deepEqual(events, ["handshake_timeout", "close"]);
 });

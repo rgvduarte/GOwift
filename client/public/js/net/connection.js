@@ -1,5 +1,6 @@
 import { Emitter } from "../util/emitter.js";
 import { ClientMessages, parseServerMessage } from "./protocol.js";
+import { DEFLATE_RAW, canInflate, createInflater } from "./inflate.js";
 import { t } from "../i18n/i18n.js";
 
 /**
@@ -19,11 +20,15 @@ export class GameConnection extends Emitter {
   /** How long the server keeps a dropped rider, in seconds (from `welcome`). */
   graceS = 0;
 
-  /** @param {{url: string, createSocket?: (url: string) => WebSocket}} options */
-  constructor({ url, createSocket = (u) => new WebSocket(u) }) {
+  /**
+   * @param {{url: string, createSocket?: (url: string) => WebSocket, canInflate?: boolean}} options
+   *   `canInflate`: ask the server for deflate-raw frames (a twelfth of the traffic).
+   */
+  constructor({ url, createSocket = (u) => new WebSocket(u), canInflate: inflates = canInflate() }) {
     super();
     this.url = url;
     this.createSocket = createSocket;
+    this.inflates = inflates;
   }
 
   /**
@@ -34,16 +39,21 @@ export class GameConnection extends Emitter {
     return new Promise((resolve, reject) => {
       const socket = this.createSocket(this.url);
       this.#socket = socket;
+      socket.binaryType = "arraybuffer";
       let joined = false;
+      // Set by a deflate-raw welcome: every later frame is binary and goes through it.
+      let inflater = null;
 
-      socket.addEventListener("open", () => this.#send(ClientMessages.hello()));
-      socket.addEventListener("message", (event) => {
-        const message = parseServerMessage(event.data);
+      const handle = (text) => {
+        const message = parseServerMessage(text);
         if (!message) return;
         switch (message.type) {
           case "welcome":
             this.serverInfo = message;
             this.graceS = message.grace_s ?? 0;
+            if (message.compression === DEFLATE_RAW) {
+              inflater = createInflater(handle, { onError: () => this.close() });
+            }
             this.#send(ClientMessages.join(profile));
             break;
           case "joined":
@@ -60,10 +70,21 @@ export class GameConnection extends Emitter {
           default:
             this.emit(message.type, message);
         }
+      };
+
+      socket.addEventListener("open", () => this.#send(ClientMessages.hello(this.inflates ? [DEFLATE_RAW] : [])));
+      socket.addEventListener("message", (event) => {
+        if (typeof event.data === "string") handle(event.data);
+        else inflater?.push(event.data);
       });
       socket.addEventListener("close", () => {
-        if (!joined) reject(new Error(t("net.closedBeforeJoin")));
-        this.emit("close");
+        const closed = () => {
+          if (!joined) reject(new Error(t("net.closedBeforeJoin")));
+          this.emit("close");
+        };
+        // Messages sent before the close (a final error) still come first.
+        if (inflater) inflater.drained().then(closed);
+        else closed();
       });
       socket.addEventListener("error", () => {
         if (!joined) reject(new Error(t("net.cannotConnect", { url: this.url })));

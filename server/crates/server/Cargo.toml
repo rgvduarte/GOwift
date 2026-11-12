@@ -22,6 +22,8 @@ reqwest = { version = "0.12", default-features = false, features = ["json", "mul
 # Strava logins survive restarts: SQLite on a volume, refresh tokens encrypted, session ids hashed.
 rusqlite = { version = "0.40", features = ["bundled"] }
 aes-gcm = "0.11"
+# State frames raw-deflated for clients that ask (see frames.rs); already built for tower-http.
+flate2 = "1"
 sha2 = "0.11"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"

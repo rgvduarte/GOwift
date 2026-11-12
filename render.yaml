@@ -31,9 +31,9 @@ services:
         value: "true"
       - key: GOINDOOR_SERVER_NAME
         value: GOindoor
-      # The free plan has 0.1 CPU and 5 GB of traffic a month. State updates are
-      # uncompressed JSON: measured, a rider receives about 150 MB an hour with
-      # the defaults and about 56 MB with these (so ~90 riding hours a month).
+      # The free plan has 0.1 CPU and 5 GB of traffic a month. State updates go
+      # to browsers deflated: measured, a rider receives about 28 MB an hour with
+      # the defaults and about 5.3 MB with these (so ~900 riding hours a month).
       - key: GOINDOOR_TARGET_RIDERS
         value: "6"
       - key: GOINDOOR_MAX_VISIBLE_RIDERS

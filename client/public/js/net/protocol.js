@@ -8,7 +8,13 @@ export const PROTOCOL_VERSION = 2;
 export const CLIENT_VERSION = "web-0.1.0";
 
 export const ClientMessages = Object.freeze({
-  hello: () => ({ type: "hello", protocol_version: PROTOCOL_VERSION, client_version: CLIENT_VERSION }),
+  /** `compression`: the frame compressions this browser can decode, e.g. `["deflate-raw"]`. */
+  hello: (compression = []) => ({
+    type: "hello",
+    protocol_version: PROTOCOL_VERSION,
+    client_version: CLIENT_VERSION,
+    ...(compression.length ? { compression } : {}),
+  }),
   join: ({ name, weightKg, publicKey, routeId, ftp, level, device, vehicleCode, resumeToken, resume }) => ({
     type: "join",
     name,

@@ -33,13 +33,14 @@ What the free plan means for riders:
   logins (`/app/data`) are lost when it sleeps or redeploys; riders connect
   Strava again. Rides themselves are saved in each rider's browser.
 - **0.1 CPU, 512 MB and 5 GB of traffic a month.** The server needs about 1 %
-  of a CPU and 30 MB. Traffic is the limit: state updates are uncompressed
-  JSON, and a rider receives about 150 MB an hour with the defaults
-  (measured). `render.yaml` keeps 6 riders on each road
-  (`GOINDOOR_TARGET_RIDERS`) and at most 15 in each update
-  (`GOINDOOR_MAX_VISIBLE_RIDERS`): about 56 MB an hour, so roughly 90 riding
-  hours a month in total. Over the allowance Render stops the service until
-  the next month.
+  of a CPU and 30 MB, plus about 0.5 MB per rider. Traffic is the limit.
+  State updates go to browsers deflated ([Compression](protocol.md#compression)):
+  measured, a rider receives about 28 MB an hour with the defaults, and with
+  `render.yaml`, which keeps 6 riders on each road (`GOINDOOR_TARGET_RIDERS`)
+  and at most 15 in each update (`GOINDOOR_MAX_VISIBLE_RIDERS`), about 5.3 MB
+  an hour (16.6 KB/s uncompressed, 1.5 KB/s deflated): roughly 900 riding
+  hours a month in total, less a little for TLS and page loads. Over the
+  allowance Render stops the service until the next month.
 - Pushes to `main` that touch the server, the client or the routes redeploy it
   (`buildFilter` in `render.yaml`).
 

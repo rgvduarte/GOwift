@@ -1,3 +1,4 @@
+import zlib from "node:zlib";
 import { RouteGeometry } from "../public/js/route/geometry.js";
 
 /** 1000 m square loop: flat, 4 % up, flat, 4 % down. */
@@ -43,6 +44,11 @@ export class FakeSocket {
 
   receive(message) {
     this.dispatch("message", { data: JSON.stringify(message) });
+  }
+
+  /** A binary frame, as an ArrayBuffer (the connection sets `binaryType`). */
+  receiveBinary(bytes) {
+    this.dispatch("message", { data: bytes });
   }
 
   send(data) {
@@ -162,4 +168,23 @@ export function fitMessages(bytes) {
     }
   }
   return messages;
+}
+
+/**
+ * Raw-deflates messages the way the server does after a deflate-raw welcome:
+ * one stream for the whole connection, each message's JSON and a newline
+ * sync-flushed into its own frame (an ArrayBuffer, as a WebSocket delivers it).
+ */
+export function deflateRawFrames() {
+  const deflate = zlib.createDeflateRaw();
+  const chunks = [];
+  deflate.on("data", (chunk) => chunks.push(chunk));
+  return (message) =>
+    new Promise((resolve) => {
+      deflate.write(`${JSON.stringify(message)}\n`);
+      deflate.flush(zlib.constants.Z_SYNC_FLUSH, () => {
+        const bytes = Buffer.concat(chunks.splice(0));
+        resolve(bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.length));
+      });
+    });
 }
