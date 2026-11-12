@@ -99,8 +99,26 @@ pub fn description(public_url: &str) -> String {
     format!("Ridden on GOindoor: {public_url}")
 }
 
-/// Uploads a ride file. A TCX ride is turned into a virtual ride by
-/// [`mark_virtual_ride`] once it is processed (where Strava allows it).
+/// The upload's text fields. `sport_type` overrides the type Strava detects
+/// from the file, so a TCX ride (TCX only knows "Biking") is filed as a
+/// virtual ride too.
+fn upload_fields(
+    data_type: &'static str,
+    name: &str,
+    description: &str,
+    external_id: &str,
+) -> [(&'static str, String); 5] {
+    [
+        ("data_type", data_type.to_owned()),
+        ("sport_type", "VirtualRide".to_owned()),
+        ("name", name.to_owned()),
+        ("description", description.to_owned()),
+        ("external_id", external_id.to_owned()),
+    ]
+}
+
+/// Uploads a ride file as a virtual ride. [`mark_virtual_ride`] sets the
+/// sport type again once the ride is processed, for uploads that ignored it.
 pub async fn upload(
     http: &reqwest::Client,
     access_token: &str,
@@ -123,12 +141,12 @@ pub async fn upload(
             "tcx",
         ),
     };
-    let form = reqwest::multipart::Form::new()
-        .part("file", file)
-        .text("data_type", data_type)
-        .text("name", name.to_owned())
-        .text("description", description.to_owned())
-        .text("external_id", external_id.to_owned());
+    let form = upload_fields(data_type, name, description, external_id)
+        .into_iter()
+        .fold(
+            reqwest::multipart::Form::new().part("file", file),
+            |form, (key, value)| form.text(key, value),
+        );
     let response = http
         .post(UPLOADS_URL)
         .bearer_auth(access_token)
@@ -142,8 +160,8 @@ pub async fn upload(
 }
 
 /// Sets the sport type to `VirtualRide`: Strava keeps those off real-world
-/// segments and outdoor stats but still shows the map. (The upload API has no
-/// field for the sport type, and TCX only knows "Biking".)
+/// segments and outdoor stats but still shows the map. The upload already asks
+/// for it ([`upload_fields`]); this covers an upload that ignored the field.
 pub async fn mark_virtual_ride(
     http: &reqwest::Client,
     access_token: &str,
@@ -206,5 +224,11 @@ mod tests {
         assert!(matches!(RideFile::detect(tcx.as_bytes()), Some(RideFile::Tcx(t)) if t.starts_with("<?xml")));
         assert_eq!(RideFile::detect(b"<?xml version=\"1.0\"?><gpx/>"), None);
         assert_eq!(RideFile::detect(&[0xff, 0xfe, 0x00]), None);
+    }
+
+    #[test]
+    fn uploads_ask_strava_for_a_virtual_ride() {
+        let fields = upload_fields("tcx", "Morning ride", "Ridden on GOindoor", "goindoor-1");
+        assert!(fields.contains(&("sport_type", "VirtualRide".to_owned())));
     }
 }

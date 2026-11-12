@@ -194,9 +194,10 @@ Things to know:
 - A new Strava API app may be limited to a single athlete until Strava
   approves it for more ("athlete capacity" in the API settings).
 - Uploads carry GPS positions in a virtual world off Mallorca (see
-  [routes](routes.md#on-the-map)), so Strava shows a map. Once Strava has
-  processed an upload, the server sets the sport type to *Virtual Ride*,
-  which keeps it off real-world segments.
+  [routes](routes.md#on-the-map)), so Strava shows a map. Every upload asks
+  Strava for the sport type *Virtual Ride*, which keeps it off real-world
+  segments; once Strava has processed it, the server sets the sport type
+  again in case the upload did not take.
 
 ## OpenBikeNet (optional)
 

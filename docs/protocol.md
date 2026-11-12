@@ -218,8 +218,8 @@ when `GOINDOOR_ALLOWED_ORIGINS` is set and the page's origin isn't listed, and
 | `POST /auth/strava/app/claim` | `{ticket}` from the `goindoor://strava` URL; sets `goindoor_session` in the app's web view |
 | `POST /auth/logout` | forgets the session |
 | `GET /api/me` | `athlete_id`, `name`, `can_upload` — or 401 |
-| `POST /api/strava/upload?name=…` | body: a FIT file (the client marks it a virtual ride) or a TCX file; uploads it, answers Strava's upload status (`id`, `status`, `error`, `activity_id`) |
-| `GET /api/strava/upload/{id}` | the current upload status; once it has an `activity_id`, the server marks the activity as a *Virtual Ride* |
+| `POST /api/strava/upload?name=…` | body: a FIT file (the client marks it a virtual ride) or a TCX file; uploads it as a *Virtual Ride*, answers Strava's upload status (`id`, `status`, `error`, `activity_id`) |
+| `GET /api/strava/upload/{id}` | the current upload status; once it has an `activity_id`, the server marks the activity as a *Virtual Ride* again, in case the upload did not take |
 
 `distance_m` is a community counter (#65): every tick the server adds what each
 human rider covers to the total of their `device`, `trainer` or `paddle`. The
