@@ -424,10 +424,13 @@ export class Renderer {
     gl.uniform3fv(s.u_zenithColor, zenith);
     gl.uniform3fv(s.u_horizonColor, horizon);
     gl.uniform3fv(s.u_sunColor, sunColor);
+    // The triangle lies on the far plane, exactly at the cleared depth: a depth test would discard all of it.
+    gl.disable(gl.DEPTH_TEST);
     gl.depthMask(false);
     gl.bindVertexArray(this.emptyVao);
     gl.drawArrays(gl.TRIANGLES, 0, 3);
     gl.depthMask(true);
+    gl.enable(gl.DEPTH_TEST);
 
     gl.useProgram(this.program);
     const u = this.uniforms;
