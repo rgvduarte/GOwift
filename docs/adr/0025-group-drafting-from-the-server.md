@@ -1,0 +1,72 @@
+# 25. Drafting depends on the place in a group, and only the server knows it
+
+Date: 2026-11-12 · Status: accepted
+
+## Context
+
+Every follower got at most 30 % less drag from the single nearest rider ahead
+in its lane, whether it sat second wheel or twentieth in a bunch. So a group was
+no faster than a pair, and sitting in a bunch felt like sitting on one wheel.
+Measured shelter grows with depth and with riders around: the second of two
+riders has up to 27.1 % less drag and the first up to 2.6 % less (Blocken et
+al. 2013, *Comput. Fluids* 71:435–445); a team pursuit line saves 45, 55 and
+57 % on positions 2–4 (Barry et al. 2015, *Sports Eng.* 18:93–103); deep in a
+121-rider peloton drag drops to 5–10 % of a solo rider's (Blocken et al. 2018,
+*J. Wind Eng. Ind. Aerodyn.* 179:319–337).
+
+The client's virtual shifting and its "drafting %" came from a copy of the
+one-wheel rule (`ride/draft.js`). That copy already disagreed with the server:
+it missed drafts across routes on a shared road and behind a beer bike, and it
+drafted behind parked riders and other apps' riders. A group rule would widen
+the gap.
+
+## Decision
+
+- **Shelter by place in the group** (`DraftParams::group_factor`, fed once per
+  tick by `Field::shelter`):
+  - the first, second, third and fourth-and-later wheel of a same-lane line
+    (every link inside the 2–6.5 m window) save up to 30, 40, 45 and 48 %;
+    each wheel's extra over the one ahead of it counts as far as every link
+    up the line to that depth is close, faded like the draft (all of it from
+    2 m in, nothing at 6.5 m);
+  - each rider ahead in a neighbouring lane (at most 1.5 lanes off) adds up
+    to 4 % for a rider on a wheel: all of it a bike length (2 m) ahead, fading
+    to nothing level with the rider and 4 m ahead;
+  - a bunch saves at most 60 %, the gain from a wheel behind included;
+  - a rider with a wheel 2 m behind saves 2.6 %, fading to nothing at 4 m.
+  The window and its linear fade stay as they were, so bots' draft window and
+  the spacing logic need no change. The follower of a pair rides exactly as
+  before; its leader now saves up to 2.6 %. Behind
+  a beer bike every wheel of a closed-up line keeps its 50 %: a line saves up
+  to what any of its wheels gives the rider right behind it, faded by the links
+  up to that wheel like the depth. Every part fades, so no rider's drag jumps
+  when a rider up the line or alongside drifts a centimetre.
+- **The server sends the result.** `state.drag_factor` is everything the
+  physics scaled the rider's air drag by in the last tick, `state.draft` the
+  drafting part alone: the shelter of the riders ahead and alongside, without
+  the leader's gain from a wheel behind. Virtual shifting pushes with
+  `drag_factor`, the HUD shows `draft`. The client's copy of the rule stays only for older servers, which
+  send neither, and to draw the gap to the wheel ahead on the map.
+
+## Consequences
+
+- The game stays well below the measured peloton values: its riders hold a
+  perfect line, and no crosswind gaps anyone. Raising the cap is a tuning step.
+- Big groups ride faster and breakaways get harder; race times and route
+  records move. Bots aim for the same window, but a deeper draft gives them more
+  surplus, so the pass logic rotates them through a line a little more often.
+- A leader with a wheel behind slightly out-accelerates the clear-air
+  comparison of the pass logic: at equal power, followers pass a little less.
+- Each rider's line is walked to its front, so a beer bike's draft reaches
+  its whole line; the walk ends back at the rider round a ring of riders on a
+  short loop, and after one link per rider in the field at most. Per tick,
+  each rider still scans the field once for its wheel ahead; a rider on a
+  wheel scans it a second time for the riders alongside and walks its line
+  along the links already found. With 100 bots a tick still takes about
+  0.4 ms in a release build, within the noise of the one-wheel rule.
+- The HUD now shows what the server applies: 0 % behind another app's rider,
+  50 % behind a beer bike. A leader with a wheel behind is not drafting and
+  sees no drafting line; its few percent reach the pedals through
+  `drag_factor`.
+- Only the viewer's own numbers are sent; other riders' drafts stay on the
+  server.
