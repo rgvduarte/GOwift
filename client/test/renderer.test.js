@@ -8,23 +8,27 @@ import { fakeGl } from "./fakeGl.js";
 const FRAME = { viewProjection: identity(), inverseViewProjection: identity(), camera: [0, 2, 0], ...TIME_PRESETS.golden };
 const mesh = { positions: new Float32Array(9), normals: new Float32Array(9), colors: new Float32Array(12), vertexCount: 3 };
 
-test("the sky is drawn behind everything, past the cleared depth buffer", () => {
-  // The sky triangle sits on the far plane, at the cleared depth; a depth test would throw it all away.
-  const gl = fakeGl();
-  const renderer = new Renderer(gl);
-  renderer.begin(FRAME);
-  const sky = gl.draws.find((d) => d.program === renderer.skyProgram);
-  assert.ok(sky, "the sky pass draws");
-  assert.deepEqual([sky.enabled.has("DEPTH_TEST"), sky.depthMask], [false, false]);
-});
-
-test("the world after the sky is depth tested again", () => {
+test("the sky fills in only what the world left uncovered", () => {
+  // Drawn after the opaque world on the far plane, where the depth is still the cleared one:
+  // covered pixels fail the depth test before they are shaded.
   const gl = fakeGl();
   const renderer = new Renderer(gl);
   renderer.begin(FRAME);
   renderer.draw(renderer.upload(mesh), identity());
-  const world = gl.draws.at(-1);
-  assert.deepEqual([world.program === renderer.program, world.enabled.has("DEPTH_TEST"), world.depthMask], [true, true, true]);
+  renderer.drawSky();
+  const sky = gl.draws.at(-1);
+  assert.equal(sky.program, renderer.skyProgram);
+  assert.deepEqual([sky.enabled.has("DEPTH_TEST"), sky.depthFunc, sky.depthMask], [true, "LEQUAL", false]);
+});
+
+test("the world after the sky is drawn as usual", () => {
+  const gl = fakeGl();
+  const renderer = new Renderer(gl);
+  renderer.begin(FRAME);
+  renderer.drawSky();
+  renderer.drawTransparent(renderer.upload(mesh), identity(), { alpha: 0.5 });
+  const water = gl.draws.at(-1);
+  assert.deepEqual([water.program === renderer.program, water.enabled.has("DEPTH_TEST"), water.depthFunc], [true, true, "LESS"]);
 });
 
 test("water is shaded as water only while it is drawn", () => {

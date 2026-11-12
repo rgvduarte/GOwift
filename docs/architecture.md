@@ -156,7 +156,7 @@ dependencies (see [ADR 0005](adr/0005-own-webgl-renderer.md)):
 | `lighting.js` | Time-of-day presets (day, golden hour, dusk, auto by local clock) and the sun's shadow frustum |
 | `atmosphere.js` | The sky's colour along a view ray (gradient, sun halo, a broad glow around the sun), shared by the sky pass and the fog, so far land fades into the sky behind it without a seam; the GLSL chunk is written from the same constants as the tested maths |
 | `chaseCamera.js` | Road-anchored cameras: chase, close, drone and TV side, with blended switching |
-| `renderer.js` | Shadow-map pass (depth from the sun), sky pass (gradient + sun glow), lit pass (PCF-filtered sun shadows, hemisphere light, rim light, distance and height fog towards the sky along the view ray, tone mapping), blended pass (water that mirrors the sky by Fresnel with the sun's glint and, on the high tier, moving waves from `water.js`; contact shadows) |
+| `renderer.js` | Shadow-map pass (depth from the sun), lit pass (PCF-filtered sun shadows, hemisphere light, rim light, distance and height fog towards the sky along the view ray, tone mapping), sky pass (gradient + sun glow, after the opaque world so only bare far plane is shaded), blended pass (water that mirrors the sky by Fresnel with the sun's glint and, on the high tier, moving waves from `water.js`; contact shadows) |
 | `view3d.js` | Puts it together per frame; HTML name labels over the canvas |
 
 The 3D view consumes exactly the same smoothed rider list as the 2D views, so

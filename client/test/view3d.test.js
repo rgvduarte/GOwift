@@ -357,6 +357,9 @@ class StubRenderer {
   drawBright() {}
   drawCloudLayer() {}
   drawTransparent() {}
+  drawSky() {
+    this.skyAfter = this.draws.length;
+  }
   uploadWeather(data) {
     return { data };
   }
@@ -398,6 +401,14 @@ test("the outdoor world fogs towards the sky along each view ray", () => {
   view.camera.update(100, 1, 0);
   view.render({ riders: [], myId: null, timeS: 12, colors });
   assert.equal(renderer.frame.scatter, 1);
+});
+
+test("the sky is drawn after the whole opaque world, so only the bare far plane is shaded", () => {
+  const { view, renderer } = gymView([]);
+  const me = { id: 1, name: "Me", distance: 100, lane: 1, speed: 8, power: 200 };
+  view.render({ riders: [me], myId: 1, timeS: 3, colors });
+  assert.ok(renderer.draws.length > 0);
+  assert.equal(renderer.skyAfter, renderer.draws.length);
 });
 
 test("the view resolves the scene's biome for its sky", () => {

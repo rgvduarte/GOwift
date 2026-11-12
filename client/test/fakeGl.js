@@ -10,6 +10,7 @@ export function fakeGl({ width = 320, height = 200 } = {}) {
   const draws = [];
   let program = null;
   let depthMask = true;
+  let depthFunc = "LESS";
   const own = {
     canvas: { width, height },
     draws,
@@ -28,7 +29,8 @@ export function fakeGl({ width = 320, height = 200 } = {}) {
     enable: (cap) => enabled.add(cap),
     disable: (cap) => enabled.delete(cap),
     depthMask: (flag) => (depthMask = flag),
-    drawArrays: (mode, first, count) => draws.push({ program, mode, count, enabled: new Set(enabled), depthMask, uniforms: new Map(uniforms.get(program)) }),
+    depthFunc: (func) => (depthFunc = func),
+    drawArrays: (mode, first, count) => draws.push({ program, mode, count, enabled: new Set(enabled), depthMask, depthFunc, uniforms: new Map(uniforms.get(program)) }),
   };
   const setUniform = (location, value) => {
     if (!location) return;

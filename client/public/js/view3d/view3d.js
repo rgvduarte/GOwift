@@ -921,6 +921,9 @@ export class View3D {
       if (glow) this.renderer.drawBright(glow, model, 0.9);
     }
 
+    // The sky only where the world left the far plane bare.
+    this.renderer.drawSky?.();
+
     // Pass 3: blended — sea and soft contact shadows under the bikes. Open water mirrors the sky; ice is just ice.
     this.renderer.drawTransparent(this.water, this.identity, { alpha: this.biome.water?.alpha ?? 0.82, water: waterMode({ high }) });
     this.renderer.drawTransparent(this.rivers, this.identity, { alpha: this.biome.river?.alpha ?? 0.85, water: waterMode({ high, ice: Boolean(this.biome.river?.ice) }) });

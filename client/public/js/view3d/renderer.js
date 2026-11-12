@@ -3,10 +3,11 @@
  *
  * Passes per frame:
  * 0. shadow — depth of the shadow casters as seen from the sun (shadow map)
- * 1. sky    — full-screen gradient with sun glow (no geometry)
- * 2. opaque — sun (shadowed, PCF-filtered) + sky/ground hemisphere light,
+ * 1. opaque — sun (shadowed, PCF-filtered) + sky/ground hemisphere light,
  *             rim light, distance and height fog towards the sky's colour
  *             along the view ray (atmosphere.js), tone mapping
+ * 2. sky    — full-screen gradient with sun glow (no geometry), only where
+ *             the world left the far plane uncovered (`drawSky`)
  * 3. blended — water (sky reflection by Fresnel, sun glint, waves on the
  *             high tier: water.js) and contact shadows, depth-tested but
  *             not written
@@ -448,7 +449,8 @@ export class Renderer {
   }
 
   /**
-   * Starts a frame: clears, draws the sky and sets the shared uniforms.
+   * Starts a frame: clears and sets the shared uniforms. The sky follows the
+   * opaque meshes (`drawSky`); without it the clear colour (the horizon) shows.
    * @param {{viewProjection: Float32Array, inverseViewProjection: Float32Array, camera: number[],
    *          zenith: number[], horizon: number[], ground: number[], sun: number[], sunColor: number[], fog: number[],
    *          shadowStrength?: number, scatter?: number, timeS?: number}} frame `scatter` 1 fogs towards the sky
@@ -469,13 +471,6 @@ export class Renderer {
     gl.uniform3fv(s.u_horizonColor, horizon);
     gl.uniform3fv(s.u_sunColor, sunColor);
     gl.uniform1f(s.u_scatter, scatter);
-    // The triangle lies on the far plane, exactly at the cleared depth: a depth test would discard all of it.
-    gl.disable(gl.DEPTH_TEST);
-    gl.depthMask(false);
-    gl.bindVertexArray(this.emptyVao);
-    gl.drawArrays(gl.TRIANGLES, 0, 3);
-    gl.depthMask(true);
-    gl.enable(gl.DEPTH_TEST);
 
     gl.useProgram(this.program);
     const u = this.uniforms;
@@ -501,6 +496,23 @@ export class Renderer {
     gl.uniform1f(u.u_shadowStrength, shadow?.lightViewProjection ? shadowStrength : 0);
     gl.uniform1f(u.u_shadowTexel, shadow ? 1 / shadow.size : 0);
     gl.uniformMatrix4fv(u.u_lightViewProjection, false, shadow?.lightViewProjection ?? IDENTITY);
+  }
+
+  /**
+   * The sky, after the opaque meshes: its triangle lies on the far plane, so
+   * with LEQUAL it passes only where the depth is still the cleared one, and
+   * the pixels the world covers are never shaded (most of a ride's screen).
+   */
+  drawSky() {
+    const gl = this.gl;
+    gl.useProgram(this.skyProgram);
+    gl.depthFunc(gl.LEQUAL);
+    gl.depthMask(false);
+    gl.bindVertexArray(this.emptyVao);
+    gl.drawArrays(gl.TRIANGLES, 0, 3);
+    gl.depthMask(true);
+    gl.depthFunc(gl.LESS);
+    gl.useProgram(this.program);
   }
 
   /** Draws with partial self-illumination (signage that should read in shade). */
