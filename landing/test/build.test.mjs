@@ -63,6 +63,23 @@ test("the hero leads to how it works, and hosting keeps its own section", { skip
   );
 });
 
+test("the hero asks for the width its cover crop needs, which on a tall screen depends on the height", { skip }, () => {
+  const img = read("index.html").match(/<img[^>]*class="hero-shot"[^>]*>/)[0];
+  assert.match(img.match(/sizes="([^"]*)"/)[1], /\d+vh/);
+});
+
+test("the hero offers no image wider than its source file", { skip }, () => {
+  const html = read("index.html");
+  const img = html.match(/<img[^>]*class="hero-shot"[^>]*>/)[0];
+  const source = Number(img.match(/width="(\d+)"/)[1]);
+  const picture = html.slice(html.lastIndexOf("<picture", html.indexOf(img)), html.indexOf(img));
+  const widths = [...(picture + img).matchAll(/\s(\d+)w[,"]/g)].map((m) => Number(m[1]));
+  assert.deepEqual(
+    widths.filter((w) => w > source),
+    [],
+  );
+});
+
 test("no background is fixed to the viewport (iOS ignores it, low-end Android repaints it on scroll)", { skip }, () => {
   assert.doesNotMatch(allCss(), /background-attachment\s*:\s*fixed/);
 });
