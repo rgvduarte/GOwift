@@ -27,7 +27,7 @@ the drag the server's physics applies. Today:
 | Bunch cap | 60 % (Blocken et al. 2018 measured 90–95 % deep in a peloton; game riders hold perfect position and nobody is gapped by crosswind) |
 | Leader | 2.6 % less drag with a wheel 2 m behind, fading to none at 4 m (Blocken et al. 2013) |
 | Draft window | Unchanged (2–6.5 m, linear fade): bots' `draft_window` and the spacing logic stay valid |
-| Beer bike | Its 50 % holds on every wheel behind it (`max` with the line's value) |
+| Beer bike | Its 50 % holds on every wheel of the line behind it (`max` with the largest reduction any wheel of the line gives) |
 | Wheel inertia | I = 0.14 kg·m² for both wheels, r = 0.311 m: about 1.45 kg more inertial mass (Martin et al. 1998). Vehicles use the same pair |
 | Push from rest | Propulsion force at most 0.5 g × mass (rear-tyre grip, μ ≈ 0.8 with about 60 % of the load on it) |
 | Drivetrain efficiency | Not added: trainers measure power at the hub, after the chain |
@@ -49,7 +49,7 @@ to a trainer without virtual shifting, and the 20 Hz loop.
 Follower factor, with `t(gap)` the existing linear fade across the window:
 
 ```text
-f = 1 − min(max_bunch, max(line[depth], ahead.max_reduction) + side · n_alongside) · (1 − t(gap))
+f = 1 − min(max_bunch, max(line[depth], max over the line's wheels of max_reduction) + side · n_alongside) · (1 − t(gap))
 ```
 
 Leader factor, with `gap_behind` the nearest rider whose wheel ahead is this
@@ -60,8 +60,9 @@ f_lead = 1 − leader · (1 − clamp((gap_behind − 2) / (4 − 2), 0, 1))
 ```
 
 A rider's draft is `f · f_lead`; its `drag_factor` is `draft · ρ(h) / ρ₀`.
-Depth counts at most four links forward, so a ring of riders round a short loop
-ends.
+The walk follows the line to its front, so a beer bike anywhere ahead counts; it
+ends back at the rider round a ring of riders on a short loop, and after one link
+per rider in the field at most.
 
 Acceleration:
 

@@ -1916,30 +1916,32 @@ impl Field<'_> {
                 gap_behind[j] = Some(gap_behind[j].map_or(gap, |g: f64| g.min(gap)));
             }
         }
-        // Wheels past the deepest one counted add nothing; stopping there also
-        // ends the walk round a ring of riders that closes on itself.
-        let deepest = 1 + draft.deeper_wheels.len();
+        // The line ahead of slot `i`, link by link to its front. A ring of
+        // riders round a short loop closes on itself: the walk ends back at
+        // `i`, or once round the field when `i` only feeds into a ring.
+        let line = |i: usize| {
+            let mut wheels = Vec::new();
+            let mut at = i;
+            while wheels.len() < self.slots.len() {
+                let Some((gap, j)) = link(at).filter(|&(_, j)| j != i) else {
+                    break;
+                };
+                wheels.push(Wheel {
+                    gap,
+                    max_reduction: self.slots[j].draft.max_reduction,
+                });
+                at = j;
+            }
+            wheels
+        };
         self.slots
             .iter()
             .enumerate()
             .map(|(i, me)| {
-                let wheel = link(i).map(|(gap, j)| {
-                    let mut depth = 1;
-                    let mut front = j;
-                    while depth < deepest {
-                        let Some((_, next)) = link(front) else { break };
-                        depth += 1;
-                        front = next;
-                    }
-                    Wheel {
-                        gap,
-                        max_reduction: self.slots[j].draft.max_reduction,
-                        depth,
-                    }
-                });
-                let alongside = if wheel.is_some() { self.alongside(me, draft) } else { 0 };
+                let line = line(i);
+                let alongside = if line.is_empty() { 0 } else { self.alongside(me, draft) };
                 let place = GroupPlace {
-                    wheel,
+                    line,
                     alongside,
                     gap_behind: gap_behind[i],
                 };
@@ -2355,12 +2357,12 @@ mod tests {
     fn the_second_wheel_gets_the_second_wheels_draft() {
         let (world, ids) = line_of(flat_loop(10_000.0), &[104.0, 102.0, 100.0], &[1, 1, 1]);
         let config = SimConfig::default();
+        let wheel = Wheel {
+            gap: 2.0,
+            max_reduction: config.draft.max_reduction,
+        };
         let expected = config.draft.group_factor(&GroupPlace {
-            wheel: Some(Wheel {
-                gap: 2.0,
-                max_reduction: config.draft.max_reduction,
-                depth: 2,
-            }),
+            line: vec![wheel, wheel],
             ..GroupPlace::default()
         });
         assert!((draft_of(&world, ids[2]) - expected).abs() < 1e-12);

@@ -32,7 +32,8 @@ the gap.
   - a rider with a wheel 2 m behind saves 2.6 %, fading to nothing at 4 m.
   The window and its linear fade stay as they were, so bots' draft window and
   the spacing logic need no change, and a pair rides exactly as before. Behind
-  a beer bike every wheel keeps at least its 50 %.
+  a beer bike every wheel keeps at least its 50 %: a line saves at least what
+  any of its wheels gives the rider right behind it.
 - **The server sends the result.** `state.drag_factor` is everything the
   physics scaled the rider's air drag by in the last tick, `state.draft` the
   drafting part alone. Virtual shifting pushes with `drag_factor`, the HUD shows
@@ -48,9 +49,10 @@ the gap.
   surplus, so the pass logic rotates them through a line a little more often.
 - A leader with a wheel behind slightly out-accelerates the clear-air
   comparison of the pass logic: at equal power, followers pass a little less.
-- The depth walk stops after four links, which also ends it round a ring of
-  riders on a short loop. The per-tick cost stays one scan of the field per
-  rider, as before.
+- Each rider's line is walked to its front, so a beer bike's draft reaches
+  its whole line; the walk ends back at the rider round a ring of riders on a
+  short loop, and after one link per rider in the field at most. The per-tick
+  cost stays one scan of the field per rider, as before.
 - The HUD now shows what the server applies: 0 % behind another app's rider,
   50 % behind a beer bike, a few percent for a leader with a wheel behind.
 - Only the viewer's own numbers are sent; other riders' drafts stay on the

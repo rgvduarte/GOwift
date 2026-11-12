@@ -57,24 +57,23 @@ impl Default for DraftParams {
     }
 }
 
-/// The wheel a rider follows in its lane.
+/// A wheel of a line: the next rider ahead in a lane, close enough to draft.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Wheel {
-    /// Metres to it, middle to middle.
+    /// Metres to it from the rider (or wheel) right behind it, middle to middle.
     pub gap: f64,
     /// The reduction it gives the rider right behind it (its own
     /// [`DraftParams::max_reduction`]: more behind a beer bike).
     pub max_reduction: f64,
-    /// Which wheel of the line the rider rides: 1 right behind its front,
-    /// 2 behind that, and so on.
-    pub depth: usize,
 }
 
 /// A rider's place in a group, as the draft sees it.
-#[derive(Debug, Clone, Copy, PartialEq, Default)]
+#[derive(Debug, Clone, PartialEq, Default)]
 pub struct GroupPlace {
-    /// The wheel ahead in the rider's lane, if any.
-    pub wheel: Option<Wheel>,
+    /// The line ahead in the rider's lane, nearest first: the wheel the rider
+    /// follows, the wheel that one follows, and so on to the front. Empty
+    /// without a wheel.
+    pub line: Vec<Wheel>,
     /// Riders up to `side_gap` ahead in the lanes alongside.
     pub alongside: usize,
     /// Metres to the nearest rider on this rider's own wheel.
@@ -91,19 +90,29 @@ impl DraftParams {
     /// wheel, deeper in the line and with riders alongside, times the little
     /// a wheel behind gives.
     pub fn group_factor(&self, place: &GroupPlace) -> f64 {
-        let follow = place.wheel.map_or(1.0, |wheel| {
-            let line = match wheel.depth {
-                0 | 1 => wheel.max_reduction,
-                deeper => self.deeper_wheels[(deeper - 2).min(self.deeper_wheels.len() - 1)].max(wheel.max_reduction),
-            };
+        let follow = place.line.first().map_or(1.0, |wheel| {
+            let line = self.line_reduction(&place.line);
             let flanked = line + self.side_per_rider * place.alongside as f64;
-            self.follow(wheel.gap, flanked.min(self.max_bunch.max(wheel.max_reduction)))
+            self.follow(wheel.gap, flanked.min(self.max_bunch.max(line)))
         });
         let lead = place.gap_behind.map_or(1.0, |gap| {
             let t = ((gap - self.min_gap) / (self.leader_gap - self.min_gap)).clamp(0.0, 1.0);
             1.0 - self.leader * (1.0 - t)
         });
         follow * lead
+    }
+
+    /// The most a rider at the back of `line` saves right behind its wheel:
+    /// more the deeper it rides in the line, and never less than any wheel of
+    /// the line gives the rider right behind it (a beer bike's holds all the
+    /// way down its line).
+    fn line_reduction(&self, line: &[Wheel]) -> f64 {
+        line.iter().enumerate().fold(0.0, |level: f64, (k, wheel)| {
+            let deeper = k
+                .checked_sub(1)
+                .map_or(0.0, |d| self.deeper_wheels[d.min(self.deeper_wheels.len() - 1)]);
+            level.max(deeper).max(wheel.max_reduction)
+        })
     }
 
     /// CdA multiplier `gap` metres behind a wheel that gives `reduction` at its
@@ -152,14 +161,19 @@ mod tests {
         assert_eq!(p.cda_factor(100.0), 1.0);
     }
 
-    /// A rider `gap` metres behind a normal rider, `depth` wheels deep in the line.
+    /// A wheel `gap` metres ahead that gives `max_reduction` right behind it.
+    fn wheel(gap: f64, max_reduction: f64) -> Wheel {
+        Wheel { gap, max_reduction }
+    }
+
+    /// A rider `gap` metres behind a normal rider, `depth` wheels deep in a
+    /// line of normal riders 2 m apart.
     fn in_line(gap: f64, depth: usize) -> GroupPlace {
+        let normal = DraftParams::default().max_reduction;
         GroupPlace {
-            wheel: Some(Wheel {
-                gap,
-                max_reduction: DraftParams::default().max_reduction,
-                depth,
-            }),
+            line: std::iter::once(wheel(gap, normal))
+                .chain(std::iter::repeat_n(wheel(2.0, normal), depth - 1))
+                .collect(),
             ..GroupPlace::default()
         }
     }
@@ -246,18 +260,28 @@ mod tests {
         assert!((p.group_factor(&middle) - 0.7 * 0.974).abs() < 1e-12);
     }
 
-    #[test]
-    fn a_beer_bike_keeps_its_draft_deeper_in_the_line() {
-        let p = DraftParams::default();
-        let behind_a_beer_bike = GroupPlace {
-            wheel: Some(Wheel {
-                gap: 2.0,
-                max_reduction: 0.5,
-                depth: 2,
-            }),
+    /// The draft 2 m behind the first wheel of `line`, all of it 2 m apart,
+    /// with each wheel's own reduction given nearest first.
+    fn behind(line: &[f64]) -> f64 {
+        DraftParams::default().group_factor(&GroupPlace {
+            line: line.iter().map(|&max_reduction| wheel(2.0, max_reduction)).collect(),
             ..GroupPlace::default()
-        };
-        assert!((p.group_factor(&behind_a_beer_bike) - 0.5).abs() < 1e-12);
+        })
+    }
+
+    #[test]
+    fn a_beer_bike_keeps_its_draft_when_it_follows_a_wheel() {
+        assert!((behind(&[0.5, 0.3]) - 0.5).abs() < 1e-12);
+    }
+
+    #[test]
+    fn the_second_wheel_behind_a_beer_bike_keeps_its_draft() {
+        assert!((behind(&[0.3, 0.5]) - 0.5).abs() < 1e-12);
+    }
+
+    #[test]
+    fn a_beer_bike_keeps_its_draft_on_every_wheel_of_its_line() {
+        assert!((behind(&[0.3, 0.3, 0.3, 0.3, 0.3, 0.5]) - 0.5).abs() < 1e-12);
     }
 
     #[test]

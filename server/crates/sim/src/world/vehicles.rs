@@ -936,6 +936,37 @@ mod tests {
         assert!((follower_speed(0.0, Some(2.0)) - alone).abs() < 1e-12);
     }
 
+    #[test]
+    fn every_wheel_of_a_line_behind_a_beer_bike_saves_at_least_half() {
+        let mut world = empty_world(flat_loop(10_000.0));
+        let captain = human(&mut world, "Captain", 3.0);
+        world
+            .create_vehicle(captain, VehicleKind::BeerBike { seats: 5 }, false, &no_codes_taken)
+            .unwrap();
+        place(&mut world, captain, 106.0, 8.0);
+        let line: Vec<RiderId> = [104.0, 102.0, 100.0]
+            .into_iter()
+            .enumerate()
+            .map(|(i, at)| {
+                let id = human(&mut world, &format!("Wheel{i}"), 3.0);
+                place(&mut world, id, at, 8.0);
+                id
+            })
+            .collect();
+        for &id in line.iter().chain([&captain]) {
+            let r = world.riders.get_mut(&id).unwrap();
+            r.lane = 1.0;
+            r.target_lane = 1;
+        }
+
+        ride(&mut world, DT, &powers(&line, 200.0));
+
+        for (i, id) in line.into_iter().enumerate() {
+            let draft = world.rider(id).unwrap().draft;
+            assert!(draft <= 0.5 + 1e-12, "wheel {}: {draft}", i + 1);
+        }
+    }
+
     /// A tandem 3.5 m behind a solo rider in lane 1, after one tick: the
     /// world and both seats.
     fn a_tandem_3_5_m_behind() -> (World, Vec<RiderId>) {
