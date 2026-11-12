@@ -30,7 +30,7 @@ import {
   withRivers,
 } from "./features.js";
 import { COAST, SEA_LEVEL, coastHeight, islandShape } from "./island.js";
-import { MeshBuilder } from "./meshBuilder.js";
+import { MeshBuilder, verticalShade } from "./meshBuilder.js";
 import { inStretch, resolveZones } from "./zones.js";
 import { add, cellKey, normalize, placement, scale } from "./math.js";
 import { fbm, seededRandom, valueNoise } from "./noise.js";
@@ -889,7 +889,11 @@ export function buildClouds(route, terrain, { count, spread, biome = temperate }
     for (let p = 0; p < puffs; p += 1) {
       const offset = [(random() - 0.5) * size * style.offset[0], random() * size * style.offset[1], (random() - 0.5) * size * style.offset[2]];
       const r = size * (style.puffRadius[0] + random() * style.puffRadius[1]);
-      mesh.ellipsoid(add([x, y, z], offset), [r, r * style.squash[0], r * style.squash[1]], style.color, style.segments[0], style.segments[1], random() * Math.PI);
+      const center = add([x, y, z], offset);
+      // Greyer underneath: clouds are drawn mostly unlit, so this is what gives them a body.
+      mesh.shaded(verticalShade(center[1] - r * style.squash[0], center[1] + r * style.squash[0] * 0.6, 0.8), () =>
+        mesh.ellipsoid(center, [r, r * style.squash[0], r * style.squash[1]], style.color, style.segments[0], style.segments[1], random() * Math.PI),
+      );
     }
   }
   return mesh.build();

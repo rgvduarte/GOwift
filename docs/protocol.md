@@ -68,8 +68,8 @@ Workout riders are exempt.
 | `type` | Fields |
 | --- | --- |
 | `welcome` | `protocol_version`, `server_name`, `server_version`, `auth_mode`, `route_id`, `grace_s` (how long a dropped rider is kept) |
-| `joined` | `rider_id`, `resume_token` (send it back in `join` after a dropped connection), `physics` (`mass_kg` rider plus bike, `cda_m2`, `crr`, `air_density`: what the server rides you with on a solo bike) |
-| `state` | `tick`, `riders[]` (the riders around you), `race` (your route's, see below), `route_riders` (`humans`, `bots`, `remote`?: everyone on your route; `remote` counts riders of other apps, see below, and is left out when 0), `event`? (your route's scheduled event, see below), `vehicle`? (your own vehicle, see below) — about 4 Hz |
+| `joined` | `rider_id`, `resume_token` (send it back in `join` after a dropped connection), `physics` (`mass_kg` rider plus bike, `cda_m2`, `crr`, `air_density` at sea level: what the server rides you with on a solo bike; `state.drag_factor` adds the draft and the thinner air higher up) |
+| `state` | `tick`, `riders[]` (the riders around you), `race` (your route's, see below), `route_riders` (`humans`, `bots`, `remote`?: everyone on your route; `remote` counts riders of other apps, see below, and is left out when 0), `event`? (your route's scheduled event, see below), `vehicle`? (your own vehicle, see below), `drag_factor` (what the server scaled your air drag `½·ρ·CdA·v²` by in the last tick, drafting and the thinner air at your altitude included, rounded to 0.001: `joined.physics` times this is the drag you ride with, for virtual shifting) and `draft`? (your drag area multiplier from drafting alone, behind and beside the riders ahead, rounded to 0.001, for display; left out in clear air, also when your only shelter is a wheel close behind, which only `drag_factor` carries) — about 4 Hz |
 | `studio_state` | spin studio only, for the rider's room: `tick`, `room` (0-based), `rooms`, `class` (`id`, `name`, `starts_at_s` Unix time, `elapsed_s` — negative in the lobby), `riders[]` — about 4 Hz |
 | `resistance` | `grade_percent` — when the grade under the rider changes |
 | `event` | `event` with a `kind` (see below) |
@@ -248,6 +248,9 @@ A privacy link (#12) added `privacy_url` to `/api/info` within version 2.
 Opt-in analytics (#12) added `analytics` to `/api/info` within version 2.
 Community distance counters (#65) added `distance_m` to `/api/info` within version 2.
 Physics calibration (#22) added `physics` to `joined` within version 2.
+The server's own draft added `state.drag_factor` and `state.draft` within
+version 2; a client that finds no `drag_factor` is talking to an older server
+and estimates the draft itself.
 AFK warnings added `afk_warning`, `stay` and `afk_timeout` within version 2.
 Reconnecting (#73) added `leave`, `resume_token` and `resume` in `join`,
 `resume_token` in `joined` and `grace_s` in `welcome` within version 2. An

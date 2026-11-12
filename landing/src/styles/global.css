@@ -23,12 +23,31 @@
 
   --font: "Helvetica Neue", Helvetica, Arial, system-ui, sans-serif;
   --display: var(--font);
-  --max: 68rem;
-  --gutter: clamp(1.25rem, 4vw, 2.5rem);
+  --max: 72rem;
+  --gutter: clamp(1rem, 4vw, 2.5rem);
+
+  /* Spacing: one scale for gaps and padding, so rhythm stays even. */
+  --s-1: 0.5rem;
+  --s-2: 1rem;
+  --s-3: 1.5rem;
+  --s-4: 2rem;
+  --s-6: 3rem;
+  --s-8: 4rem;
+  --s-12: 6rem;
+  --section: clamp(4rem, 8vw, 6.5rem);
+
+  /* Type: large, tight headings over calm body text. */
+  --fs-eyebrow: 0.8125rem;
+  --fs-body: 1.0625rem;
+  --fs-card: 1rem;
+  --fs-h3: 1.25rem;
+  --fs-h2: clamp(2rem, 4.2vw, 3.25rem);
+  --fs-h1: clamp(3rem, 9.5vw, 8rem);
+  --lede: rgb(255 255 255 / 0.86);
 
   font-family: var(--font);
   font-size: 100%;
-  line-height: 1.6;
+  line-height: 1.55;
 }
 
 * {
@@ -37,16 +56,21 @@
 
 body {
   margin: 0;
-  /* The GD ground: near black with soft grey glows. */
-  background:
-    radial-gradient(60rem 45rem at 10% 0%, rgb(138 138 142 / 0.16), transparent 70%),
-    radial-gradient(50rem 40rem at 100% 45%, rgb(107 107 112 / 0.12), transparent 70%),
-    radial-gradient(45rem 35rem at 80% 100%, rgb(90 90 95 / 0.12), transparent 70%),
-    var(--bg);
-  background-attachment: fixed;
+  /* The GD ground: near black. Its grey glows sit behind the glass where they
+     are needed (.glow), scrolling with the page: a fixed background is
+     ignored on iOS and repainted on every scroll on low-end Android. */
+  background: var(--bg);
   color: var(--text);
-  font-size: 1.0625rem;
+  font-size: var(--fs-body);
   -webkit-font-smoothing: antialiased;
+  /* The footer stays at the bottom of short pages (404). */
+  min-height: 100svh;
+  display: flex;
+  flex-direction: column;
+}
+
+main {
+  flex: 1;
 }
 
 img {
@@ -82,12 +106,16 @@ h3 {
 }
 
 h2 {
-  font-size: clamp(2.25rem, 5vw, 3.5rem);
+  font-size: var(--fs-h2);
+  line-height: 1.02;
+  letter-spacing: -0.035em;
+  max-width: 18ch;
 }
 
 h3 {
-  font-size: 1.5rem;
-  font-weight: 700;
+  font-size: var(--fs-h3);
+  line-height: 1.15;
+  letter-spacing: -0.02em;
 }
 
 p {
@@ -124,12 +152,53 @@ code {
   color: var(--text);
   font-weight: 700;
   text-decoration: none;
-  white-space: nowrap;
+  /* Long labels wrap rather than push the page wider than a phone. */
+  justify-content: center;
+  text-align: center;
+  min-height: 44px;
 }
 
 .button:hover {
   color: var(--text);
   border-color: var(--muted);
+}
+
+/* Motion is a nicety: only for visitors who haven't asked their system to
+   reduce it, and the page reads the same without it. Only on screens: paper
+   doesn't scroll, so a section waiting to rise in would print blank. */
+@media screen and (prefers-reduced-motion: no-preference) {
+  .button {
+    transition:
+      background-color 0.15s,
+      border-color 0.15s,
+      transform 0.15s;
+  }
+
+  .button:active {
+    transform: translateY(1px);
+  }
+
+  /* Sections rise in as they scroll into view, where the browser can tie an
+     animation to scrolling (Chrome and Edge, the browsers the app needs).
+     Elsewhere they are simply there: nothing is hidden outside @supports. */
+  @supports (animation-timeline: view()) {
+    /* Longhands on purpose: a shorthand with view() in it is dropped by
+       browsers that only know animation-timeline as a longhand. */
+    .reveal {
+      animation-name: rise;
+      animation-timing-function: linear;
+      animation-fill-mode: both;
+      animation-timeline: view();
+      animation-range: entry 0% cover 22%;
+    }
+  }
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    translate: 0 1.5rem;
+  }
 }
 
 .button.primary {
@@ -146,6 +215,14 @@ code {
 .button.large {
   font-size: 1.125rem;
   padding: 0.85em 1.6em;
+}
+
+/* The header's button: a 44 px touch target that doesn't outweigh the logo.
+   Its short label stays on one line, so the header stays one row. */
+.button.compact {
+  font-size: 1rem;
+  padding: 0.45em 1.1em;
+  white-space: nowrap;
 }
 
 .skip {
@@ -189,6 +266,40 @@ code {
 .prose li {
   margin-bottom: 0.5rem;
   max-width: 68ch;
+}
+
+/* A small label above a heading. */
+.eyebrow {
+  display: block;
+  font-size: var(--fs-eyebrow);
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  line-height: 1.3;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+/* A soft grey light behind a group of glass cards: the GD ground's glow,
+   which also gives the cards' blur something to blur. */
+.glow {
+  position: relative;
+  isolation: isolate;
+}
+
+.glow::before {
+  content: "";
+  position: absolute;
+  /* Taller than the section, so the light fades out instead of being cut
+     off at its top and bottom edges. Each light is at most as large as this
+     box, so it is never cut off on a short page either. */
+  inset: calc(-1 * var(--s-12)) 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(closest-side, rgb(160 160 166 / 0.2), transparent) var(--glow-at, 15% 30%) /
+      min(52rem, 100%) min(40rem, 100%) no-repeat,
+    radial-gradient(closest-side, rgb(120 120 126 / 0.14), transparent) var(--glow-at-2, 90% 85%) /
+      min(44rem, 100%) min(34rem, 100%) no-repeat;
 }
 
 /* A GD glass card: white at 9 %, a 22 % outline that catches the light on

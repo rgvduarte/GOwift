@@ -100,6 +100,7 @@
     <link rel="modulepreload" href="js/view3d/biomes/index.js" />
     <link rel="modulepreload" href="js/view3d/highlight.js" />
     <link rel="modulepreload" href="js/view3d/menuCamera.js" />
+    <link rel="modulepreload" href="js/view3d/quality.js" />
     <link rel="modulepreload" href="js/view3d/studioScene.js" />
     <link rel="modulepreload" href="js/view3d/view3d.js" />
     <link rel="modulepreload" href="js/view3d/worldScene.js" />
@@ -149,14 +150,18 @@
     <link rel="modulepreload" href="js/view3d/noise.js" />
     <link rel="modulepreload" href="js/view3d/renderer.js" />
     <link rel="modulepreload" href="js/view3d/riderModel.js" />
+    <link rel="modulepreload" href="js/view3d/riderMotion.js" />
     <link rel="modulepreload" href="js/view3d/riderPose.js" />
     <link rel="modulepreload" href="js/view3d/statues.js" />
     <link rel="modulepreload" href="js/view3d/structures.js" />
     <link rel="modulepreload" href="js/view3d/vehicleModel.js" />
     <link rel="modulepreload" href="js/view3d/vehicleScene.js" />
+    <link rel="modulepreload" href="js/view3d/water.js" />
     <link rel="modulepreload" href="js/view3d/world.js" />
     <link rel="modulepreload" href="js/workout/plan.js" />
+    <link rel="modulepreload" href="js/view3d/atmosphere.js" />
     <link rel="modulepreload" href="js/view3d/banners.js" />
+    <link rel="modulepreload" href="js/view3d/biomes/helpers.js" />
     <link rel="modulepreload" href="js/view3d/biomes/winter/buildings.js" />
     <link rel="modulepreload" href="js/view3d/biomes/winter/flora.js" />
     <link rel="modulepreload" href="js/view3d/biomes/winter/palette.js" />
@@ -165,7 +170,6 @@
     <link rel="modulepreload" href="js/view3d/features.js" />
     <link rel="modulepreload" href="js/view3d/weather.js" />
     <link rel="modulepreload" href="js/view3d/zones.js" />
-    <link rel="modulepreload" href="js/view3d/biomes/helpers.js" />
     <link rel="modulepreload" href="js/view3d/biomes/winter/animals.js" />
     <link rel="modulepreload" href="js/view3d/pixelFont.js" />
     <!-- /modulepreload -->
@@ -522,7 +526,7 @@
               <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="6" width="18" height="13" rx="2.5" /><path d="M8.5 6l1.5-2.5h4L15.5 6" /><circle cx="12" cy="12.5" r="3.5" /></svg>
               <span id="photo-count" class="photo-badge" hidden>0</span>
             </button>
-            <button type="button" class="text-button glass" id="hud-view" title="View: camera, layout, time of day" aria-haspopup="dialog" aria-controls="view-popover" aria-expanded="false" data-i18n-attr="title:ride.viewTitle">
+            <button type="button" class="text-button glass" id="hud-view" title="View: camera, layout, time of day, graphics" aria-haspopup="dialog" aria-controls="view-popover" aria-expanded="false" data-i18n-attr="title:ride.viewTitle">
               <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.5-6.5 10-6.5S22 12 22 12s-3.5 6.5-10 6.5S2 12 2 12z" /><circle cx="12" cy="12" r="3" /></svg>
               <span data-i18n="ride.view">View</span>
             </button>
@@ -817,7 +821,7 @@
                     </div>
                     <div id="scene-controls" class="scene-controls">
                       <button type="button" id="camera-mode" class="toggle" title="Camera (C)" data-i18n="drawer.cameraChase" data-i18n-attr="title:ride.cameraC">Camera: Chase</button>
-                      <button type="button" id="quality-mode" class="toggle" title="Lower this if the ride stutters" data-i18n="drawer.graphicsHigh" data-i18n-attr="title:drawer.lowerThisIfThe">Graphics: High</button>
+                      <button type="button" id="quality-mode" class="toggle" title="Lower this if the ride stutters. Until you pick, it suits this device; edge smoothing follows after a reload" data-i18n="drawer.graphicsHigh" data-i18n-attr="title:drawer.lowerThisIfThe">Graphics: High</button>
                       <select id="time-mode" aria-label="Time of day" title="Time of day (T)" data-i18n-attr="title:drawer.timeOfDayT,aria-label:drawer.timeOfDay">
                         <option value="auto" data-i18n="drawer.timeAuto">Time: auto</option>
                         <option value="day" data-i18n="drawer.timeDay">Day</option>

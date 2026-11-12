@@ -347,8 +347,9 @@ class StubRenderer {
   viewports = [];
   pass = null;
   begins = 0;
-  begin() {
+  begin(frame) {
     this.begins += 1;
+    this.frame = frame;
   }
   draw(handle, model, tint) {
     this.draws.push({ handle, model, tint, pass: this.pass });
@@ -356,6 +357,9 @@ class StubRenderer {
   drawBright() {}
   drawCloudLayer() {}
   drawTransparent() {}
+  drawSky() {
+    this.skyAfter = this.draws.length;
+  }
   uploadWeather(data) {
     return { data };
   }
@@ -391,6 +395,21 @@ function gymView(gyms, biome = "temperate", weather = null, renderer = new StubR
 }
 const workoutRider = { id: 7, name: "Ana", distance: 100, lane: 1, speed: 0, power: 0, device: "workout", exercise: null, exerciseSince: 10 };
 const colors = { me: "#ff0000", human: "#00ff00", bot: "#0000ff" };
+
+test("the outdoor world fogs towards the sky along each view ray", () => {
+  const { view, renderer } = gymView([]);
+  view.camera.update(100, 1, 0);
+  view.render({ riders: [], myId: null, timeS: 12, colors });
+  assert.equal(renderer.frame.scatter, 1);
+});
+
+test("the sky is drawn after the whole opaque world, so only the bare far plane is shaded", () => {
+  const { view, renderer } = gymView([]);
+  const me = { id: 1, name: "Me", distance: 100, lane: 1, speed: 8, power: 200 };
+  view.render({ riders: [me], myId: 1, timeS: 3, colors });
+  assert.ok(renderer.draws.length > 0);
+  assert.equal(renderer.skyAfter, renderer.draws.length);
+});
 
 test("the view resolves the scene's biome for its sky", () => {
   assert.equal(gymView([]).view.biome.id, "temperate");
@@ -879,6 +898,69 @@ test("my best lap's ghost is drawn see-through, casting no shadow, never solid",
   const solidAtGhost = (list) => list.filter((d) => d.handle === bike && Math.abs(d.model[12] - road[0]) < 0.01 && Math.abs(d.model[14] - road[2]) < 0.01);
   assert.equal(solidAtGhost(renderer.draws).length, 0, "not drawn solid");
   assert.equal(solidAtGhost(renderer.casters).length, 0, "no shadow");
+});
+
+// --- riders' body motion -----------------------------------------------------------
+
+/** How far each frame's bike of `id` leaned off upright (radians), riding `seconds` on the flat first side of the square. */
+function bikeLeans(rider, { seconds = 1.5, myId = 1, myFtp } = {}) {
+  const { view, renderer } = gymView([]);
+  const bike = view.bodies[riderLook(rider.id).variant];
+  const scale = riderLook(rider.id).scale;
+  const leans = [];
+  // The camera stays back at the start, so another rider is out of label range (no DOM here).
+  view.camera.update(0, 1, 0);
+  for (let t = 0; t <= seconds; t += 0.05) {
+    renderer.draws = [];
+    view.render({ riders: [rider], myId, myCadence: 90, myFtp, timeS: 10 + t, colors });
+    const model = renderer.draws.find((d) => d.handle === bike).model;
+    leans.push(Math.acos(Math.min(1, model[5] / scale)));
+  }
+  return leans;
+}
+
+const bot = { id: 42, name: "Bot", distance: 100, lane: 2, speed: 12, power: 450, is_bot: true };
+
+test("a sprinting bot gets out of the saddle and rocks its bike", () => {
+  assert.ok(Math.max(...bikeLeans({ ...bot, move: "sprint" })) > 0.08);
+});
+
+test("a rider cruising in the saddle keeps the bike upright", () => {
+  assert.ok(Math.max(...bikeLeans({ ...bot, power: 200 })) < 0.01);
+});
+
+test("I get out of the saddle when I surge well over my FTP", () => {
+  const me = { id: 1, name: "Me", distance: 100, lane: 1, speed: 10, power: 500 };
+  assert.ok(Math.max(...bikeLeans(me, { myFtp: 250 })) > 0.08);
+  assert.ok(Math.max(...bikeLeans(me, { myFtp: 400 })) < 0.01);
+});
+
+// --- water ----------------------------------------------------------------------
+
+/** The water shading the sea and the rivers were drawn with, at `quality` in `biome`. */
+function waterDrawn(biome, quality) {
+  const { view, renderer } = gymView([], biome, null, new TransparentRecorder());
+  view.setQuality(quality);
+  view.camera.update(100, 1, 0);
+  view.render({ riders: [], myId: null, timeS: 3, colors });
+  const of = (handle) => renderer.transparent.find((d) => d.handle === handle).options.water;
+  return { sea: of(view.water), river: of(view.rivers) };
+}
+
+test("the sea moves with waves on high and still mirrors the sky on low", () => {
+  assert.deepEqual([waterDrawn("temperate", "high").sea, waterDrawn("temperate", "low").sea], [2, 1]);
+});
+
+test("a flowing river is water, a frozen one is not", () => {
+  assert.ok(waterDrawn("temperate", "high").river > 0);
+  assert.equal(waterDrawn("winter", "high").river, 0);
+});
+
+test("the waves follow the clock", () => {
+  const { view, renderer } = gymView([]);
+  view.camera.update(100, 1, 0);
+  view.render({ riders: [], myId: null, timeS: 42, colors });
+  assert.equal(renderer.frame.timeS, 42);
 });
 
 test("past the ends of a route that isn't a loop the road keeps its direction", () => {

@@ -188,6 +188,11 @@ impl Network {
         self.edge(key.0).position_at(self.along(key, offset))
     }
 
+    /// Elevation in metres `offset` metres into road `key`.
+    pub fn elevation(&self, key: RoadKey, offset: f64) -> f64 {
+        self.edge(key.0).elevation_at(self.along(key, offset))
+    }
+
     /// Grade in percent in riding direction.
     pub fn grade(&self, key: RoadKey, offset: f64) -> f64 {
         self.edge(key.0).grade_at(self.along(key, offset)) * f64::from(key.1)
@@ -287,6 +292,14 @@ pub(crate) mod tests {
         assert_eq!(net.position((left, -1), 100.0), (1000.0, 400.0));
         assert!((net.grade((left, 1), 100.0) - 2.0).abs() < 1e-9);
         assert!((net.grade((left, -1), 100.0) + 2.0).abs() < 1e-9);
+    }
+
+    #[test]
+    fn elevations_follow_the_riding_direction() {
+        let net = crossroads();
+        let left = net.edge_index("left").unwrap();
+        assert!((net.elevation((left, 1), 100.0) - 2.0).abs() < 1e-9);
+        assert!((net.elevation((left, -1), 100.0) - 8.0).abs() < 1e-9);
     }
 
     #[test]

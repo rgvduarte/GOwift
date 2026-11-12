@@ -65,7 +65,17 @@ that died after its rider was taken over by a new one can't touch the rider.
 3. Drafting: the nearest rider up to 6.5 m ahead in the same lane reduces CdA by up to 30 %,
    most from 2 m (a bike length, middle to middle) in
    (on your route, or on the same road in the same direction on another route).
+   Deeper in a line of such wheels it saves up to 40, 45 and 48 % (as far as
+   the links up the line are close), each rider just ahead in a neighbouring
+   lane adds up to 4 %, up to 60 % in a bunch, and
+   a rider with a wheel close behind saves up to 2.6 %
+   ([ADR 25](adr/0025-group-drafting-from-the-server.md)). Each client gets its
+   rider's result in `state` (`drag_factor`, `draft`).
 4. Physics integrates speed; position advances and wraps around the loop.
+   The wheels' inertia counts as about 1.45 kg more to accelerate, and the push
+   is capped at 0.5 g, the rear tyre's grip, so a standing start doesn't leap;
+   the air thins with the road's elevation, as in the standard atmosphere
+   ([ADR 26](adr/0026-inertia-grip-and-thin-air.md)).
    Nobody rides through the wheel ahead: closing in, a rider slows to sit on
    it 2 m behind, and pulls out into a free neighbouring lane to pass when it
    would be faster than that rider even in clear air (humans too: the server
@@ -140,11 +150,12 @@ dependencies (see [ADR 0005](adr/0005-own-webgl-renderer.md)):
 
 | Module | Role |
 | --- | --- |
-| `world.js` | Roads with verge, markings and roadside posts; terrain blended to every road of the map (fine near the roads, coarse to the horizon) with farmland patches; firs, leafy trees, bushes and rocks in small woods; arches; the sea with far-off islands, clouds and baked tree shadows — all from the route files and their seeds. Routes on one map ([ADR 0010](adr/0010-one-connected-world.md)) are drawn together: shared terrain from the map seed, every road and every route's scenery; markers, arches and spectators only for the ridden route |
+| `world.js` | Roads with verge, markings and roadside posts; terrain blended to every road of the map (fine near the roads, coarse to the horizon) with farmland patches; firs, leafy trees, bushes and rocks in small woods; arches; the sea with far-off islands, clouds and baked tree shadows — all from the route files and their seeds. Trees, bushes, rocks and clouds bake ambient occlusion into their vertex colours (`MeshBuilder.shaded`: darker at the foot and under the crowns, clouds greyer underneath), so they read as volumes on every tier, shadow map or not. Routes on one map ([ADR 0010](adr/0010-one-connected-world.md)) are drawn together: shared terrain from the map seed, every road and every route's scenery; markers, arches and spectators only for the ridden route |
 | `island.js` | The map as an island: coast a seeded margin beyond the outermost roads, beaches, cliffs, sea floor |
 | `menuCamera.js`, `highlight.js` | Start menu: drone orbit over the island, glide down to the picked route and follow it (cuts with reduced motion); glowing band on the picked route with climbs, sprints and a start beacon |
 | `worldScene.js`, `worldWorker.js` | Build the world in a module worker and hand the meshes over without copying (falls back to building in place) |
-| `riderModel.js` | Low-poly cyclist; jersey parts are tinted (me orange, humans blue, bots in their team's kit, see `view/botKits.js`, else grey); skin, helmet, bike and size vary per rider (deterministic from the id); cranks turn, legs follow the pedals by two-bone IK (`legPose`), spoked wheels spin |
+| `riderModel.js` | Low-poly cyclist; jersey parts are tinted (me orange, humans blue, bots in their team's kit, see `view/botKits.js`, else grey); skin, helmet, bike and size vary per rider (deterministic from the id); cranks turn, legs follow the pedals by two-bone IK (`legPose`), spoked wheels spin; out of the saddle the hips move forward over the cranks and the hands stay on the hoods by arm IK (`riderStance`) |
+| `riderMotion.js` | When riders get out of the saddle (sprints, attacks and answering them, steep ramps for climbers by habit, my own surges over 1.4 × FTP; held 1.5 s so a wobbling grade cannot flicker them), the bike's rock with the strokes and the body's lean against it, and each other rider's own cadence so a pack never pedals in lock-step |
 | `zones.js` | Scenery zones from the route file, or seeded defaults (village, river, forest) |
 | `features.js` | River carving and water, stone bridge, village (houses, church, pavements, lamps, signs), farms with animals, wind turbines, spectators (at the finish, climbs and sprints, lining the last 600 m of each climb), guard rails, warning signs, flamme rouge |
 | `lemonModel.js` | The golden lemon floating over the road (lemons are placed by `ride/lemons.js`) |
@@ -153,8 +164,9 @@ dependencies (see [ADR 0005](adr/0005-own-webgl-renderer.md)):
 | `crowd.js` | How much of the crowd is out for the riders online, and how each spectator cheers a rider coming by |
 | `chunks.js` | Splits the static world into 300 m tiles; only tiles in view are drawn and only tiles near the rider cast shadows |
 | `lighting.js` | Time-of-day presets (day, golden hour, dusk, auto by local clock) and the sun's shadow frustum |
+| `atmosphere.js` | The sky's colour along a view ray (gradient, sun halo, a broad glow around the sun), shared by the sky pass and the fog, so far land fades into the sky behind it without a seam; the GLSL chunk is written from the same constants as the tested maths |
 | `chaseCamera.js` | Road-anchored cameras: chase, close, drone and TV side, with blended switching |
-| `renderer.js` | Shadow-map pass (depth from the sun), sky pass (gradient + sun glow), lit pass (PCF-filtered sun shadows, hemisphere light, rim light, distance and height fog, tone mapping), blended pass (water, contact shadows) |
+| `renderer.js` | Shadow-map pass (depth from the sun), lit pass (PCF-filtered sun shadows, hemisphere light, rim light, distance and height fog towards the sky along the view ray, tone mapping), sky pass (gradient + sun glow, after the opaque world so only bare far plane is shaded), blended pass (water that mirrors the sky by Fresnel with the sun's glint and, on the high tier, moving waves from `water.js`; contact shadows) |
 | `view3d.js` | Puts it together per frame; HTML name labels over the canvas |
 
 The 3D view consumes exactly the same smoothed rider list as the 2D views, so
@@ -162,7 +174,11 @@ no server or protocol change was needed. The world is built right after
 joining, in a worker (a few seconds for the bundled map of three routes), while
 the ride already shows the 2D view. <kbd>V</kbd> toggles 3D and 2D, <kbd>C</kbd>
 cycles cameras, <kbd>T</kbd> cycles the time of day; *Graphics: Low* turns off the
-shadow map and grass for weaker GPUs. Devices without WebGL 2 fall back to 2D.
+shadow map, grass, high-DPI drawing and moving waves for weaker GPUs. Until the
+rider picks, `quality.js` picks the tier for the device (software GL, data saver
+and very small devices start low) and drops an automatic high tier to low once if
+frames stay above 40 ms ([ADR 0027](adr/0027-quality-tiers.md)). Devices without
+WebGL 2 fall back to 2D.
 
 ### 2D view
 
@@ -220,8 +236,8 @@ route's profile show at once; the world is built in the worker and fades in.
 Picking a route flies the camera down to it and highlights it; the world is
 rebuilt for that route once the pick settles. The ride's own 3D canvas sits in
 the menu's background until joining, so the built view carries straight into
-the ride. Without WebGL 2, with *Graphics: Low* or with *Data saver* on, the
-menu shows the 2D map instead and builds nothing up front.
+the ride. Without WebGL 2, with *Graphics: Low* picked by the rider or with
+*Data saver* on, the menu shows the 2D map instead and builds nothing up front.
 
 While riding, `ride/rideAutosave.js` writes the recorder (with its pauses),
 the ride's route and the resume token to IndexedDB every 10 s and when the

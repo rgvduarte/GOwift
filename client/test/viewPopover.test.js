@@ -103,11 +103,11 @@ test("the current choices show as pressed", () => {
   const root = fakeEl();
   const popover = createViewPopover({
     root, button: fakeEl("button"), controls: viewControls({ studio: false }), stack: createPanelStack(),
-    matchNarrow: fakeNarrow(false), onPick() {}, doc, selected: () => ({ camera: "side", layout: "auto", mode: "3d", time: "dusk" }),
+    matchNarrow: fakeNarrow(false), onPick() {}, doc, selected: () => ({ camera: "side", layout: "auto", mode: "3d", time: "dusk", quality: "low" }),
   });
   popover.open();
   const pressed = root.all().filter((el) => el.getAttribute("aria-pressed") === "true").map((el) => `${el.dataset.kind}:${el.dataset.id}`);
-  assert.deepEqual(pressed, ["camera:side", "layout:auto", "mode:3d", "time:dusk"]);
+  assert.deepEqual(pressed, ["camera:side", "layout:auto", "mode:3d", "time:dusk", "quality:low"]);
 });
 
 test("a narrow screen shows it as a bottom sheet", () => {
@@ -139,10 +139,26 @@ test("closing with focus elsewhere leaves focus alone", () => {
   assert.equal(button.focused ?? 0, 0);
 });
 
-test("2D hides the camera and time rows", () => {
+test("2D hides the camera, time and graphics rows", () => {
   const { popover, root } = setup({ selected: () => ({ camera: "chase", mode: "2d" }) });
   popover.open();
-  assert.deepEqual([rowHidden(root, "camera"), rowHidden(root, "time"), rowHidden(root, "layout")], [true, true, false]);
+  assert.deepEqual(
+    [rowHidden(root, "camera"), rowHidden(root, "time"), rowHidden(root, "quality"), rowHidden(root, "layout")],
+    [true, true, true, false],
+  );
+});
+
+test("picking a graphics tier calls onPick", () => {
+  const { popover, picks, option } = setup();
+  popover.open();
+  option("quality", "high").fire("click");
+  assert.deepEqual(picks, [["quality", "high"]]);
+});
+
+test("the studio popover offers graphics, which it draws in 3D only", () => {
+  const { popover, root, option } = setup({ studio: true, selected: () => ({ camera: "seat", mode: "2d" }) });
+  popover.open();
+  assert.deepEqual([option("quality", "low") !== undefined, rowHidden(root, "quality")], [true, false]);
 });
 
 test("without a 3D view the 3D option is disabled", () => {

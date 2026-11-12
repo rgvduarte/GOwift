@@ -2,7 +2,7 @@
 // The elevation profile of a real route, drawn as the ground the hero stands
 // on: the area below the line is filled with the page colour, climbs are
 // traced red and sprints blue, as on the app's profile.
-import { loadProfile } from "../lib/route";
+import { loadProfile, simplifyProfile } from "../lib/route";
 
 interface Props {
   route: string;
@@ -15,8 +15,11 @@ const TOP = 12; // room for the stroke at the highest point
 const x = (d: number) => (d / profile.lengthM) * W;
 const y = (e: number) => TOP + (1 - (e - profile.minEle) / (profile.maxEle - profile.minEle)) * (H - TOP - 28);
 
+// About two points per 4 units of the 1000-wide drawing: smooth at any
+// width, with every peak and dip, at half the path data.
+const samples = simplifyProfile(profile.samples, W / 4);
 const line = (from = 0, to = profile.lengthM) =>
-  profile.samples
+  samples
     .filter(([d]) => d >= from && d <= to)
     .map(([d, e], i) => `${i ? "L" : "M"}${x(d).toFixed(1)},${y(e).toFixed(1)}`)
     .join("");
@@ -27,8 +30,10 @@ const km = (m: number) => (m / 1000).toFixed(1);
 <figure class="profile">
   <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" aria-hidden="true">
     <path class="ground" d={area} />
-    <path class="road" d={line()} />
-    {profile.segments.map((s) => <path class={s.type} d={line(s.from, s.to)} />)}
+    <g class="trace">
+      <path class="road" d={line()} />
+      {profile.segments.map((s) => <path class={s.type} d={line(s.from, s.to)} />)}
+    </g>
   </svg>
   <figcaption>
     {profile.name}: {km(profile.lengthM)} km, {Math.round(profile.climbM)} m of climbing.
@@ -66,6 +71,23 @@ const km = (m: number) => (m / 1000).toFixed(1);
   .sprint {
     stroke: var(--sprint);
     stroke-width: 4;
+  }
+  /* The route draws itself from start to finish, once. Only the line moves:
+     the ground stays, so the hero never jumps. A clip-path follows the
+     stretched viewBox, where a dash offset would be distorted. Not on paper,
+     which would catch it half drawn. */
+  @media screen and (prefers-reduced-motion: no-preference) {
+    .trace {
+      animation: draw 2.4s cubic-bezier(0.2, 0.7, 0.2, 1) 0.3s backwards;
+    }
+  }
+  @keyframes draw {
+    from {
+      clip-path: inset(-50% 100% -50% 0);
+    }
+    to {
+      clip-path: inset(-50% 0 -50% 0);
+    }
   }
   figcaption {
     /* Full width (it covers whatever is behind), text aligned with .wrap. */

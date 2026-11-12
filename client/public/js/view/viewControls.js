@@ -1,5 +1,5 @@
-// What the View popover offers on this ride: cameras, layouts, 3D/2D and time
-// of day. Pure: no DOM; labels come translated from i18n.
+// What the View popover offers on this ride: cameras, layouts, 3D/2D, time of
+// day and graphics. Pure: no DOM; labels come translated from i18n.
 import { t } from "../i18n/i18n.js";
 import { CAMERA_MODES } from "../view3d/chaseCamera.js";
 import { TIME_MODES } from "../view3d/lighting.js";
@@ -15,8 +15,9 @@ const TIME_KEYS = { auto: "viewPopover.timeAuto", day: "drawer.timeDay", golden:
 const option = (id, label) => ({ id, label });
 
 /**
- * `{ cameras, layouts, modes, showTime, times }`. The spin studio has its own
- * cameras, no layouts, only a 3D view and no time of day.
+ * `{ cameras, layouts, modes, showTime, times, qualities }`. The spin studio has
+ * its own cameras, no layouts, only a 3D view and no time of day; both offer the
+ * graphics tiers (docs/adr/0027-quality-tiers.md).
  */
 export function viewControls({ studio }) {
   const cameraIds = studio ? STUDIO_CAMERAS : Object.keys(CAMERA_MODES);
@@ -26,5 +27,6 @@ export function viewControls({ studio }) {
     modes: studio ? [] : [option("3d", "3D"), option("2d", "2D")],
     showTime: !studio,
     times: studio ? [] : TIME_MODES.map((id) => option(id, t(TIME_KEYS[id]))),
+    qualities: [option("high", t("graphics.high")), option("low", t("graphics.low"))],
   };
 }

@@ -42,7 +42,7 @@ world of its own and is not confirmed against the official course yet (see
 | Field | Meaning |
 | --- | --- |
 | `description` | Optional one-liner for the route picker. |
-| `points` | `[x, y, elevation]` in metres. At least two points. |
+| `points` | `[x, y, elevation]` in metres, elevation above sea level (the air thins with it, see [ADR 26](adr/0026-inertia-grip-and-thin-air.md)). At least two points. |
 | `loop` | Routes are ridden as loops; a closing segment to the first point is added if needed. |
 | `lanes` | Number of lanes (1 or more). |
 | `seed` | Seed for client-side decoration (trees, villages, farms) so every client draws the same world. |

@@ -10,6 +10,15 @@ use crate::names;
 use crate::physics::{self, StepInput};
 use crate::vehicle::{draw_code, summed_power, Vehicle, VehicleId, VehicleKind};
 
+/// The shelter a vehicle rides with where its captain is (see `Shelter`).
+#[derive(Debug, Clone, Copy)]
+pub(super) struct VehicleShelter {
+    /// The CdA multiplier from the riders around.
+    pub factor: f64,
+    /// Its drafting part, without the gain from a wheel behind.
+    pub draft: f64,
+}
+
 impl World {
     pub fn vehicle(&self, id: VehicleId) -> Option<&Vehicle> {
         self.vehicles.get(&id)
@@ -311,15 +320,16 @@ impl World {
 
     /// One physics step per vehicle: the seats' summed power pushes the
     /// vehicle along its captain's road, and every seat takes the captain's
-    /// place. `drafts` holds each vehicle's draft factor.
-    pub(super) fn step_vehicles(&mut self, dt: f64, drafts: &[(VehicleId, f64)]) {
+    /// place. `drafts` holds each vehicle's shelter; the air's thinness
+    /// where the captain rides comes on top.
+    pub(super) fn step_vehicles(&mut self, dt: f64, drafts: &[(VehicleId, VehicleShelter)]) {
         let lane_step = dt / self.config.lane_change_s.max(1e-6);
         let roads = Roads {
             routes: &self.routes,
             steps: &self.steps,
             network: self.network.as_ref(),
         };
-        for &(id, cda_factor) in drafts {
+        for &(id, shelter) in drafts {
             let Some(vehicle) = self.vehicles.get(&id) else {
                 continue;
             };
@@ -339,6 +349,7 @@ impl World {
             };
 
             let grade = roads.grade(captain);
+            let cda_factor = shelter.factor * roads.thin_air(captain, &self.config.physics);
             captain.speed = physics::step_speed(
                 &self.config.physics,
                 &StepInput {
@@ -369,6 +380,8 @@ impl World {
                 r.target_lane = c.target_lane;
                 r.turn = c.turn;
                 r.odometer += advance;
+                r.draft = shelter.draft;
+                r.drag_factor = cda_factor;
             }
         }
     }
@@ -412,6 +425,8 @@ impl World {
                 boxed_s: 0.0,
                 pass_urge: 0.0,
                 accel: 0.0,
+                draft: 1.0,
+                drag_factor: 1.0,
             },
         );
         self.events.push(WorldEvent::RiderJoined {
@@ -931,6 +946,146 @@ mod tests {
     }
 
     #[test]
+    fn every_wheel_of_a_line_behind_a_beer_bike_saves_at_least_half() {
+        let mut world = empty_world(flat_loop(10_000.0));
+        let captain = human(&mut world, "Captain", 3.0);
+        world
+            .create_vehicle(captain, VehicleKind::BeerBike { seats: 5 }, false, &no_codes_taken)
+            .unwrap();
+        place(&mut world, captain, 106.0, 8.0);
+        let line: Vec<RiderId> = [104.0, 102.0, 100.0]
+            .into_iter()
+            .enumerate()
+            .map(|(i, at)| {
+                let id = human(&mut world, &format!("Wheel{i}"), 3.0);
+                place(&mut world, id, at, 8.0);
+                id
+            })
+            .collect();
+        for &id in line.iter().chain([&captain]) {
+            let r = world.riders.get_mut(&id).unwrap();
+            r.lane = 1.0;
+            r.target_lane = 1;
+        }
+
+        ride(&mut world, DT, &powers(&line, 200.0));
+
+        for (i, id) in line.into_iter().enumerate() {
+            let draft = world.rider(id).unwrap().draft;
+            assert!(draft <= 0.5 + 1e-12, "wheel {}: {draft}", i + 1);
+        }
+    }
+
+    /// A tandem with a solo rider 2 m behind in lane 1, after one tick: the
+    /// world and both seats.
+    fn a_tandem_with_a_wheel_behind() -> (World, Vec<RiderId>) {
+        let mut world = empty_world(flat_loop(10_000.0));
+        let captain = human(&mut world, "Captain", 3.0);
+        let follower = human(&mut world, "Follower", 3.0);
+        let id = world
+            .create_vehicle(captain, VehicleKind::Tandem, false, &no_codes_taken)
+            .unwrap();
+        let both = crew(&mut world, id, captain, 1);
+        place(&mut world, captain, 102.0, 8.0);
+        place(&mut world, follower, 100.0, 8.0);
+        for &seat in both.iter().chain([&follower]) {
+            let r = world.riders.get_mut(&seat).unwrap();
+            r.lane = 1.0;
+            r.target_lane = 1;
+        }
+        ride(&mut world, DT, &powers(&both, 150.0));
+        (world, both)
+    }
+
+    #[test]
+    fn a_vehicle_with_a_wheel_behind_rides_with_less_drag() {
+        let (world, both) = a_tandem_with_a_wheel_behind();
+        let expected = 1.0 - SimConfig::default().draft.leader;
+        for seat in both {
+            let factor = world.rider(seat).unwrap().drag_factor;
+            assert!((factor - expected).abs() < 1e-12, "{factor} vs {expected}");
+        }
+    }
+
+    #[test]
+    fn a_vehicle_with_a_wheel_behind_is_not_drafting() {
+        let (world, both) = a_tandem_with_a_wheel_behind();
+        for seat in both {
+            assert_eq!(world.rider(seat).unwrap().draft, 1.0);
+        }
+    }
+
+    /// A tandem 3.5 m behind a solo rider in lane 1, after one tick: the
+    /// world and both seats.
+    fn a_tandem_3_5_m_behind() -> (World, Vec<RiderId>) {
+        let mut world = empty_world(flat_loop(10_000.0));
+        let leader = human(&mut world, "Leader", 3.0);
+        let captain = human(&mut world, "Captain", 3.0);
+        let id = world
+            .create_vehicle(captain, VehicleKind::Tandem, false, &no_codes_taken)
+            .unwrap();
+        let both = crew(&mut world, id, captain, 1);
+        place(&mut world, leader, 103.5, 8.0);
+        place(&mut world, captain, 100.0, 8.0);
+        for &seat in both.iter().chain([&leader]) {
+            let r = world.riders.get_mut(&seat).unwrap();
+            r.lane = 1.0;
+            r.target_lane = 1;
+        }
+        ride(&mut world, DT, &powers(&both, 150.0));
+        (world, both)
+    }
+
+    #[test]
+    fn every_seat_carries_its_vehicles_draft() {
+        let (world, both) = a_tandem_3_5_m_behind();
+        let expected = SimConfig::default().draft.cda_factor(3.5);
+        for seat in both {
+            let r = world.rider(seat).unwrap();
+            assert!(
+                (r.draft - expected).abs() < 1e-12,
+                "{}: {} vs {expected}",
+                r.name,
+                r.draft
+            );
+        }
+    }
+
+    #[test]
+    fn every_seat_carries_its_vehicles_drag_factor() {
+        let (world, both) = a_tandem_3_5_m_behind();
+        let expected = SimConfig::default().draft.cda_factor(3.5);
+        for seat in both {
+            let r = world.rider(seat).unwrap();
+            assert!(
+                (r.drag_factor - expected).abs() < 1e-12,
+                "{}: {} vs {expected}",
+                r.name,
+                r.drag_factor
+            );
+        }
+    }
+
+    #[test]
+    fn every_seat_carries_the_thin_air() {
+        let mut world = empty_world(crate::route::tests::flat_loop_at(10_000.0, 1500.0));
+        let captain = human(&mut world, "Captain", 3.0);
+        let id = world
+            .create_vehicle(captain, VehicleKind::Tandem, false, &no_codes_taken)
+            .unwrap();
+        let both = crew(&mut world, id, captain, 1);
+
+        ride(&mut world, DT, &powers(&both, 150.0));
+
+        let params = physics::PhysicsParams::default();
+        let thin = physics::air_density_at(&params, 1500.0) / params.air_density;
+        for seat in both {
+            let factor = world.rider(seat).unwrap().drag_factor;
+            assert!((factor - thin).abs() < 1e-12, "{factor} vs {thin}");
+        }
+    }
+
+    #[test]
     fn only_the_captain_steers() {
         let mut world = empty_world(square_loop());
         let anna = human(&mut world, "Anna", 3.0);
@@ -1005,8 +1160,10 @@ mod tests {
     }
 
     /// Recorded on c10a43d, before vehicles had their own physics step;
-    /// re-recorded for the calibrated physics, #22.
-    const SOLO_ODOMETER: f64 = 400.957_290_244_504_46;
+    /// re-recorded for the calibrated physics, #22, for wheel inertia (0.32 m
+    /// less from a standing start over the minute) and for air density by
+    /// altitude (0.59 m more in the thinner air 100–110 m up).
+    const SOLO_ODOMETER: f64 = 401.221_248_778_026_5;
 
     #[test]
     fn huge_power_is_capped() {

@@ -3,11 +3,17 @@
  *
  * Passes per frame:
  * 0. shadow — depth of the shadow casters as seen from the sun (shadow map)
- * 1. sky    — full-screen gradient with sun glow (no geometry)
- * 2. opaque — sun (shadowed, PCF-filtered) + sky/ground hemisphere light,
- *             rim light, distance and height fog, tone mapping
- * 3. blended — water and contact shadows, depth-tested but not written
+ * 1. opaque — sun (shadowed, PCF-filtered) + sky/ground hemisphere light,
+ *             rim light, distance and height fog towards the sky's colour
+ *             along the view ray (atmosphere.js), tone mapping
+ * 2. sky    — full-screen gradient with sun glow (no geometry), only where
+ *             the world left the far plane uncovered (`drawSky`)
+ * 3. blended — water (sky reflection by Fresnel, sun glint, waves on the
+ *             high tier: water.js) and contact shadows, depth-tested but
+ *             not written
  */
+import { ATMOSPHERE, ATMOSPHERE_GLSL } from "./atmosphere.js";
+import { WATER, WATER_GLSL } from "./water.js";
 
 const MESH_VERTEX = `#version 300 es
 in vec3 a_position;
@@ -31,7 +37,7 @@ void main() {
   gl_Position = u_viewProjection * world;
 }`;
 
-const MESH_FRAGMENT = `#version 300 es
+export const MESH_FRAGMENT = `#version 300 es
 precision highp float;
 precision highp sampler2DShadow;
 in vec3 v_normal;
@@ -51,8 +57,13 @@ uniform vec2 u_fogRange;
 uniform float u_alpha;
 uniform float u_unlit;
 uniform float u_fogScale;
+uniform float u_scatter;
+/** 0: not water; 1: sky reflection and sun glint; 2: also moving waves. */
+uniform float u_water;
+uniform float u_time;
 out vec4 outColor;
-
+${ATMOSPHERE_GLSL}
+${WATER_GLSL}
 vec3 toneMap(vec3 c) {
   // Gentle exposure + roll-off: whites stay white, highlights never clip harshly.
   c *= 1.2;
@@ -79,18 +90,44 @@ float sunVisibility() {
 void main() {
   vec3 n = normalize(v_normal);
   if (!gl_FrontFacing) n = -n;
-  float sun = max(dot(n, u_sunDirection), 0.0) * sunVisibility();
-  vec3 ambient = mix(u_groundColor, u_skyColor, n.y * 0.5 + 0.5);
+  float shade = sunVisibility();
   vec3 toCamera = normalize(u_cameraPosition - v_world);
+  float distance = length(v_world - u_cameraPosition);
+  float alpha = u_alpha;
+  float reflectance = 0.0;
+  vec3 mirror = vec3(0.0);
+  vec3 glint = vec3(0.0);
+  if (u_water > 0.5) {
+    // Waves tilt the surface; the short chop fades out with distance before it aliases, the swell further out.
+    if (u_water > 1.5) {
+      float chop = 1.0 - smoothstep(${WATER.chopFade[0].toFixed(1)}, ${WATER.chopFade[1].toFixed(1)}, distance);
+      float swell = 1.0 - smoothstep(${WATER.swellFade[0].toFixed(1)}, ${WATER.swellFade[1].toFixed(1)}, distance);
+      n = normalize(n + (waveNormal(v_world.xz, u_time, chop) - vec3(0.0, 1.0, 0.0)) * swell);
+    }
+    reflectance = mirrorShare(max(dot(n, toCamera), 0.0));
+    vec3 r = reflect(-toCamera, n);
+    // The sky it mirrors (level at most: a wave never shows the ground), and the sun's glint: the sun is
+    // so much brighter than the sky that its reflection shows even where the water reflects little.
+    mirror = fogAlong(r, u_fogColor, u_skyColor, u_sunDirection, u_sunColor, 1.0);
+    float towardsSun = max(dot(r, u_sunDirection), 0.0);
+    // Far off the sun the glint is far below one colour step: skip its pow.
+    if (towardsSun > 0.95) glint = u_sunColor * pow(towardsSun, ${WATER.glint[0].toFixed(1)}) * ${WATER.glint[1].toFixed(2)} * shade;
+    // Seen flat, water is a mirror and hides what lies under it.
+    alpha = mix(u_alpha, 1.0, reflectance);
+  }
+  float sun = max(dot(n, u_sunDirection), 0.0) * shade;
+  vec3 ambient = mix(u_groundColor, u_skyColor, n.y * 0.5 + 0.5);
   // Soft rim light keeps silhouettes readable against the terrain.
   float rim = pow(1.0 - max(dot(n, toCamera), 0.0), 3.0) * 0.18;
   vec3 lit = v_color * (ambient * 0.62 + u_sunColor * sun * 0.85) + rim * u_skyColor;
   lit = mix(lit, v_color, u_unlit);
-  float distance = length(v_world - u_cameraPosition);
+  vec3 color = mix(toneMap(lit), mirror, reflectance) + glint;
   float fog = smoothstep(u_fogRange.x, u_fogRange.y, distance);
   // Height fog: distant valleys get hazier than mountain tops.
   fog = clamp(fog * (1.15 - 0.3 * smoothstep(0.0, 250.0, v_world.y - u_cameraPosition.y)), 0.0, 1.0) * u_fogScale;
-  outColor = vec4(mix(toneMap(lit), u_fogColor, fog), u_alpha);
+  // Near pixels (no fog) skip the atmosphere.
+  vec3 haze = fog > 0.001 ? fogAlong((v_world - u_cameraPosition) / max(distance, 0.001), u_fogColor, u_skyColor, u_sunDirection, u_sunColor, u_scatter) : u_fogColor;
+  outColor = vec4(mix(color, haze, fog), alpha);
 }`;
 
 const DEPTH_VERTEX = `#version 300 es
@@ -113,7 +150,7 @@ void main() {
   gl_Position = vec4(v_ndc, 1.0, 1.0);
 }`;
 
-const SKY_FRAGMENT = `#version 300 es
+export const SKY_FRAGMENT = `#version 300 es
 precision highp float;
 in vec2 v_ndc;
 uniform mat4 u_inverseViewProjection;
@@ -122,14 +159,16 @@ uniform vec3 u_sunDirection;
 uniform vec3 u_zenithColor;
 uniform vec3 u_horizonColor;
 uniform vec3 u_sunColor;
+uniform float u_scatter;
 out vec4 outColor;
+${ATMOSPHERE_GLSL}
 void main() {
   vec4 far = u_inverseViewProjection * vec4(v_ndc, 1.0, 1.0);
   vec3 direction = normalize(far.xyz / far.w - u_cameraPosition);
-  float height = clamp(direction.y, -0.1, 1.0);
-  vec3 sky = mix(u_horizonColor, u_zenithColor, pow(max(height, 0.0), 0.55));
+  vec3 sky = skyAlong(direction, u_horizonColor, u_zenithColor, u_sunDirection, u_sunColor, u_scatter);
   float sunAmount = max(dot(direction, u_sunDirection), 0.0);
-  sky += u_sunColor * (pow(sunAmount, 900.0) * 1.4 + pow(sunAmount, 12.0) * 0.18);
+  // Only near the sun is the disk visible at all (0.99 to the power 900 is far below one colour step).
+  if (sunAmount > 0.99) sky += u_sunColor * pow(sunAmount, ${ATMOSPHERE.disk[0].toFixed(1)}) * ${ATMOSPHERE.disk[1].toFixed(2)};
   outColor = vec4(sky, 1.0);
 }`;
 
@@ -171,8 +210,12 @@ void main() {
   outColor = vec4(u_color.rgb, u_color.a * (1.0 - smoothstep(0.55, 1.0, d)));
 }`;
 
-export function createContext(canvas) {
-  return canvas.getContext("webgl2", { antialias: true, alpha: false, powerPreference: "high-performance" });
+/**
+ * The WebGL 2 context of `canvas`. Multisampling is fixed for the context's
+ * life, so the low tier (software GL above all) asks for none up front.
+ */
+export function createContext(canvas, { antialias = true } = {}) {
+  return canvas.getContext("webgl2", { antialias, alpha: false, powerPreference: "high-performance" });
 }
 
 export class Renderer {
@@ -215,6 +258,9 @@ export class Renderer {
       "u_alpha",
       "u_unlit",
       "u_fogScale",
+      "u_scatter",
+      "u_water",
+      "u_time",
       "u_lightViewProjection",
       "u_shadowMap",
       "u_shadowStrength",
@@ -245,6 +291,7 @@ export class Renderer {
       "u_zenithColor",
       "u_horizonColor",
       "u_sunColor",
+      "u_scatter",
     ]);
     this.emptyVao = gl.createVertexArray();
     gl.enable(gl.DEPTH_TEST);
@@ -402,12 +449,15 @@ export class Renderer {
   }
 
   /**
-   * Starts a frame: clears, draws the sky and sets the shared uniforms.
+   * Starts a frame: clears and sets the shared uniforms. The sky follows the
+   * opaque meshes (`drawSky`); without it the clear colour (the horizon) shows.
    * @param {{viewProjection: Float32Array, inverseViewProjection: Float32Array, camera: number[],
    *          zenith: number[], horizon: number[], ground: number[], sun: number[], sunColor: number[], fog: number[],
-   *          shadowStrength?: number}} frame
+   *          shadowStrength?: number, scatter?: number, timeS?: number}} frame `scatter` 1 fogs towards the sky
+   *          along each view ray with the sun's glow (the outdoor world), 0 towards the flat horizon colour (the
+   *          studio); `timeS` moves the waves
    */
-  begin({ viewProjection, inverseViewProjection, camera, zenith, horizon, ground, sun, sunColor, fog, shadowStrength = 0.6 }) {
+  begin({ viewProjection, inverseViewProjection, camera, zenith, horizon, ground, sun, sunColor, fog, shadowStrength = 0.6, scatter = 0, timeS = 0 }) {
     const gl = this.gl;
     gl.clearColor(horizon[0], horizon[1], horizon[2], 1);
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
@@ -420,10 +470,7 @@ export class Renderer {
     gl.uniform3fv(s.u_zenithColor, zenith);
     gl.uniform3fv(s.u_horizonColor, horizon);
     gl.uniform3fv(s.u_sunColor, sunColor);
-    gl.depthMask(false);
-    gl.bindVertexArray(this.emptyVao);
-    gl.drawArrays(gl.TRIANGLES, 0, 3);
-    gl.depthMask(true);
+    gl.uniform1f(s.u_scatter, scatter);
 
     gl.useProgram(this.program);
     const u = this.uniforms;
@@ -438,6 +485,10 @@ export class Renderer {
     gl.uniform1f(u.u_alpha, 1);
     gl.uniform1f(u.u_unlit, 0);
     gl.uniform1f(u.u_fogScale, 1);
+    gl.uniform1f(u.u_scatter, scatter);
+    gl.uniform1f(u.u_water, 0);
+    // Wrapped, so the wave phases keep their precision on a long session (one unseen jump an hour).
+    gl.uniform1f(u.u_time, timeS % 3600);
     const shadow = this.shadow;
     gl.activeTexture(gl.TEXTURE0);
     gl.bindTexture(gl.TEXTURE_2D, shadow?.texture ?? null);
@@ -445,6 +496,23 @@ export class Renderer {
     gl.uniform1f(u.u_shadowStrength, shadow?.lightViewProjection ? shadowStrength : 0);
     gl.uniform1f(u.u_shadowTexel, shadow ? 1 / shadow.size : 0);
     gl.uniformMatrix4fv(u.u_lightViewProjection, false, shadow?.lightViewProjection ?? IDENTITY);
+  }
+
+  /**
+   * The sky, after the opaque meshes: its triangle lies on the far plane, so
+   * with LEQUAL it passes only where the depth is still the cleared one, and
+   * the pixels the world covers are never shaded (most of a ride's screen).
+   */
+  drawSky() {
+    const gl = this.gl;
+    gl.useProgram(this.skyProgram);
+    gl.depthFunc(gl.LEQUAL);
+    gl.depthMask(false);
+    gl.bindVertexArray(this.emptyVao);
+    gl.drawArrays(gl.TRIANGLES, 0, 3);
+    gl.depthMask(true);
+    gl.depthFunc(gl.LESS);
+    gl.useProgram(this.program);
   }
 
   /** Draws with partial self-illumination (signage that should read in shade). */
@@ -518,8 +586,10 @@ export class Renderer {
   /**
    * Draws a blended mesh (shadows, water). Call after all opaque meshes.
    * `unlit` = 1 uses the vertex colour as is (shadows), 0 applies lighting.
+   * `water` (see `waterMode`) shades it as open water: 1 mirrors the sky and
+   * the sun, 2 also moves waves over it.
    */
-  drawTransparent(handle, model, { alpha, unlit = 0, tint = [1, 1, 1] }) {
+  drawTransparent(handle, model, { alpha, unlit = 0, tint = [1, 1, 1], water = 0 }) {
     const gl = this.gl;
     gl.enable(gl.BLEND);
     gl.depthMask(false);
@@ -527,9 +597,11 @@ export class Renderer {
     gl.polygonOffset(-1, -2);
     gl.uniform1f(this.uniforms.u_alpha, alpha);
     gl.uniform1f(this.uniforms.u_unlit, unlit);
+    gl.uniform1f(this.uniforms.u_water, water);
     this.draw(handle, model, tint);
     gl.uniform1f(this.uniforms.u_alpha, 1);
     gl.uniform1f(this.uniforms.u_unlit, 0);
+    gl.uniform1f(this.uniforms.u_water, 0);
     gl.disable(gl.POLYGON_OFFSET_FILL);
     gl.depthMask(true);
     gl.disable(gl.BLEND);

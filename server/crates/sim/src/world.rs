@@ -18,7 +18,7 @@ use crate::bot::{
     pack_levels, BotBrain, BotProfile, BotSituation, BotTuning, LaneView, LineAhead, LineKind, Passer,
     DEFAULT_LEVEL_WKG,
 };
-use crate::drafting::DraftParams;
+use crate::drafting::{DraftParams, GroupPlace, Wheel};
 use crate::names;
 use crate::network::{Network, RoadKey};
 use crate::physics::{self, Body, PhysicsParams, RiderPhysics, StepInput};
@@ -32,6 +32,7 @@ use std::collections::{BTreeMap, BTreeSet};
 use std::fmt;
 
 mod vehicles;
+use vehicles::VehicleShelter;
 
 pub type RiderId = u32;
 
@@ -163,6 +164,15 @@ pub struct Rider {
     pub pass_urge: f64,
     /// Acceleration in the last tick (m/s²): what a rider behind compares itself with.
     pub accel: f64,
+    /// Multiplier on the drag area from riding in the slipstream of the
+    /// riders ahead and alongside, in the last tick: 1 in clear air, below 1
+    /// in a draft (a seat: its vehicle's). A wheel behind is no draft: what it
+    /// gives a leader is only in `drag_factor`.
+    pub draft: f64,
+    /// Everything the last tick scaled the rider's air drag `½·ρ·CdA·v²` by,
+    /// `draft` included: what the client's virtual shifting needs to push
+    /// the pedals as hard as the physics pushed back.
+    pub drag_factor: f64,
 }
 
 /// A rider off their route: the road they ride and how far into it.
@@ -621,6 +631,8 @@ impl World {
                 boxed_s: 0.0,
                 pass_urge: 0.0,
                 accel: 0.0,
+                draft: 1.0,
+                drag_factor: 1.0,
             },
         );
         self.events.push(WorldEvent::RiderJoined {
@@ -868,16 +880,20 @@ impl World {
 
         let around = self.bot_surroundings(&field, &own_slots);
 
-        // The draft each vehicle gets from the gap ahead of its captain.
-        let vehicle_drafts: Vec<(VehicleId, f64)> = self
+        let shelter = field.shelter(&self.config.draft);
+        // The shelter each vehicle gets where its captain rides.
+        let vehicle_drafts: Vec<(VehicleId, VehicleShelter)> = self
             .vehicles
             .values()
             .filter_map(|v| {
-                let me = slots.iter().find(|s| s.id == v.captain)?;
-                let factor = field
-                    .draft_ahead(me, me.lane)
-                    .map_or(1.0, |(gap, ahead)| ahead.draft.cda_factor(gap));
-                Some((v.id, factor))
+                let s = shelter.get(&v.captain)?;
+                Some((
+                    v.id,
+                    VehicleShelter {
+                        factor: s.factor,
+                        draft: s.draft,
+                    },
+                ))
             })
             .collect();
 
@@ -938,13 +954,15 @@ impl World {
                 continue;
             }
 
-            // 2. Physics with drafting.
-            let ahead = if rider.parked {
-                None
-            } else {
-                field.draft_ahead(me, me.lane)
-            };
-            let cda_factor = ahead.map_or(1.0, |(gap, ahead)| ahead.draft.cda_factor(gap));
+            // 2. Physics with drafting. A parked rider has no slot in the field
+            // and so no shelter: it rides in clear air.
+            let (ahead, factor, draft) = shelter
+                .get(&rider.id)
+                .map_or((None, 1.0, 1.0), |s| (s.ahead, s.factor, s.draft));
+            let air = roads.thin_air(rider, &self.config.physics);
+            let cda_factor = factor * air;
+            rider.draft = draft;
+            rider.drag_factor = cda_factor;
             let power_watts = if rider.parked {
                 0.0
             } else {
@@ -968,7 +986,7 @@ impl World {
                 let settled = (rider.lane - f64::from(rider.target_lane)).abs() < 1e-9;
                 let at_their_speed = StepInput {
                     speed: ahead.speed,
-                    cda_factor: 1.0,
+                    cda_factor: air,
                     ..input
                 };
                 // Compared with what the leader really does: riders speeding up
@@ -1608,6 +1626,8 @@ impl World {
                 boxed_s: 0.0,
                 pass_urge: 0.0,
                 accel: 0.0,
+                draft: 1.0,
+                drag_factor: 1.0,
             },
         );
         self.events.push(WorldEvent::RiderJoined {
@@ -1778,6 +1798,20 @@ impl Roads<'_> {
         }
     }
 
+    /// Metres above sea level under the rider.
+    fn elevation(&self, rider: &Rider) -> f64 {
+        match (rider.off_route, self.network) {
+            (Some(off), Some(network)) => network.elevation(off.road, off.offset),
+            _ => self.routes[rider.route].elevation_at(rider.position),
+        }
+    }
+
+    /// How much thinner than at sea level the air is around the rider: the
+    /// share of the sea-level drag it rides with.
+    fn thin_air(&self, rider: &Rider, params: &PhysicsParams) -> f64 {
+        physics::air_density_at(params, self.elevation(rider)) / params.air_density
+    }
+
     /// Moves the rider `advance` metres on, turning at a junction where they
     /// picked another road.
     fn advance(&self, rider: &mut Rider, advance: f64) {
@@ -1835,6 +1869,16 @@ impl Roads<'_> {
     }
 }
 
+/// A slot's draft in one step: the wheel ahead in its lane (at any gap: the
+/// spacing logic keeps off it), the CdA multiplier it rides with, and the
+/// drafting part of that (without a leader's gain from a wheel behind).
+#[derive(Debug, Clone, Copy)]
+struct Shelter<'a> {
+    ahead: Option<(f64, &'a Slot)>,
+    factor: f64,
+    draft: f64,
+}
+
 /// Everybody's position before the step, to find who rides ahead of whom.
 struct Field<'a> {
     routes: &'a [Route],
@@ -1868,6 +1912,76 @@ impl Field<'_> {
             .filter(|s| s.id != me.id && in_lane(me, s, lane))
             .filter_map(|s| self.gap_to(me, s).filter(|&gap| gap > 0.0).map(|gap| (gap, s)))
             .min_by(|a, b| a.0.total_cmp(&b.0))
+    }
+
+    /// Every slot's wheel ahead and the draft it rides with, from its place
+    /// in the group (see [`DraftParams::group_factor`]): the line of wheels
+    /// ahead, the riders just ahead alongside, how close a wheel behind.
+    fn shelter(&self, draft: &DraftParams) -> BTreeMap<RiderId, Shelter<'_>> {
+        let index: BTreeMap<RiderId, usize> = self.slots.iter().enumerate().map(|(i, s)| (s.id, i)).collect();
+        let ahead: Vec<Option<(f64, &Slot)>> = self.slots.iter().map(|s| self.draft_ahead(s, s.lane)).collect();
+        // A link: a slot's wheel ahead, close enough to draft.
+        let link = |i: usize| {
+            ahead[i]
+                .filter(|(gap, wheel)| *gap <= wheel.draft.max_gap)
+                .map(|(gap, wheel)| (gap, index[&wheel.id]))
+        };
+        let mut gap_behind: Vec<Option<f64>> = vec![None; self.slots.len()];
+        for i in 0..self.slots.len() {
+            if let Some((gap, j)) = link(i) {
+                gap_behind[j] = Some(gap_behind[j].map_or(gap, |g: f64| g.min(gap)));
+            }
+        }
+        // The line ahead of slot `i`, link by link to its front. A ring of
+        // riders round a short loop closes on itself: the walk ends back at
+        // `i`, or once round the field when `i` only feeds into a ring.
+        let line = |i: usize| {
+            let mut wheels = Vec::new();
+            let mut at = i;
+            while wheels.len() < self.slots.len() {
+                let Some((gap, j)) = link(at).filter(|&(_, j)| j != i) else {
+                    break;
+                };
+                wheels.push(Wheel {
+                    gap,
+                    max_reduction: self.slots[j].draft.max_reduction,
+                });
+                at = j;
+            }
+            wheels
+        };
+        self.slots
+            .iter()
+            .enumerate()
+            .map(|(i, me)| {
+                let line = line(i);
+                let alongside = if line.is_empty() {
+                    Vec::new()
+                } else {
+                    self.alongside(me, draft)
+                };
+                let place = GroupPlace {
+                    line,
+                    alongside,
+                    gap_behind: gap_behind[i],
+                };
+                let shelter = Shelter {
+                    ahead: ahead[i],
+                    factor: draft.group_factor(&place),
+                    draft: draft.group_draft(&place),
+                };
+                (me.id, shelter)
+            })
+            .collect()
+    }
+
+    /// Metres to each rider up to `side_gap` ahead of `me` in a neighbouring lane.
+    fn alongside(&self, me: &Slot, draft: &DraftParams) -> Vec<f64> {
+        self.slots
+            .iter()
+            .filter(|s| s.id != me.id && !in_lane(me, s, me.lane) && (s.lane - me.lane).abs() <= draft.side_lanes)
+            .filter_map(|s| self.gap_to(me, s).filter(|&gap| gap > 0.0 && gap <= draft.side_gap))
+            .collect()
     }
 
     /// Gap to the closest rider behind `me` in `lane` on its route, if any.
@@ -2203,6 +2317,263 @@ mod tests {
             world.rider(leader).unwrap().position,
         );
         assert!(gap < 3.0, "gap should shrink in the draft, was {gap}");
+    }
+
+    /// A follower 3.5 m behind a leader in lane 1, after one tick.
+    fn a_follower_3_5_m_behind() -> (World, RiderId) {
+        let mut world = empty_world(flat_loop(10_000.0));
+        let leader = world.join_human("Leader", 75.0);
+        let follower = world.join_human("Follower", 75.0);
+        put(&mut world, leader, 103.5, 1, 8.0);
+        put(&mut world, follower, 100.0, 1, 8.0);
+        ride(&mut world, DT, &[(leader, 200.0), (follower, 200.0)]);
+        (world, follower)
+    }
+
+    #[test]
+    fn the_draft_matches_the_draft_curve_behind_a_wheel() {
+        let (world, follower) = a_follower_3_5_m_behind();
+        let expected = DraftParams::default().cda_factor(3.5);
+        let draft = world.rider(follower).unwrap().draft;
+        assert!((draft - expected).abs() < 1e-12, "{draft} vs {expected}");
+    }
+
+    #[test]
+    fn the_drag_factor_matches_the_draft_curve_behind_a_wheel() {
+        let (world, follower) = a_follower_3_5_m_behind();
+        let expected = DraftParams::default().cda_factor(3.5);
+        let factor = world.rider(follower).unwrap().drag_factor;
+        assert!((factor - expected).abs() < 1e-12, "{factor} vs {expected}");
+    }
+
+    /// Riders at `positions` in `lanes` of `route`, all at 8 m/s and 200 W, after one tick.
+    fn line_of(route: Route, positions: &[f64], lanes: &[u8]) -> (World, Vec<RiderId>) {
+        let mut world = empty_world(route);
+        let ids: Vec<RiderId> = positions
+            .iter()
+            .zip(lanes)
+            .enumerate()
+            .map(|(i, (&position, &lane))| {
+                let id = world.join_human(&format!("Rider{i}"), 75.0);
+                put(&mut world, id, position, lane, 8.0);
+                id
+            })
+            .collect();
+        let riders: Vec<(RiderId, f64)> = ids.iter().map(|&id| (id, 200.0)).collect();
+        ride(&mut world, DT, &riders);
+        (world, ids)
+    }
+
+    fn draft_of(world: &World, id: RiderId) -> f64 {
+        world.rider(id).unwrap().draft
+    }
+
+    #[test]
+    fn the_third_rider_in_a_line_rides_with_less_drag_than_the_second() {
+        let (world, ids) = line_of(flat_loop(10_000.0), &[104.0, 102.0, 100.0], &[1, 1, 1]);
+        assert!(draft_of(&world, ids[2]) < draft_of(&world, ids[1]));
+    }
+
+    #[test]
+    fn the_second_wheel_gets_the_second_wheels_draft() {
+        let (world, ids) = line_of(flat_loop(10_000.0), &[104.0, 102.0, 100.0], &[1, 1, 1]);
+        let config = SimConfig::default();
+        let wheel = Wheel {
+            gap: 2.0,
+            max_reduction: config.draft.max_reduction,
+        };
+        let expected = config.draft.group_factor(&GroupPlace {
+            line: vec![wheel, wheel],
+            ..GroupPlace::default()
+        });
+        assert!((draft_of(&world, ids[2]) - expected).abs() < 1e-12);
+    }
+
+    #[test]
+    fn the_leader_rides_with_less_drag_with_a_wheel_right_behind() {
+        let (world, ids) = line_of(flat_loop(10_000.0), &[102.0, 100.0], &[1, 1]);
+        let factor = world.rider(ids[0]).unwrap().drag_factor;
+        assert!(
+            (factor - (1.0 - DraftParams::default().leader)).abs() < 1e-12,
+            "{factor}"
+        );
+    }
+
+    #[test]
+    fn the_leader_with_a_wheel_right_behind_is_not_drafting() {
+        let (world, ids) = line_of(flat_loop(10_000.0), &[102.0, 100.0], &[1, 1]);
+        assert_eq!(draft_of(&world, ids[0]), 1.0);
+    }
+
+    #[test]
+    fn a_rider_alongside_adds_shelter() {
+        let (world, ids) = line_of(flat_loop(10_000.0), &[102.0, 100.0], &[1, 1]);
+        let (flanked, flanked_ids) = line_of(flat_loop(10_000.0), &[102.0, 100.0, 101.0], &[1, 1, 2]);
+        assert!(draft_of(&flanked, flanked_ids[1]) < draft_of(&world, ids[1]));
+    }
+
+    /// The draft of the third rider of a line 2 m behind the second, the
+    /// second `link` metres behind the first.
+    fn third_wheel_behind_a_link_of(link: f64) -> f64 {
+        let (world, ids) = line_of(flat_loop(10_000.0), &[102.0 + link, 102.0, 100.0], &[1, 1, 1]);
+        draft_of(&world, ids[2])
+    }
+
+    #[test]
+    fn a_deeper_wheel_s_draft_fades_out_as_the_link_ahead_opens_past_the_window() {
+        let max_gap = DraftParams::default().max_gap;
+        let (inside, outside) = (
+            third_wheel_behind_a_link_of(max_gap - 0.01),
+            third_wheel_behind_a_link_of(max_gap + 0.01),
+        );
+        assert!((inside - outside).abs() < 1e-3, "{inside} vs {outside}");
+    }
+
+    /// The draft of a rider 2 m behind a wheel, with a rider `gap` metres
+    /// ahead of it in the next lane.
+    fn wheel_with_a_rider_alongside_at(gap: f64) -> f64 {
+        let (world, ids) = line_of(flat_loop(10_000.0), &[102.0, 100.0, 100.0 + gap], &[1, 1, 2]);
+        draft_of(&world, ids[1])
+    }
+
+    #[test]
+    fn a_rider_alongside_fades_out_at_the_side_gap() {
+        let side_gap = DraftParams::default().side_gap;
+        let (inside, outside) = (
+            wheel_with_a_rider_alongside_at(side_gap - 0.01),
+            wheel_with_a_rider_alongside_at(side_gap + 0.01),
+        );
+        assert!((inside - outside).abs() < 1e-3, "{inside} vs {outside}");
+    }
+
+    #[test]
+    fn a_rider_alongside_fades_in_as_it_draws_level() {
+        let (ahead, behind) = (
+            wheel_with_a_rider_alongside_at(0.01),
+            wheel_with_a_rider_alongside_at(-0.01),
+        );
+        assert!((ahead - behind).abs() < 1e-3, "{ahead} vs {behind}");
+    }
+
+    #[test]
+    fn a_rider_alongside_but_behind_adds_no_shelter() {
+        let (pair, ids) = line_of(flat_loop(10_000.0), &[102.0, 100.0], &[1, 1]);
+        let (flanked, flanked_ids) = line_of(flat_loop(10_000.0), &[102.0, 100.0, 99.0], &[1, 1, 2]);
+        assert_eq!(draft_of(&flanked, flanked_ids[1]), draft_of(&pair, ids[1]));
+    }
+
+    #[test]
+    fn a_rider_two_lanes_over_adds_no_shelter() {
+        let (pair, ids) = line_of(flat_loop(10_000.0), &[102.0, 100.0], &[1, 1]);
+        let (flanked, flanked_ids) = line_of(flat_loop(10_000.0), &[102.0, 100.0, 101.0], &[1, 1, 3]);
+        assert_eq!(draft_of(&flanked, flanked_ids[1]), draft_of(&pair, ids[1]));
+    }
+
+    #[test]
+    fn a_ring_of_riders_on_a_short_loop_terminates() {
+        // Every rider has a wheel ahead: the line runs round and round.
+        let (world, ids) = line_of(flat_loop(10.0), &[0.0, 2.5, 5.0, 7.5], &[1, 1, 1, 1]);
+        for id in ids {
+            let draft = draft_of(&world, id);
+            assert!(draft > 0.0 && draft < 1.0, "{draft}");
+        }
+    }
+
+    #[test]
+    fn a_standing_start_pushes_at_most_half_a_g_even_at_one_tick_a_second() {
+        let mut world = empty_world(flat_loop(10_000.0));
+        let sprinter = world.join_human("Sprinter", 75.0);
+        world.set_telemetry(sprinter, 2500.0, Some(120.0)).unwrap();
+
+        world.tick(1.0);
+
+        let accel = world.rider(sprinter).unwrap().accel;
+        assert!(accel <= 0.5 * physics::GRAVITY + 1e-9, "{accel} m/s²");
+    }
+
+    /// Metres one rider covers in a minute at 200 W on a flat loop at `elevation`.
+    fn minute_at(elevation: f64) -> f64 {
+        let mut world = empty_world(crate::route::tests::flat_loop_at(10_000.0, elevation));
+        let rider = world.join_human("Rider", 75.0);
+        ride(&mut world, 60.0, &[(rider, 200.0)]);
+        world.rider(rider).unwrap().odometer
+    }
+
+    #[test]
+    fn the_same_power_is_faster_high_up() {
+        assert!(minute_at(2000.0) > minute_at(0.0) + 10.0);
+    }
+
+    #[test]
+    fn the_drag_factor_carries_the_thin_air() {
+        let mut world = empty_world(crate::route::tests::flat_loop_at(10_000.0, 2000.0));
+        let rider = world.join_human("Rider", 75.0);
+        ride(&mut world, DT, &[(rider, 200.0)]);
+        let params = PhysicsParams::default();
+        let thin = physics::air_density_at(&params, 2000.0) / params.air_density;
+        let r = world.rider(rider).unwrap();
+        assert!((r.drag_factor - thin).abs() < 1e-12, "{} vs {thin}", r.drag_factor);
+    }
+
+    #[test]
+    fn high_up_the_pass_logic_compares_in_the_same_thin_air() {
+        // Equal riders at equal speed, the follower too far back to give the
+        // leader any shelter: once the leader speeds up as it would alone in
+        // the thin air, the follower has no surplus to pass with.
+        let elevation = 2000.0;
+        let mut world = empty_world(crate::route::tests::flat_loop_at(10_000.0, elevation));
+        let leader = world.join_human("Leader", 75.0);
+        let follower = world.join_human("Follower", 75.0);
+        put(&mut world, leader, 105.0, 1, 8.0);
+        put(&mut world, follower, 100.0, 1, 8.0);
+        let params = PhysicsParams::default();
+        let alone = StepInput {
+            rider_mass_kg: 75.0,
+            body: Body::bike(&params, 75.0),
+            speed: 8.0,
+            power_watts: 200.0,
+            grade_percent: 0.0,
+            cda_factor: physics::air_density_at(&params, elevation) / params.air_density,
+        };
+        world.riders.get_mut(&leader).unwrap().accel = physics::acceleration(&params, &alone);
+
+        ride(&mut world, DT, &[(leader, 200.0), (follower, 200.0)]);
+
+        let urge = world.rider(follower).unwrap().pass_urge;
+        assert!(urge.abs() < 1e-12, "{urge}");
+    }
+
+    #[test]
+    fn thin_air_is_no_draft() {
+        let mut world = empty_world(crate::route::tests::flat_loop_at(10_000.0, 2000.0));
+        let rider = world.join_human("Rider", 75.0);
+        ride(&mut world, DT, &[(rider, 200.0)]);
+        assert_eq!(world.rider(rider).unwrap().draft, 1.0);
+    }
+
+    #[test]
+    fn a_rider_in_clear_air_has_no_draft() {
+        let mut world = empty_world(flat_loop(10_000.0));
+        let solo = world.join_human("Solo", 75.0);
+        put(&mut world, solo, 100.0, 1, 8.0);
+
+        ride(&mut world, DT, &[(solo, 200.0)]);
+
+        assert_eq!(world.rider(solo).unwrap().draft, 1.0);
+    }
+
+    #[test]
+    fn a_parked_rider_has_no_draft() {
+        let mut world = empty_world(flat_loop(10_000.0));
+        let leader = world.join_human("Leader", 75.0);
+        let parked = world.join_human("Parked", 75.0);
+        put(&mut world, leader, 102.0, 1, 0.0);
+        put(&mut world, parked, 100.0, 1, 0.0);
+        world.park(parked).unwrap();
+
+        ride(&mut world, DT, &[(leader, 0.0)]);
+
+        assert_eq!(world.rider(parked).unwrap().draft, 1.0);
     }
 
     /// Puts a rider in `lane` at `position`, already riding at `speed`.
@@ -3225,6 +3596,33 @@ mod tests {
         assert!(rider.off_route.is_none());
         assert_eq!(rider.route, 1);
         assert!((1005.0..1030.0).contains(&rider.position));
+    }
+
+    #[test]
+    fn off_route_the_air_thins_with_the_road_ridden() {
+        let mut world = junction_world();
+        let me = world.join_human("Me", 75.0);
+        // Off-route, back down c-d, 10 m from d: about 14 m up, where the
+        // route's own position would put the rider at sea level.
+        let network = world.network.as_ref().unwrap();
+        let cd = network.edge_index("cd").unwrap();
+        let elevation = network.elevation((cd, -1), 10.0);
+        {
+            let rider = world.riders.get_mut(&me).unwrap();
+            rider.off_route = Some(OffRoute {
+                road: (cd, -1),
+                offset: 10.0,
+            });
+            rider.position = 5000.0;
+            rider.speed = 10.0;
+        }
+
+        cruise(&mut world, me, DT);
+
+        let params = PhysicsParams::default();
+        let thin = physics::air_density_at(&params, elevation) / params.air_density;
+        let factor = world.rider(me).unwrap().drag_factor;
+        assert!((factor - thin).abs() < 1e-12, "{factor} vs {thin}");
     }
 
     #[test]

@@ -20,10 +20,14 @@ test("the studio offers its own cameras and no layouts", () => {
   );
 });
 
+test("route rides and the studio both offer high and low graphics", () => {
+  assert.deepEqual([false, true].map((studio) => ids(viewControls({ studio }).qualities)), [["high", "low"], ["high", "low"]]);
+});
+
 test("every option carries a label", () => {
   for (const studio of [false, true]) {
-    const { cameras, layouts, modes, times } = viewControls({ studio });
-    const all = [...cameras, ...(layouts ?? []), ...modes, ...times];
+    const { cameras, layouts, modes, times, qualities } = viewControls({ studio });
+    const all = [...cameras, ...(layouts ?? []), ...modes, ...times, ...qualities];
     assert.deepEqual(all.filter((item) => typeof item.label !== "string" || item.label === ""), []);
   }
 });

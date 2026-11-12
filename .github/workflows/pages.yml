@@ -13,6 +13,7 @@ on:
     paths:
       - "landing/**"
       - "routes/**"
+      - "docs/assets/**"
       - "CHANGELOG.md"
       - ".github/workflows/pages.yml"
   workflow_dispatch:
@@ -49,6 +50,20 @@ jobs:
           # e.g. https://rgvduarte.github.io/GOwift; its path becomes the base path.
           PUBLIC_SITE_URL: ${{ steps.pages.outputs.base_url }}
           PUBLIC_APP_URL: ${{ vars.GOINDOOR_PUBLIC_URL || 'https://goindoor.onrender.com' }}
+          # The public server is on Render's free plan: it sleeps after 15
+          # minutes without riders and takes about a minute to wake, and the
+          # page says so. Set the repository variable to "false" for a server
+          # that is always on.
+          PUBLIC_APP_COLD_START: ${{ vars.GOINDOOR_LANDING_COLD_START || 'true' }}
+          # "true" wakes that server on every page view (docs/adr/0025), which
+          # shows each visitor's IP address to the server's host: off until
+          # the privacy policy linked below says so.
+          PUBLIC_APP_PREWARM: ${{ vars.GOINDOOR_LANDING_PREWARM || 'false' }}
+          # Footer links, as in Docker Compose; without them none are shown.
+          PUBLIC_PRIVACY_URL: ${{ vars.GOINDOOR_PRIVACY_URL }}
+          PUBLIC_IMPRINT_URL: ${{ vars.GOINDOOR_LANDING_IMPRINT_URL }}
+      # Checks this very build (links under the base path and more) before it goes live.
+      - run: npm test
       - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
         with:
           path: landing/dist

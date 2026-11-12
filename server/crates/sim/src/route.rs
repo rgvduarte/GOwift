@@ -303,12 +303,20 @@ pub(crate) mod tests {
 
     /// A long, completely flat loop for physics tests.
     pub(crate) fn flat_loop(length: f64) -> Route {
+        flat_loop_at(length, 0.0)
+    }
+
+    /// [`flat_loop`] at `elevation` metres above sea level.
+    pub(crate) fn flat_loop_at(length: f64, elevation: f64) -> Route {
         Route::new(RouteSpec {
             id: "flat".into(),
             name: "Flat".into(),
             lanes: 4,
             seed: 1,
-            points: vec![Point::new(0.0, 0.0, 0.0), Point::new(length / 2.0, 0.0, 0.0)],
+            points: vec![
+                Point::new(0.0, 0.0, elevation),
+                Point::new(length / 2.0, 0.0, elevation),
+            ],
             markers: vec![],
             walk: vec![],
         })
