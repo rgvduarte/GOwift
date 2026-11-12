@@ -100,6 +100,7 @@ import { DEFAULT_BIOME, biomeChoices, resolveBiome } from "./view3d/biomes/index
 import { MenuCamera, springTo } from "./view3d/menuCamera.js";
 import { CAMERA_MODES, TIME_MODES, View3D, droneLens, gymLens, isWebGl2Available } from "./view3d/view3d.js";
 import { buildScene } from "./view3d/worldScene.js";
+import { QualityGovernor, chosenQuality, detectQuality, webglRendererName } from "./view3d/quality.js";
 import { INSTRUCTOR, STUDIO_CAMERAS, StudioView3D } from "./view3d/studioScene.js";
 import { ScreenWakeLock } from "./util/wakeLock.js";
 import { installNativeApp } from "./native/app.js";
@@ -120,7 +121,10 @@ const AUTOSAVE_INTERVAL_MS = 10_000;
 const VIEW_KEY = "openride.view";
 const CAMERA_KEY = "openride.camera";
 const TIME_KEY = "openride.time";
+/** Before auto-detection: written "high" on every ride start, so only its "low" was the rider's pick (view3d/quality.js). */
 const QUALITY_KEY = "openride.quality";
+/** The graphics tier the rider picked with the button; unset means automatic (docs/adr/0025-quality-tiers.md). */
+const QUALITY_CHOICE_KEY = "goindoor.quality";
 const BIOME_KEY = "openride.biome";
 const LAYOUT_KEY = "openride.layout";
 const ROUTE_KEY = "openride.route";
@@ -452,6 +456,10 @@ const app = {
   /** Spin studio ride (null on a route): class clock, targets, ERG. */
   studio: null,
   studioView: null,
+  /** The graphics tier: the rider's pick, else this device's, lowered once if frames lag. */
+  quality: new QualityGovernor({ choice: chosenQuality(readSetting(QUALITY_CHOICE_KEY), readSetting(QUALITY_KEY)), detected: detectQuality(deviceHints()) }),
+  /** Client time of the last drawn 3D frame, for the quality governor. */
+  lastFrameAt: null,
   /** The café workout of this ride (null on a road or in the studio, #77). */
   workout: null,
   /** The plan being worked out (without the get-ready block), its HUD view, beep, latest heart rate, and the heart-rate subscription. */
@@ -830,7 +838,8 @@ function openStartMenu() {
 function initMenuStage() {
   initBiomePicker();
   const saveData = Boolean(globalThis.navigator?.connection?.saveData);
-  const use3d = isWebGl2Available() && readSetting(QUALITY_KEY) !== "low" && !saveData;
+  // A rider who picked low gets the flat menu; an automatic low tier still flies over the island (drawn low anyway).
+  const use3d = isWebGl2Available() && (app.quality.auto || app.quality.quality !== "low") && !saveData;
   const reducedMotion = Boolean(globalThis.matchMedia?.("(prefers-reduced-motion: reduce)").matches);
   const canvas = $("world3d");
   const home = { parent: canvas.parentElement, next: canvas.nextSibling };
@@ -872,7 +881,7 @@ function initMenuStage() {
     biome: () => app.biome,
     createView: use3d
       ? (route, scene) => {
-          const view = new View3D(canvas, $("labels3d"), route, scene);
+          const view = new View3D(canvas, $("labels3d"), route, scene, { antialias: app.quality.antialias });
           view.lens = droneLens(scene.overview);
           view.setQuality("low");
           view.setTimeMode(TIME_MODES.includes(readSetting(TIME_KEY)) ? readSetting(TIME_KEY) : "day");
@@ -1897,6 +1906,7 @@ function endRide() {
     rideSaved: false,
     studio: null,
     studioView: null,
+    lastFrameAt: null,
     workout: null,
     workoutPlan: null,
     workoutGym: null,
@@ -2383,7 +2393,8 @@ function startStudio({ simulated, setSimPower }) {
 
   if (isWebGl2Available()) {
     try {
-      app.studioView = new StudioView3D($("studio3d"), $("studio-labels"));
+      app.studioView = new StudioView3D($("studio3d"), $("studio-labels"), { antialias: app.quality.antialias });
+      app.studioView.setQuality(app.quality.quality);
       const camera = readSetting(STUDIO_CAMERA_KEY);
       if (STUDIO_CAMERAS.includes(camera)) app.studioView.cameraMode = camera;
     } catch (error) {
@@ -2457,6 +2468,7 @@ function studioFrame() {
     const colors = themeColors();
     const accent = getComputedStyle(document.documentElement).getPropertyValue("--accent").trim();
     app.studioView.render({ riders, myId: app.riderId, myCadence: cadence, coachCadence, timeS: time, colors: { ...colors, accent } });
+    governFrame(time);
   }
   if (app.sceneRequests.length) {
     const scene = app.studioView ? grabScene($("studio3d")) : null;
@@ -4017,7 +4029,7 @@ function initViews() {
   $("view-3d").addEventListener("click", () => setViewMode("3d"));
   $("view-2d").addEventListener("click", () => setViewMode("2d"));
   $("camera-mode").addEventListener("click", () => cycleCamera());
-  $("quality-mode").addEventListener("click", () => setQuality(app.view3d.quality === "high" ? "low" : "high"));
+  $("quality-mode").addEventListener("click", () => chooseQuality(app.quality.quality === "high" ? "low" : "high"));
   $("time-mode").addEventListener("change", (e) => setTimeMode(e.target.value));
   $("view-3d").disabled = true;
   setViewMode("2d", { remember: false });
@@ -4062,7 +4074,7 @@ async function fetchNetworkFile(mapId) {
 /** Shows the 3D view once its world is built (or takes the menu's view as it is). */
 function show3d(scene, view = null) {
   try {
-    app.view3d = view ?? new View3D($("world3d"), $("labels3d"), app.route, scene);
+    app.view3d = view ?? new View3D($("world3d"), $("labels3d"), app.route, scene, { antialias: app.quality.antialias });
   } catch (error) {
     console.error(error);
     $("view-note").textContent = t("view.unavailable");
@@ -4084,7 +4096,7 @@ function show3d(scene, view = null) {
   if (CAMERA_MODES[camera]) app.view3d.setCameraMode(camera);
   renderCameraButton();
   setTimeMode(TIME_MODES.includes(readSetting(TIME_KEY)) ? readSetting(TIME_KEY) : "day");
-  setQuality(readSetting(QUALITY_KEY) === "low" ? "low" : "high");
+  applyQuality();
   setViewMode(startingViewMode(readSetting(VIEW_KEY), { workout: Boolean(app.workout) }), { remember: false });
   // Each gym's statues (also on a view taken over from the menu, which had its own rows).
   // A workout whose café this route does not start at shows its figures at the gym here.
@@ -4141,10 +4153,39 @@ function renderCameraButton() {
   $("camera-mode").textContent = t("camera.label", { mode: cameraName(app.view3d.camera.mode) });
 }
 
-function setQuality(quality) {
-  app.view3d.setQuality(quality);
+/** The rider's pick of graphics tier: remembered, and the governor leaves it alone from now on. */
+function chooseQuality(quality) {
+  app.quality.choose(quality);
+  writeSetting(QUALITY_CHOICE_KEY, quality);
+  applyQuality();
+}
+
+/** Draws the ride (and the studio) at the current tier; nothing is stored. */
+function applyQuality() {
+  const quality = app.quality.quality;
+  app.view3d?.setQuality(quality);
+  app.studioView?.setQuality(quality);
   $("quality-mode").textContent = t("graphics.label", { level: quality === "high" ? t("graphics.high") : t("graphics.low") });
-  writeSetting(QUALITY_KEY, quality);
+}
+
+/** What the browser tells about the device, for its starting tier. The GPU's name stays here: it is a fingerprint. */
+function deviceHints() {
+  const navigator = globalThis.navigator;
+  return {
+    rendererName: webglRendererName(),
+    deviceMemory: navigator?.deviceMemory,
+    cores: navigator?.hardwareConcurrency,
+    saveData: Boolean(navigator?.connection?.saveData),
+  };
+}
+
+/** Times a drawn 3D frame; an automatic tier that cannot keep up drops to low once, and says so. */
+function governFrame(time) {
+  const dtMs = app.lastFrameAt === null ? 0 : (time - app.lastFrameAt) * 1000;
+  app.lastFrameAt = time;
+  if (!app.quality.frame(dtMs)) return;
+  applyQuality();
+  notify(t("graphics.autoLow"));
 }
 
 function setTimeMode(mode) {
@@ -4441,6 +4482,7 @@ function frame() {
   const draft = me ? draftInfo(me, riders, app.route) : null;
   if (app.viewMode === "3d") {
     app.view3d.render({ riders: ghost ? [...everyone, ghost] : everyone, myId: app.riderId, myCadence: app.session.latest.cadence, timeS: time, colors });
+    governFrame(time);
   } else {
     drawRideMap($("ride-map"), { route: app.route, riders: ghost ? [...riders, ghost] : riders, me, draft, lemons: app.lemonHunt?.lemons, colors, network: app.network, routes: app.routes, biome: app.biome, timeMode: app.timeMode });
   }

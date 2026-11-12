@@ -171,8 +171,12 @@ void main() {
   outColor = vec4(u_color.rgb, u_color.a * (1.0 - smoothstep(0.55, 1.0, d)));
 }`;
 
-export function createContext(canvas) {
-  return canvas.getContext("webgl2", { antialias: true, alpha: false, powerPreference: "high-performance" });
+/**
+ * The WebGL 2 context of `canvas`. Multisampling is fixed for the context's
+ * life, so the low tier (software GL above all) asks for none up front.
+ */
+export function createContext(canvas, { antialias = true } = {}) {
+  return canvas.getContext("webgl2", { antialias, alpha: false, powerPreference: "high-performance" });
 }
 
 export class Renderer {

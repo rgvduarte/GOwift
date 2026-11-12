@@ -162,7 +162,11 @@ no server or protocol change was needed. The world is built right after
 joining, in a worker (a few seconds for the bundled map of three routes), while
 the ride already shows the 2D view. <kbd>V</kbd> toggles 3D and 2D, <kbd>C</kbd>
 cycles cameras, <kbd>T</kbd> cycles the time of day; *Graphics: Low* turns off the
-shadow map and grass for weaker GPUs. Devices without WebGL 2 fall back to 2D.
+shadow map, grass and high-DPI drawing for weaker GPUs. Until the
+rider picks, `quality.js` picks the tier for the device (software GL, data saver
+and very small devices start low) and drops an automatic high tier to low once if
+frames stay above 40 ms ([ADR 0025](adr/0025-quality-tiers.md)). Devices without
+WebGL 2 fall back to 2D.
 
 ### 2D view
 
@@ -220,8 +224,8 @@ route's profile show at once; the world is built in the worker and fades in.
 Picking a route flies the camera down to it and highlights it; the world is
 rebuilt for that route once the pick settles. The ride's own 3D canvas sits in
 the menu's background until joining, so the built view carries straight into
-the ride. Without WebGL 2, with *Graphics: Low* or with *Data saver* on, the
-menu shows the 2D map instead and builds nothing up front.
+the ride. Without WebGL 2, with *Graphics: Low* picked by the rider or with
+*Data saver* on, the menu shows the 2D map instead and builds nothing up front.
 
 While riding, `ride/rideAutosave.js` writes the recorder (with its pauses),
 the ride's route and the resume token to IndexedDB every 10 s and when the

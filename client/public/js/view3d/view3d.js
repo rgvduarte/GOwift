@@ -342,10 +342,11 @@ export class View3D {
    * @param {HTMLElement} labelLayer absolutely positioned element over the canvas
    * @param {import("../route/geometry.js").RouteGeometry} route
    * @param {object} [world] the scene from `buildScene` (built here if missing)
-   * @param {{renderer?: object}} [options] `renderer` replaces the WebGL one (tests)
+   * @param {{renderer?: object, antialias?: boolean}} [options] `renderer` replaces the WebGL one (tests);
+   *   `antialias` multisamples the canvas (fixed for its life: the quality tier it starts on)
    */
-  constructor(canvas, labelLayer, route, world = sceneOf(buildWorld(route)), { renderer = null } = {}) {
-    const gl = renderer ? null : createContext(canvas);
+  constructor(canvas, labelLayer, route, world = sceneOf(buildWorld(route)), { renderer = null, antialias = true } = {}) {
+    const gl = renderer ? null : createContext(canvas, { antialias });
     if (!renderer && !gl) throw new Error("WebGL 2 is not available");
     this.canvas = canvas;
     this.labelLayer = labelLayer;
