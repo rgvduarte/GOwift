@@ -15,10 +15,16 @@ jobs:
       github.event.pull_request.head.repo.full_name == github.repository &&
       !github.event.pull_request.draft
     runs-on: ubuntu-latest
+    env:
+      # Preserve push-triggered CI and release automation after merging.
+      GH_TOKEN: ${{ secrets.RELEASE_PLEASE_TOKEN }}
     steps:
+      # Without the token (docs/releases.md) Dependabot PRs wait for a manual merge.
+      - name: Skip without a release token
+        if: env.GH_TOKEN == ''
+        run: echo "::notice::RELEASE_PLEASE_TOKEN is not set, so this Dependabot PR is left for a manual merge."
       - name: Enable squash auto-merge after required checks and reviews
+        if: env.GH_TOKEN != ''
         env:
-          # Preserve push-triggered CI and release automation after merging.
-          GH_TOKEN: ${{ secrets.RELEASE_PLEASE_TOKEN }}
           PR_URL: ${{ github.event.pull_request.html_url }}
         run: gh pr merge --auto --squash "$PR_URL"

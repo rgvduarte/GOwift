@@ -19,7 +19,9 @@ Before merging the automation, a maintainer must:
 The separate token lets CI run on generated release PRs and tags. Events created
 with the default `GITHUB_TOKEN` do not trigger other workflows; see the
 [action's credential documentation](https://github.com/googleapis/release-please-action#github-credentials).
-The workflow deliberately requires the configured token.
+The workflow deliberately requires the configured token: until the secret
+exists, the Release Please job and Dependabot auto-merge only leave a notice and
+succeed, so pushes to `main` don't fail.
 
 ## Commit messages
 

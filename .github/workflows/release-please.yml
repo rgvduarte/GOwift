@@ -20,10 +20,18 @@ jobs:
       contents: write
       issues: write
       pull-requests: write
+    # Without the token (docs/releases.md) the job notes it and stops, instead
+    # of failing on every push to main.
+    env:
+      RELEASE_PLEASE_TOKEN: ${{ secrets.RELEASE_PLEASE_TOKEN }}
     steps:
+      - name: Skip without a release token
+        if: env.RELEASE_PLEASE_TOKEN == ''
+        run: echo "::notice::RELEASE_PLEASE_TOKEN is not set, so no release PR is made (see docs/releases.md)."
       - uses: googleapis/release-please-action@8b8fd2cc23b2e18957157a9d923d75aa0c6f6ad5 # v4.4.1
+        if: env.RELEASE_PLEASE_TOKEN != ''
         with:
-          token: ${{ secrets.RELEASE_PLEASE_TOKEN }}
+          token: ${{ env.RELEASE_PLEASE_TOKEN }}
           target-branch: main
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json
