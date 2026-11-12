@@ -863,7 +863,8 @@ export class View3D {
    * once for the screen and, in a workout, once more for the side view.
    */
   #drawWorld({ light, lens, high, visible, vehicles, crowd, lemons, rotorMatrices }, { viewProjection, inverseViewProjection, eye, forward }) {
-    this.renderer.begin({ viewProjection, inverseViewProjection, camera: eye, ...light, shadowStrength: high ? light.shadowStrength : 0 });
+    // Outdoors the fog takes the sky's colour along each view ray, so far land meets the sky without a seam.
+    this.renderer.begin({ viewProjection, inverseViewProjection, camera: eye, ...light, shadowStrength: high ? light.shadowStrength : 0, scatter: 1 });
     this.renderer.draw(this.meshes.horizon, this.identity);
     this.renderer.draw(this.meshes.islands, this.identity);
     for (const [group, chunks] of Object.entries(this.chunks)) {

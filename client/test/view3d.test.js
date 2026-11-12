@@ -347,8 +347,9 @@ class StubRenderer {
   viewports = [];
   pass = null;
   begins = 0;
-  begin() {
+  begin(frame) {
     this.begins += 1;
+    this.frame = frame;
   }
   draw(handle, model, tint) {
     this.draws.push({ handle, model, tint, pass: this.pass });
@@ -391,6 +392,13 @@ function gymView(gyms, biome = "temperate", weather = null, renderer = new StubR
 }
 const workoutRider = { id: 7, name: "Ana", distance: 100, lane: 1, speed: 0, power: 0, device: "workout", exercise: null, exerciseSince: 10 };
 const colors = { me: "#ff0000", human: "#00ff00", bot: "#0000ff" };
+
+test("the outdoor world fogs towards the sky along each view ray", () => {
+  const { view, renderer } = gymView([]);
+  view.camera.update(100, 1, 0);
+  view.render({ riders: [], myId: null, timeS: 12, colors });
+  assert.equal(renderer.frame.scatter, 1);
+});
 
 test("the view resolves the scene's biome for its sky", () => {
   assert.equal(gymView([]).view.biome.id, "temperate");

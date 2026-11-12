@@ -28,6 +28,7 @@ GPU (animated wave normals).
   | Sun shadow map | off | 2048², ±65 m around the rider |
   | Grass and flowers (`detail` chunks) | off | on |
   | Multisampling | off when the session *starts* low | on |
+  | Fog towards the sky along the view ray, glow around the sun | on | on |
 
   New effects that cost little run on both tiers; the rest are high only.
   They are switched by uniforms inside the one mesh program, not by `#define`

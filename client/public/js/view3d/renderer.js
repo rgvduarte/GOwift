@@ -5,9 +5,11 @@
  * 0. shadow — depth of the shadow casters as seen from the sun (shadow map)
  * 1. sky    — full-screen gradient with sun glow (no geometry)
  * 2. opaque — sun (shadowed, PCF-filtered) + sky/ground hemisphere light,
- *             rim light, distance and height fog, tone mapping
+ *             rim light, distance and height fog towards the sky's colour
+ *             along the view ray (atmosphere.js), tone mapping
  * 3. blended — water and contact shadows, depth-tested but not written
  */
+import { ATMOSPHERE, ATMOSPHERE_GLSL } from "./atmosphere.js";
 
 const MESH_VERTEX = `#version 300 es
 in vec3 a_position;
@@ -31,7 +33,7 @@ void main() {
   gl_Position = u_viewProjection * world;
 }`;
 
-const MESH_FRAGMENT = `#version 300 es
+export const MESH_FRAGMENT = `#version 300 es
 precision highp float;
 precision highp sampler2DShadow;
 in vec3 v_normal;
@@ -51,8 +53,9 @@ uniform vec2 u_fogRange;
 uniform float u_alpha;
 uniform float u_unlit;
 uniform float u_fogScale;
+uniform float u_scatter;
 out vec4 outColor;
-
+${ATMOSPHERE_GLSL}
 vec3 toneMap(vec3 c) {
   // Gentle exposure + roll-off: whites stay white, highlights never clip harshly.
   c *= 1.2;
@@ -90,7 +93,9 @@ void main() {
   float fog = smoothstep(u_fogRange.x, u_fogRange.y, distance);
   // Height fog: distant valleys get hazier than mountain tops.
   fog = clamp(fog * (1.15 - 0.3 * smoothstep(0.0, 250.0, v_world.y - u_cameraPosition.y)), 0.0, 1.0) * u_fogScale;
-  outColor = vec4(mix(toneMap(lit), u_fogColor, fog), u_alpha);
+  // Near pixels (no fog) skip the atmosphere.
+  vec3 haze = fog > 0.001 ? fogAlong((v_world - u_cameraPosition) / max(distance, 0.001), u_fogColor, u_skyColor, u_sunDirection, u_sunColor, u_scatter) : u_fogColor;
+  outColor = vec4(mix(toneMap(lit), haze, fog), u_alpha);
 }`;
 
 const DEPTH_VERTEX = `#version 300 es
@@ -113,7 +118,7 @@ void main() {
   gl_Position = vec4(v_ndc, 1.0, 1.0);
 }`;
 
-const SKY_FRAGMENT = `#version 300 es
+export const SKY_FRAGMENT = `#version 300 es
 precision highp float;
 in vec2 v_ndc;
 uniform mat4 u_inverseViewProjection;
@@ -122,14 +127,15 @@ uniform vec3 u_sunDirection;
 uniform vec3 u_zenithColor;
 uniform vec3 u_horizonColor;
 uniform vec3 u_sunColor;
+uniform float u_scatter;
 out vec4 outColor;
+${ATMOSPHERE_GLSL}
 void main() {
   vec4 far = u_inverseViewProjection * vec4(v_ndc, 1.0, 1.0);
   vec3 direction = normalize(far.xyz / far.w - u_cameraPosition);
-  float height = clamp(direction.y, -0.1, 1.0);
-  vec3 sky = mix(u_horizonColor, u_zenithColor, pow(max(height, 0.0), 0.55));
+  vec3 sky = skyAlong(direction, u_horizonColor, u_zenithColor, u_sunDirection, u_sunColor, u_scatter);
   float sunAmount = max(dot(direction, u_sunDirection), 0.0);
-  sky += u_sunColor * (pow(sunAmount, 900.0) * 1.4 + pow(sunAmount, 12.0) * 0.18);
+  sky += u_sunColor * pow(sunAmount, ${ATMOSPHERE.disk[0].toFixed(1)}) * ${ATMOSPHERE.disk[1].toFixed(2)};
   outColor = vec4(sky, 1.0);
 }`;
 
@@ -219,6 +225,7 @@ export class Renderer {
       "u_alpha",
       "u_unlit",
       "u_fogScale",
+      "u_scatter",
       "u_lightViewProjection",
       "u_shadowMap",
       "u_shadowStrength",
@@ -249,6 +256,7 @@ export class Renderer {
       "u_zenithColor",
       "u_horizonColor",
       "u_sunColor",
+      "u_scatter",
     ]);
     this.emptyVao = gl.createVertexArray();
     gl.enable(gl.DEPTH_TEST);
@@ -409,9 +417,10 @@ export class Renderer {
    * Starts a frame: clears, draws the sky and sets the shared uniforms.
    * @param {{viewProjection: Float32Array, inverseViewProjection: Float32Array, camera: number[],
    *          zenith: number[], horizon: number[], ground: number[], sun: number[], sunColor: number[], fog: number[],
-   *          shadowStrength?: number}} frame
+   *          shadowStrength?: number, scatter?: number}} frame `scatter` 1 fogs towards the sky along each
+   *          view ray with the sun's glow (the outdoor world), 0 towards the flat horizon colour (the studio)
    */
-  begin({ viewProjection, inverseViewProjection, camera, zenith, horizon, ground, sun, sunColor, fog, shadowStrength = 0.6 }) {
+  begin({ viewProjection, inverseViewProjection, camera, zenith, horizon, ground, sun, sunColor, fog, shadowStrength = 0.6, scatter = 0 }) {
     const gl = this.gl;
     gl.clearColor(horizon[0], horizon[1], horizon[2], 1);
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
@@ -424,6 +433,7 @@ export class Renderer {
     gl.uniform3fv(s.u_zenithColor, zenith);
     gl.uniform3fv(s.u_horizonColor, horizon);
     gl.uniform3fv(s.u_sunColor, sunColor);
+    gl.uniform1f(s.u_scatter, scatter);
     // The triangle lies on the far plane, exactly at the cleared depth: a depth test would discard all of it.
     gl.disable(gl.DEPTH_TEST);
     gl.depthMask(false);
@@ -445,6 +455,7 @@ export class Renderer {
     gl.uniform1f(u.u_alpha, 1);
     gl.uniform1f(u.u_unlit, 0);
     gl.uniform1f(u.u_fogScale, 1);
+    gl.uniform1f(u.u_scatter, scatter);
     const shadow = this.shadow;
     gl.activeTexture(gl.TEXTURE0);
     gl.bindTexture(gl.TEXTURE_2D, shadow?.texture ?? null);

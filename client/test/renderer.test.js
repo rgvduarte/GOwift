@@ -26,3 +26,12 @@ test("the world after the sky is depth tested again", () => {
   const world = gl.draws.at(-1);
   assert.deepEqual([world.program === renderer.program, world.enabled.has("DEPTH_TEST"), world.depthMask], [true, true, true]);
 });
+
+test("the sky and the world share the frame's scatter", () => {
+  const gl = fakeGl();
+  const renderer = new Renderer(gl);
+  renderer.begin({ ...FRAME, scatter: 1 });
+  assert.deepEqual([gl.uniform(renderer.skyProgram, "u_scatter"), gl.uniform(renderer.program, "u_scatter")], [1, 1]);
+  renderer.begin(FRAME);
+  assert.equal(gl.uniform(renderer.program, "u_scatter"), 0, "the studio's default: flat horizon fog");
+});

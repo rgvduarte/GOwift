@@ -153,8 +153,9 @@ dependencies (see [ADR 0005](adr/0005-own-webgl-renderer.md)):
 | `crowd.js` | How much of the crowd is out for the riders online, and how each spectator cheers a rider coming by |
 | `chunks.js` | Splits the static world into 300 m tiles; only tiles in view are drawn and only tiles near the rider cast shadows |
 | `lighting.js` | Time-of-day presets (day, golden hour, dusk, auto by local clock) and the sun's shadow frustum |
+| `atmosphere.js` | The sky's colour along a view ray (gradient, sun halo, a broad glow around the sun), shared by the sky pass and the fog, so far land fades into the sky behind it without a seam; the GLSL chunk is written from the same constants as the tested maths |
 | `chaseCamera.js` | Road-anchored cameras: chase, close, drone and TV side, with blended switching |
-| `renderer.js` | Shadow-map pass (depth from the sun), sky pass (gradient + sun glow), lit pass (PCF-filtered sun shadows, hemisphere light, rim light, distance and height fog, tone mapping), blended pass (water, contact shadows) |
+| `renderer.js` | Shadow-map pass (depth from the sun), sky pass (gradient + sun glow), lit pass (PCF-filtered sun shadows, hemisphere light, rim light, distance and height fog towards the sky along the view ray, tone mapping), blended pass (water, contact shadows) |
 | `view3d.js` | Puts it together per frame; HTML name labels over the canvas |
 
 The 3D view consumes exactly the same smoothed rider list as the 2D views, so
