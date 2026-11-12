@@ -39,9 +39,10 @@ off-palette colour on the changelog) and no tests: the page is not part of
   buttons. Builds for a server that sleeps (`PUBLIC_APP_COLD_START`) say that
   the first start can take up to a minute, and an FAQ entry explains why.
 - **Wake the server early, never in the way:** with `PUBLIC_APP_PREWARM`, a
-  small script sends one `no-cors` request to the app's `/healthz` when a
-  *Ride* button is first in view or touched, after the page has loaded and
-  only if the visitor has not asked to save data. It never blocks, never
+  small script sends one `no-cors` request to the app's `/healthz` on every
+  page view, once the page has loaded and the browser is idle (sooner if a
+  *Ride* button is touched), and only if the visitor has not asked to save
+  data. It never blocks, never
   retries and ignores every failure.
 - **Hero quality:** source widths that exist (the file is 1,600 px), a `sizes`
   that accounts for the cover crop so phones get the largest file, a vertical

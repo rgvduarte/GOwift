@@ -34,13 +34,15 @@ is not possible today and would mislead if it were:
   `PUBLIC_APP_COLD_START=true` adds a note under the buttons and an FAQ entry.
 - **Wake the server early with a request the page never reads.** With
   `PUBLIC_APP_PREWARM=true`, a small script sends one
-  `fetch(appUrl + "/healthz", { mode: "no-cors" })` once a *Ride* link is on
-  screen after the page has loaded and the browser is idle, or when a visitor
-  points at, focuses or touches one. An opaque response is enough to start
-  the instance, so the server needs no CORS change. The request sends no
-  cookies and no referrer, is skipped when the visitor's browser asks to save
-  data, happens at most once per page view, and every failure is ignored: the
-  page never waits for it or breaks because of it.
+  `fetch(appUrl + "/healthz", { mode: "no-cors" })` on every page view, once
+  the page has loaded and the browser is idle, or sooner when a visitor points
+  at, focuses or touches a *Ride* link. Waiting for a *Ride* link to come into
+  view would change nothing: the header's *Ride now* is on every page and on
+  screen at load. An opaque response is enough to start the instance, so the
+  server needs no CORS change. The request sends no cookies and no referrer,
+  is skipped when the visitor's browser asks to save data, happens at most
+  once per page view, and every failure is ignored: the page never waits for
+  it or breaks because of it.
 - The Pages workflow turns the note on for the public Render server; a
   repository variable turns it off. Pre-warming stays off there until the
   operator turns it on with a repository variable, once the privacy policy
