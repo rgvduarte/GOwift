@@ -72,7 +72,7 @@ import {
   splitLine,
 } from "./view/hud.js";
 import { appendFeed, describeEvent, inRace, nearbyRiders, onlineSummary, raceCaption, raceStatus, renderResults, renderRiderList, riderName, riderSections } from "./view/panels.js";
-import { PhotoAlbum, canShareFiles, canvasToPng, composePhoto, composeSummary, downloadBlob, grabScene, photoActions, photoFileName, photoStats } from "./view/photos.js";
+import { PhotoAlbum, canShareFiles, canvasToPng, composePhoto, composeSummary, downloadBlob, grabScene, photoActions, photoFileName, photoStats, rideTrack } from "./view/photos.js";
 import { drawRideMap } from "./view/rideMapView.js";
 import { renderSplits } from "./view/splitsView.js";
 import { drawProfile, drawUpcoming } from "./view/profileView.js";
@@ -2725,12 +2725,14 @@ function finishStats() {
   const stats = [
     [t("finish.time"), formatDuration(summary.durationS)],
     [t("finish.distance"), formatDistanceWithUnit(summary.distanceM)],
-    [t("finish.avgPower"), `${summary.avgPower} W`],
-    [t("finish.maxPower"), `${summary.maxPower} W`],
+    [t("finish.avgSpeed"), `${formatSpeed(summary.avgSpeed)} ${speedUnit()}`],
     [t("finish.climbed"), formatElevation(summary.elevationGainM)],
-    [t("finish.work"), `${summary.kilojoules} kJ`],
+    [t("finish.avgPower"), `${summary.avgPower} W`],
   ];
+  if (summary.normalizedPower !== null) stats.push([t("finish.normalizedPower"), `${summary.normalizedPower} W`]);
+  stats.push([t("finish.maxPower"), `${summary.maxPower} W`], [t("finish.work"), `${summary.kilojoules} kJ`]);
   if (summary.avgHeartRate) stats.push([t("finish.avgHeartRate"), `${summary.avgHeartRate} bpm`]);
+  if (summary.avgCadence) stats.push([t("finish.avgCadence"), `${summary.avgCadence} rpm`]);
   if (app.lemonsThisRide > 0) stats.push([t("finish.lemons"), formatNumber(app.lemonsThisRide)]);
   if (app.seatEnergy && app.vehicleKind) {
     stats.push([t("finish.vehicle"), app.seatEnergy.summaryLine(app.vehicleKind)]);
@@ -2859,7 +2861,7 @@ function saveFinishedSnapshot() {
 }
 
 /** The same panel renders a finished ride and a ride restored from browser recovery. */
-function mountUpload(prefix, recorder, name, { indoor, splits = [], onSuccess, onConnect }) {
+function mountUpload(prefix, recorder, name, { indoor, splits = [], summary, onSuccess, onConnect }) {
   const action = prefix === "finish-strava" ? "upload-strava" : "unfinished-strava";
   const status = prefix === "finish-strava" ? "upload-status" : "unfinished-upload-status";
   const elements = Object.fromEntries(["account", "detail", "connect", "activity", "storage"].map((part) => [part, $(`${prefix}-${part}`)]));
@@ -2871,6 +2873,7 @@ function mountUpload(prefix, recorder, name, { indoor, splits = [], onSuccess, o
     account: app.stravaAccount,
     makeFile: () => recorder.toFit({ indoor, splits }),
     name,
+    summary,
     onSuccess,
     onConnect: nativeApp?.signIn ? () => connectStravaInApp() : onConnect,
     confirm: (message) => confirm(message),
@@ -2886,6 +2889,8 @@ function setupFinishUpload() {
   if (!visible) return;
   app.finishUpload = mountUpload("finish-strava", recorder, rideName(), {
     indoor: Boolean(app.studio), splits: app.finishSplits,
+    // The totals of the finish screen, one per line, for the Strava description.
+    summary: () => finishStats().map(([label, value]) => `${label}: ${value}`).join("\n"),
     onConnect: async () => {
       await app.finishSave;
       if (!app.finishRecoverable && !confirm(t("strava.connectUnsaved"))) return;
@@ -3289,6 +3294,14 @@ async function refreshSummaryImage() {
   }
 }
 
+/** The island, its roads and where this ride went, for the summary card. */
+function summaryMap(samples) {
+  const byId = new Map(app.routes);
+  if (app.rideRoute && app.route && !byId.has(app.rideRoute.id)) byId.set(app.rideRoute.id, app.route);
+  const routes = [...byId.values()];
+  return { routes, network: app.network, track: rideTrack(samples, byId) };
+}
+
 async function summaryImage() {
   const samples = app.recorder.samples;
   const canvas = composeSummary({
@@ -3299,6 +3312,7 @@ async function summaryImage() {
     power: samples.map((s) => s.power),
     elevation: samples.map((s) => s.elevation),
     scene: app.finishScene,
+    map: summaryMap(samples),
   });
   const blob = await canvasToPng(canvas);
   return { blob, name: photoFileName(samples[0]?.t ?? Date.now(), app.rideRoute.id, "summary") };

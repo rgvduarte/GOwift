@@ -8,7 +8,7 @@
 //! | `POST /auth/strava/app/claim`  | The app's web view takes the new session      |
 //! | `POST /auth/logout`            | Forget the session                            |
 //! | `GET /api/me`                  | The connected account, or 401                 |
-//! | `POST /api/strava/upload`      | Upload a TCX ride (body), `?name=` optional   |
+//! | `POST /api/strava/upload`      | Upload a ride (body), `?name=`, `?summary=` optional |
 //! | `GET /api/strava/upload/{id}`  | Whether Strava finished processing it         |
 
 use crate::guard::Slots;
@@ -322,6 +322,8 @@ pub async fn me(State(state): State<AppState>, headers: HeaderMap) -> Response {
 #[derive(Debug, Deserialize)]
 pub struct UploadQuery {
     pub name: Option<String>,
+    /// The ride's totals as text, one per line, for the activity description.
+    pub summary: Option<String>,
 }
 
 pub async fn upload(
@@ -378,7 +380,7 @@ pub async fn upload(
         &access_token,
         ride,
         &name,
-        &strava_api::description(&strava.config.public_url),
+        &strava_api::description(&strava.config.public_url, query.summary.as_deref()),
         &external_id,
     )
     .await

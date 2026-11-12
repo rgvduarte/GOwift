@@ -171,3 +171,10 @@ test("a corrupt stored receipt is ignored without calling the storage unavailabl
   assert.equal(receipts.load("7:1000"), null);
   assert.equal(receipts.available, true);
 });
+
+test("the ride summary goes along with the upload, for the activity description", async () => {
+  const seen = [];
+  const { job } = setup({ upload: async (_file, name, summary) => { seen.push([name, summary]); return { id: 9 }; } });
+  await job.run(file, "GOindoor · Rolling Hills", { summary: "Time: 1:00:00\nAvg power: 200 W" });
+  assert.deepEqual(seen, [["GOindoor · Rolling Hills", "Time: 1:00:00\nAvg power: 200 W"]]);
+});

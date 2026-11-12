@@ -23,6 +23,29 @@ test("records at most one sample per interval", () => {
   assert.equal(recorder.samples[0].power, 0);
 });
 
+test("summary: average cadence leaves out coasting", () => {
+  assert.equal(ride(60).summary().avgCadence, 90);
+  const recorder = new RideRecorder();
+  for (let i = 0; i <= 3; i += 1) recorder.add({ t: T0 + i * 1000, distance: i * 10, power: 100, cadence: i % 2 ? 0 : 80 });
+  assert.equal(recorder.summary().avgCadence, 80, "zero cadence is coasting, not pedalling slowly");
+  assert.equal(new RideRecorder().summary().avgCadence, null);
+});
+
+test("summary: normalized power equals average power on a steady ride", () => {
+  assert.equal(ride(120).summary().normalizedPower, 200);
+});
+
+test("summary: normalized power weighs hard efforts more than the average does", () => {
+  const recorder = new RideRecorder();
+  for (let i = 0; i <= 120; i += 1) recorder.add({ t: T0 + i * 1000, distance: i * 10, power: Math.floor(i / 30) % 2 ? 300 : 100 });
+  const { avgPower, normalizedPower } = recorder.summary();
+  assert.ok(normalizedPower > avgPower, `${normalizedPower} > ${avgPower}`);
+});
+
+test("summary: no normalized power for a ride under 30 seconds", () => {
+  assert.equal(ride(20).summary().normalizedPower, null);
+});
+
 test("summary: duration, distance, averages, climbing and work", () => {
   const summary = ride(60).summary();
   assert.equal(summary.durationS, 60);
