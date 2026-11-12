@@ -1,0 +1,323 @@
+import { test } from "node:test";
+import assert from "node:assert/strict";
+import { createPlan, planPositionAt, withGetReady } from "../public/js/workout/plan.js";
+import { WorkoutSession } from "../public/js/workout/workoutSession.js";
+import { createCue } from "../public/js/workout/cue.js";
+import { WorkoutStudioView, blockProgress, highlightedFigure, resyncWorkout, startingViewMode, summaryText, workoutHudText } from "../public/js/view/workoutStudioView.js";
+import { EXERCISES } from "../public/js/workout/plan.js";
+import { t } from "../public/js/i18n/i18n.js";
+import { PRESETS } from "../public/js/workout/presets.js";
+
+// The full-body preset with get-ready: squats 30-70, rest 70-90, sit-ups 90-130, rest 130-150, …
+const fullBody = PRESETS.find((preset) => preset.id === "full-body");
+const valleyFigures = ["squats", "situps", "pushups", "jumping_jacks", "plank", "burpees"];
+const fullBodyAt = (elapsed) => planPositionAt(withGetReady(fullBody), elapsed);
+
+test("get-ready lights the first exercise's statue", () => {
+  assert.equal(highlightedFigure(fullBodyAt(0), valleyFigures), 0);
+});
+
+test("the first exercise has no statue lit", () => {
+  assert.equal(highlightedFigure(fullBodyAt(30), valleyFigures), null);
+});
+
+test("a rest lights the statue of the next exercise by its index in the row", () => {
+  assert.equal(highlightedFigure(fullBodyAt(75), valleyFigures), 1);
+});
+
+test("a finished plan has no statue lit", () => {
+  assert.equal(highlightedFigure(fullBodyAt(1e6), valleyFigures), null);
+});
+
+test("a rest whose next exercise has no statue at this gym lights nothing", () => {
+  assert.equal(highlightedFigure(fullBodyAt(75), ["squats"]), null);
+});
+
+test("skipping out of a rest into an exercise turns the glow off", () => {
+  const clock = { t: 0 };
+  const session = new WorkoutSession({ plan: fullBody, now: () => clock.t });
+  clock.t = 75;
+  assert.equal(highlightedFigure(session.position(), valleyFigures), 1);
+  session.skip();
+  assert.equal(highlightedFigure(session.position(), valleyFigures), null);
+});
+
+// Get ready 0-30, squats 30-65, rest 65-80, burpees 80-120
+const plan = () =>
+  createPlan({
+    id: "p1",
+    name: "Test circuit",
+    blocks: [
+      { kind: "exercise", exercise: "squats", seconds: 35 },
+      { kind: "rest", seconds: 15 },
+      { kind: "exercise", exercise: "burpees", seconds: 40 },
+    ],
+  });
+const at = (elapsed) => planPositionAt(withGetReady(plan()), elapsed);
+
+test("an exercise block shows its name, the time left and what comes next", () => {
+  const text = workoutHudText(at(60), { state: "block", heartRate: null });
+  assert.deepEqual([text.exercise, text.time, text.next], ["Squats", "0:05", "Next: Rest 15 s"]);
+});
+
+test("the time left rounds up so the last second reads 0:01", () => {
+  assert.equal(workoutHudText(at(64.2), { state: "block", heartRate: null }).time, "0:01");
+});
+
+test("a rest block says Rest and names the next exercise", () => {
+  const text = workoutHudText(at(70), { state: "block", heartRate: null });
+  assert.deepEqual([text.exercise, text.next], ["Rest", "Next: Burpees 40 s"]);
+});
+
+test("the last block has no next", () => {
+  assert.equal(workoutHudText(at(100), { state: "block", heartRate: null }).next, "Last block");
+});
+
+test("the block counter counts the get-ready block", () => {
+  assert.equal(workoutHudText(at(35), { state: "block", heartRate: null }).block, "Block 2/4");
+});
+
+test("elapsed and remaining time read as minutes and seconds", () => {
+  const text = workoutHudText(at(35), { state: "block", heartRate: null });
+  assert.deepEqual([text.elapsed, text.remaining], ["0:35", "1:25"]);
+});
+
+test("paused keeps the block's name and adds a Paused badge", () => {
+  const text = workoutHudText(at(35), { state: "paused", heartRate: null });
+  assert.deepEqual([text.exercise, text.paused], ["Squats", "Paused"]);
+  assert.equal(workoutHudText(at(35), { state: "block", heartRate: null }).paused, "");
+});
+
+test("paused during rest and get ready still names them", () => {
+  assert.equal(workoutHudText(at(70), { state: "paused", heartRate: null }).exercise, "Rest");
+  assert.equal(workoutHudText(at(5), { state: "paused", heartRate: null }).exercise, "Get ready");
+});
+
+test("the first frame is consistent: the remaining time rounds up like the ring's, the elapsed time down", () => {
+  const text = workoutHudText(at(0.01), { state: "ready", heartRate: null });
+  assert.deepEqual([text.time, text.elapsed, text.remaining], ["0:30", "0:00", "2:00"]);
+});
+
+test("the heart rate shows when it is known and is empty otherwise", () => {
+  assert.equal(workoutHudText(at(35), { state: "block", heartRate: 141.6 }).hr, "142 bpm");
+  assert.equal(workoutHudText(at(35), { state: "block", heartRate: null }).hr, "");
+});
+
+test("the ring fills with the share of the block that is over", () => {
+  assert.equal(blockProgress(at(47.5)), 0.5);
+  assert.equal(blockProgress(at(500)), 1);
+});
+
+const record = (over = {}) => ({ planName: "Tabata", activeS: 680, blocksDone: 23, blocksSkipped: 1, hr: { avg: 138, max: 171 }, ...over });
+
+test("the summary names the plan and the work against the plan", () => {
+  const text = summaryText(record(), createPlan({ id: "t", name: "Tabata", blocks: [{ kind: "exercise", exercise: "squats", seconds: 360 }, { kind: "exercise", exercise: "plank", seconds: 360 }] }));
+  assert.deepEqual([text.plan, text.worked], ["Tabata", "11:20 of 12:00"]);
+});
+
+test("a completed plan with rests reads as complete: work is compared with the planned exercise time", () => {
+  const text = summaryText(record({ activeS: 480 }), createPlan({ id: "f", name: "Full body", blocks: [{ kind: "exercise", exercise: "squats", seconds: 240 }, { kind: "rest", seconds: 240 }, { kind: "exercise", exercise: "plank", seconds: 240 }] }), { finished: true });
+  assert.equal(text.worked, "8:00 of 8:00");
+});
+
+test("the summary title says complete only when the plan was finished", () => {
+  assert.equal(summaryText(record(), plan(), { finished: true }).title, "Workout complete");
+  assert.equal(summaryText(record(), plan(), { finished: false }).title, "Workout ended");
+  assert.equal(summaryText(record(), plan()).title, "Workout ended");
+});
+
+test("the summary counts blocks done and skipped", () => {
+  assert.equal(summaryText(record(), plan()).blocks, "23 done · 1 skipped");
+});
+
+test("the summary leaves out skipped blocks when there are none", () => {
+  assert.equal(summaryText(record({ blocksSkipped: 0 }), plan()).blocks, "23 done");
+});
+
+test("the summary shows the heart rate only when it was measured", () => {
+  assert.equal(summaryText(record(), plan()).hr, "Avg 138 · max 171 bpm");
+  assert.equal(summaryText(record({ hr: null }), plan()).hr, "");
+});
+
+function audio() {
+  const log = [];
+  const oscillator = { frequency: { value: 0 }, connect: (to) => log.push(["connect", to]), start: (t) => log.push(["start", t]), stop: (t) => log.push(["stop", t]) };
+  const gain = { gain: { value: 1 }, connect: () => {} };
+  return { log, oscillator, gain, context: { currentTime: 2, destination: "out", state: "running", createOscillator: () => oscillator, createGain: () => gain } };
+}
+
+test("the cue plays a 60 ms 880 Hz beep", () => {
+  const { context, oscillator, log } = audio();
+  createCue({ audioContext: context, vibrate: null })();
+  assert.equal(oscillator.frequency.value, 880);
+  assert.deepEqual(log.filter(([name]) => name === "start" || name === "stop"), [["start", 2], ["stop", 2.06]]);
+});
+
+test("the cue vibrates for 30 ms", () => {
+  const calls = [];
+  createCue({ audioContext: null, vibrate: (ms) => calls.push(ms) })();
+  assert.deepEqual(calls, [30]);
+});
+
+test("the cue wakes a suspended audio context", () => {
+  const { context } = audio();
+  let resumed = 0;
+  context.state = "suspended";
+  context.resume = () => resumed++;
+  createCue({ audioContext: context, vibrate: null })();
+  assert.equal(resumed, 1);
+});
+
+test("the cue works with neither audio nor vibration", () => {
+  assert.doesNotThrow(() => createCue({})());
+});
+
+function fakeConnection() {
+  const sent = [];
+  return { sent, workout: (exercise) => sent.push(exercise) };
+}
+
+test("after a reconnect the current exercise is sent again", () => {
+  const clock = { t: 0 };
+  const session = new WorkoutSession({ plan: plan(), now: () => clock.t });
+  session.tick();
+  clock.t = 40;
+  session.tick();
+  const connection = fakeConnection();
+  resyncWorkout(session, connection);
+  assert.deepEqual(connection.sent, ["squats"]);
+});
+
+test("after a reconnect while paused the avatar stands", () => {
+  const clock = { t: 40 };
+  const session = new WorkoutSession({ plan: plan(), now: () => clock.t });
+  session.tick();
+  session.pause();
+  const connection = fakeConnection();
+  resyncWorkout(session, connection);
+  assert.deepEqual(connection.sent, [null]);
+});
+
+test("a reconnect without a workout sends nothing", () => {
+  const connection = fakeConnection();
+  resyncWorkout(null, connection);
+  assert.deepEqual(connection.sent, []);
+});
+
+test("the workout opens in 3D whatever view was saved; a ride follows the saved view", () => {
+  assert.equal(startingViewMode("2d", { workout: true }), "3d");
+  assert.equal(startingViewMode("2d"), "2d");
+  assert.equal(startingViewMode(null), "3d");
+});
+
+const yogaAt = (elapsed) =>
+  planPositionAt(
+    withGetReady(
+      createPlan({
+        id: "y",
+        name: "Yoga",
+        blocks: [
+          { kind: "exercise", exercise: "cobra", seconds: 60 },
+          { kind: "rest", seconds: 10 },
+          { kind: "exercise", exercise: "pigeon", seconds: 60 },
+        ],
+      }),
+    ),
+    elapsed,
+  );
+
+test("the cue line shows the exercise's cue", () => {
+  assert.equal(workoutHudText(yogaAt(40), { state: "block", heartRate: null }).cue, EXERCISES.cobra.cue);
+});
+
+test("an exercise lists its steps under a how-to title", () => {
+  const text = workoutHudText(yogaAt(40), { state: "block", heartRate: null });
+  assert.equal(text.guideTitle, t("workout.guide.howTo"));
+  assert.deepEqual(text.steps, EXERCISES.cobra.steps);
+  assert.equal(text.step, -1);
+});
+
+test("a rest shows the steps and the cue of the pose coming up", () => {
+  const text = workoutHudText(yogaAt(95), { state: "block", heartRate: null });
+  assert.equal(text.guideTitle, t("workout.guide.comingUp", { label: EXERCISES.pigeon.name }));
+  assert.deepEqual(text.steps, EXERCISES.pigeon.steps);
+  assert.equal(text.cue, EXERCISES.pigeon.cue);
+});
+
+test("get ready shows the first pose coming up", () => {
+  assert.deepEqual(workoutHudText(yogaAt(5), { state: "ready", heartRate: null }).steps, EXERCISES.cobra.steps);
+});
+
+test("the last rest of a plan has no guide", () => {
+  const position = planPositionAt(withGetReady(createPlan({ id: "r", name: "R", blocks: [{ kind: "exercise", exercise: "cobra", seconds: 10 }, { kind: "rest", seconds: 10 }] })), 45);
+  const text = workoutHudText(position, { state: "block", heartRate: null });
+  assert.deepEqual([text.guideTitle, text.steps, text.cue, text.guideSide], ["", [], "", ""]);
+});
+
+test("a sided pose names the right side first, then says switch to the left", () => {
+  assert.equal(workoutHudText({ ...yogaAt(110), side: "right" }, { state: "block", heartRate: null }).guideSide, t("workout.side.right"));
+  assert.equal(workoutHudText({ ...yogaAt(130), side: "left" }, { state: "block", heartRate: null }).guideSide, t("workout.side.left"));
+});
+
+test("a sided pose coming up starts on the right", () => {
+  assert.equal(workoutHudText(yogaAt(95), { state: "block", heartRate: null }).guideSide, t("workout.side.right"));
+});
+
+test("a pose without sides has no side line", () => {
+  assert.equal(workoutHudText(yogaAt(40), { state: "block", heartRate: null }).guideSide, "");
+});
+
+// Get ready 0-30, sun salutation 30-102
+const flowAt = (elapsed) => planPositionAt(withGetReady(createPlan({ id: "s", name: "S", blocks: [{ kind: "exercise", exercise: "sun_salutation", seconds: 72 }] })), elapsed);
+
+test("the sun salutation marks the movement of the breath in progress", () => {
+  assert.equal(workoutHudText(flowAt(31), { state: "block", heartRate: null }).step, 0);
+  assert.equal(workoutHudText(flowAt(30 + 9), { state: "block", heartRate: null }).step, 2);
+  assert.equal(workoutHudText(flowAt(30 + 13), { state: "block", heartRate: null }).step, 2);
+  assert.equal(workoutHudText(flowAt(30 + 34), { state: "block", heartRate: null }).step, 7);
+});
+
+test("the sun salutation starts its steps over with each round", () => {
+  assert.equal(workoutHudText(flowAt(30 + 36 + 1), { state: "block", heartRate: null }).step, 0);
+});
+
+test("a paused sun salutation marks no movement", () => {
+  assert.equal(workoutHudText(flowAt(31), { state: "paused", heartRate: null }).step, -1);
+});
+
+/** A `#workout-hud` stand-in: the `[data-w]` elements, the step list and the guide card. */
+function fakeHud() {
+  const element = () => ({ textContent: "", hidden: false, style: { setProperty() {} }, parentElement: { hidden: false } });
+  const list = { ...element(), children: [], ownerDocument: { createElement: () => ({ textContent: "", className: "" }) }, replaceChildren(...items) { this.children = items; } };
+  const elements = { ".workout-guide": element(), '[data-w-list="steps"]': list };
+  return {
+    elements,
+    list,
+    querySelector(selector) {
+      elements[selector] ??= element();
+      return elements[selector];
+    },
+  };
+}
+
+test("the HUD lists the steps and marks the one in progress", () => {
+  const hud = fakeHud();
+  new WorkoutStudioView(hud).render({ exercise: "Sun salutation", steps: ["Fold", "Lift", "Plank"], step: 1, hr: "" });
+  assert.deepEqual(hud.list.children.map((item) => [item.textContent, item.className]), [["Fold", ""], ["Lift", "current"], ["Plank", ""]]);
+  assert.equal(hud.elements[".workout-guide"].hidden, false);
+});
+
+test("the next frame moves the mark without rebuilding the list", () => {
+  const hud = fakeHud();
+  const view = new WorkoutStudioView(hud);
+  view.render({ steps: ["Fold", "Lift"], step: 0, hr: "" });
+  const [first, second] = hud.list.children;
+  view.render({ steps: ["Fold", "Lift"], step: 1, hr: "" });
+  assert.deepEqual([hud.list.children[0] === first, first.className, second.className], [true, "", "current"]);
+});
+
+test("without steps the guide card hides", () => {
+  const hud = fakeHud();
+  new WorkoutStudioView(hud).render({ steps: [], step: -1, hr: "" });
+  assert.equal(hud.elements[".workout-guide"].hidden, true);
+});

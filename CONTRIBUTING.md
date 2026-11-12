@@ -1,0 +1,136 @@
+# Contributing
+
+Thanks for helping build OpenRadlr! This guide covers how we work.
+
+## Workflow
+
+1. Create a branch from `main`.
+2. Install the git hooks once per clone with `make hooks` (see [Git hooks](#git-hooks)).
+3. Write a failing test, make it pass, refactor (see below).
+4. Run `make check` — it runs exactly what CI runs.
+5. Open a pull request with a short description of *why* the change is needed.
+
+Commit messages use Conventional Commits with an imperative description
+(`feat: Add sprint marker to route format`). Use `fix:` for bug fixes and `!`
+or a `BREAKING CHANGE:` footer for breaking changes. For squash merges, make
+the PR title a Conventional Commit and preserve relevant footers in the squash
+commit body. See [Releases](docs/releases.md) for versioning and maintainer setup.
+Keep pull requests focused; split refactorings from behaviour changes.
+
+## Git hooks
+
+The repository uses [pre-commit](https://pre-commit.com) to catch problems
+before they reach CI. Install it once per clone:
+
+```bash
+uv tool install pre-commit    # or: pipx install pre-commit
+make hooks
+```
+
+`make hooks` installs two hooks:
+
+- **pre-commit** checks only the files being committed: whitespace and line
+  endings, JSON/YAML/TOML, large files, secrets, rustfmt, ESLint, ShellCheck,
+  actionlint and hadolint.
+- **pre-push** runs `make lint` (rustfmt, clippy, ESLint) — fast enough for
+  every push. The full `make check` is left to CI, where it runs on the pull
+  request; run it yourself before opening one.
+
+Bypass a hook with `git commit --no-verify` / `git push --no-verify`, or skip
+one by id, for example `SKIP=eslint git commit ...`. A pull request still runs
+the lint and test jobs in CI.
+
+If the secret scanner flags a false positive, review it, then update and check
+the baseline:
+
+```bash
+make secrets-baseline
+git diff .secrets.baseline
+```
+
+Update the pinned hook versions from time to time with `make hooks-update`.
+The hooks use the same Makefile targets as the rest of the workflow, so they
+fall back to Docker when `cargo` or `npm` is not installed.
+
+## Dependency updates
+
+Dependabot batches minor and patch version updates across ecosystems on Mondays
+at 08:00 Europe/Berlin. Major version updates remain separate. Security updates
+can arrive outside the weekly version-update batch.
+
+Dependabot PRs automatically opt into squash auto-merge. Maintainers still review
+and approve the changes; merging waits for the required CI checks and
+repository review rules. The automation never approves PRs or checks out their code.
+It reuses `RELEASE_PLEASE_TOKEN` so merged updates can trigger CI and Release Please.
+
+The `Protect main` ruleset keeps earlier reviews recorded instead of dismissing
+every stale approval, while requiring one code-owner approval. Approval of the
+latest reviewable push is not separately required. Review new changes before
+merging, even when GitHub retains an earlier approval. Branches must remain
+current with `main` before merging.
+
+## Test-driven development
+
+New behaviour starts with a test. The architecture is designed so that almost
+everything can be tested without network, Bluetooth, timers or randomness:
+
+| Layer | Where | How it is tested |
+| --- | --- | --- |
+| Simulation | `server/crates/sim` | Pure functions and a deterministic `World` with a seeded RNG |
+| Game core | `server/crates/server/src/game.rs` | In-memory `MessageSink` instead of WebSockets |
+| Connection protocol | `server/crates/server/src/connection.rs` | `Session` state machine fed with JSON strings |
+| End to end | `server/crates/server/tests/` | Real server on a random port, real WebSocket client |
+| Client logic | `client/public/js/**` | `node:test` with fakes for sockets, timers, storage and devices |
+
+Rules of thumb:
+
+- Test behaviour through public interfaces, not private details.
+- One reason to fail per test; name tests as sentences (`drafting_rider_closes_the_gap_at_equal_power`).
+- No sleeps in unit tests. Time, randomness and I/O are injected.
+- A bug fix starts with a test that reproduces the bug.
+
+## Dependency injection
+
+Dependencies are passed in, never reached for globally:
+
+- **Rust:** `World` takes a `Box<dyn RandomSource>`; `GameCore` talks to clients
+  through the `MessageSink` trait; `Config::from_lookup` takes the environment
+  lookup as a function. `app::build` is the single composition root.
+- **JavaScript:** constructors take their collaborators with production defaults
+  (`createSocket`, `setInterval`, `storage`, `subtle`, …). `main.js` is the only
+  composition root and contains no logic of its own.
+- Devices share one small interface (`on("data")`, `setGrade()`, `disconnect()`),
+  so a real trainer, the simulated trainer and test fakes are interchangeable.
+
+## Code style
+
+- **Rust:** `cargo fmt` (max width 120) and `cargo clippy -D warnings`. No `unsafe`.
+  The `sim` crate must stay free of I/O, async and third-party dependencies.
+- **JavaScript:** ES modules, no build step, ESLint recommended rules.
+  Never use `innerHTML` with data from the network — rider names come from other players.
+- **Language:** code, comments, docs and commit messages are in English.
+- **Protocol changes:** update `docs/protocol.md`, both sides, and bump
+  `PROTOCOL_VERSION` for breaking changes.
+
+## User-facing text
+
+New UI text goes through the i18n module: `data-i18n` / `data-i18n-attr` in
+`index.html`, `t()` / `tn()` in JS, with the key in both
+`client/public/js/i18n/en.js` and `de.js` (same `{params}`). Numbers shown to
+the rider use `formatNumber`, never `toFixed` into the page. The `i18nHtml`,
+`i18nSweep` and `i18nParity` tests fail on missing keys or stray English; mark
+a deliberate English literal (a log line, a file format) with `// i18n-ok`.
+A new bundled route needs a `route.<id>.description` key in both dictionaries (route
+names stay as they are); `i18nRoutes` fails without it.
+
+## Architecture decisions
+
+Significant decisions are recorded in `docs/adr/` as short markdown files
+(context, decision, consequences). Add one when you change something structural.
+
+## Licensing of contributions
+
+By contributing, you agree that your code is licensed under the
+[GNU AGPL v3 or later](LICENSE) and your artwork under
+[CC BY-SA 4.0](ASSETS-LICENSE.md), the same licences as the project. There is
+no separate contributor agreement.
