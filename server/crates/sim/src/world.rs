@@ -18,7 +18,7 @@ use crate::bot::{
     pack_levels, BotBrain, BotProfile, BotSituation, BotTuning, LaneView, LineAhead, LineKind, Passer,
     DEFAULT_LEVEL_WKG,
 };
-use crate::drafting::DraftParams;
+use crate::drafting::{DraftParams, GroupPlace, Wheel};
 use crate::names;
 use crate::network::{Network, RoadKey};
 use crate::physics::{self, Body, PhysicsParams, RiderPhysics, StepInput};
@@ -877,17 +877,12 @@ impl World {
 
         let around = self.bot_surroundings(&field, &own_slots);
 
-        // The draft each vehicle gets from the gap ahead of its captain.
+        let shelter = field.shelter(&self.config.draft);
+        // The draft each vehicle gets where its captain rides.
         let vehicle_drafts: Vec<(VehicleId, f64)> = self
             .vehicles
             .values()
-            .filter_map(|v| {
-                let me = slots.iter().find(|s| s.id == v.captain)?;
-                let factor = field
-                    .draft_ahead(me, me.lane)
-                    .map_or(1.0, |(gap, ahead)| ahead.draft.cda_factor(gap));
-                Some((v.id, factor))
-            })
+            .filter_map(|v| Some((v.id, shelter.get(&v.captain)?.factor)))
             .collect();
 
         for (rider, me) in self.riders.values_mut().zip(&own_slots) {
@@ -947,13 +942,9 @@ impl World {
                 continue;
             }
 
-            // 2. Physics with drafting.
-            let ahead = if rider.parked {
-                None
-            } else {
-                field.draft_ahead(me, me.lane)
-            };
-            let cda_factor = ahead.map_or(1.0, |(gap, ahead)| ahead.draft.cda_factor(gap));
+            // 2. Physics with drafting. A parked rider has no slot in the field
+            // and so no shelter: it rides in clear air.
+            let (ahead, cda_factor) = shelter.get(&rider.id).map_or((None, 1.0), |s| (s.ahead, s.factor));
             rider.draft = cda_factor;
             rider.drag_factor = cda_factor;
             let power_watts = if rider.parked {
@@ -1848,6 +1839,14 @@ impl Roads<'_> {
     }
 }
 
+/// A slot's draft in one step: the wheel ahead in its lane (at any gap: the
+/// spacing logic keeps off it) and the CdA multiplier it rides with.
+#[derive(Debug, Clone, Copy)]
+struct Shelter<'a> {
+    ahead: Option<(f64, &'a Slot)>,
+    factor: f64,
+}
+
 /// Everybody's position before the step, to find who rides ahead of whom.
 struct Field<'a> {
     routes: &'a [Route],
@@ -1881,6 +1880,69 @@ impl Field<'_> {
             .filter(|s| s.id != me.id && in_lane(me, s, lane))
             .filter_map(|s| self.gap_to(me, s).filter(|&gap| gap > 0.0).map(|gap| (gap, s)))
             .min_by(|a, b| a.0.total_cmp(&b.0))
+    }
+
+    /// Every slot's wheel ahead and the draft it rides with, from its place
+    /// in the group (see [`DraftParams::group_factor`]): how deep in a line of
+    /// wheels, how many riders alongside, how close a wheel behind.
+    fn shelter(&self, draft: &DraftParams) -> BTreeMap<RiderId, Shelter<'_>> {
+        let index: BTreeMap<RiderId, usize> = self.slots.iter().enumerate().map(|(i, s)| (s.id, i)).collect();
+        let ahead: Vec<Option<(f64, &Slot)>> = self.slots.iter().map(|s| self.draft_ahead(s, s.lane)).collect();
+        // A link: a slot's wheel ahead, close enough to draft.
+        let link = |i: usize| {
+            ahead[i]
+                .filter(|(gap, wheel)| *gap <= wheel.draft.max_gap)
+                .map(|(gap, wheel)| (gap, index[&wheel.id]))
+        };
+        let mut gap_behind: Vec<Option<f64>> = vec![None; self.slots.len()];
+        for i in 0..self.slots.len() {
+            if let Some((gap, j)) = link(i) {
+                gap_behind[j] = Some(gap_behind[j].map_or(gap, |g: f64| g.min(gap)));
+            }
+        }
+        // Wheels past the deepest one counted add nothing; stopping there also
+        // ends the walk round a ring of riders that closes on itself.
+        let deepest = 1 + draft.deeper_wheels.len();
+        self.slots
+            .iter()
+            .enumerate()
+            .map(|(i, me)| {
+                let wheel = link(i).map(|(gap, j)| {
+                    let mut depth = 1;
+                    let mut front = j;
+                    while depth < deepest {
+                        let Some((_, next)) = link(front) else { break };
+                        depth += 1;
+                        front = next;
+                    }
+                    Wheel {
+                        gap,
+                        max_reduction: self.slots[j].draft.max_reduction,
+                        depth,
+                    }
+                });
+                let alongside = if wheel.is_some() { self.alongside(me, draft) } else { 0 };
+                let place = GroupPlace {
+                    wheel,
+                    alongside,
+                    gap_behind: gap_behind[i],
+                };
+                let shelter = Shelter {
+                    ahead: ahead[i],
+                    factor: draft.group_factor(&place),
+                };
+                (me.id, shelter)
+            })
+            .collect()
+    }
+
+    /// Riders up to `side_gap` ahead of `me` in a neighbouring lane.
+    fn alongside(&self, me: &Slot, draft: &DraftParams) -> usize {
+        self.slots
+            .iter()
+            .filter(|s| s.id != me.id && !in_lane(me, s, me.lane) && (s.lane - me.lane).abs() <= draft.side_lanes)
+            .filter(|s| self.gap_to(me, s).is_some_and(|gap| gap > 0.0 && gap <= draft.side_gap))
+            .count()
     }
 
     /// Gap to the closest rider behind `me` in `lane` on its route, if any.
@@ -2232,6 +2294,72 @@ mod tests {
         let expected = DraftParams::default().cda_factor(3.5);
         assert!((rider.draft - expected).abs() < 1e-12, "{} vs {expected}", rider.draft);
         assert!((rider.drag_factor - expected).abs() < 1e-12, "{}", rider.drag_factor);
+    }
+
+    /// Riders at `positions` in `lanes` of `route`, all at 8 m/s and 200 W, after one tick.
+    fn line_of(route: Route, positions: &[f64], lanes: &[u8]) -> (World, Vec<RiderId>) {
+        let mut world = empty_world(route);
+        let ids: Vec<RiderId> = positions
+            .iter()
+            .zip(lanes)
+            .enumerate()
+            .map(|(i, (&position, &lane))| {
+                let id = world.join_human(&format!("Rider{i}"), 75.0);
+                put(&mut world, id, position, lane, 8.0);
+                id
+            })
+            .collect();
+        let riders: Vec<(RiderId, f64)> = ids.iter().map(|&id| (id, 200.0)).collect();
+        ride(&mut world, DT, &riders);
+        (world, ids)
+    }
+
+    fn draft_of(world: &World, id: RiderId) -> f64 {
+        world.rider(id).unwrap().draft
+    }
+
+    #[test]
+    fn the_third_rider_in_a_line_rides_with_less_drag_than_the_second() {
+        let (world, ids) = line_of(flat_loop(10_000.0), &[104.0, 102.0, 100.0], &[1, 1, 1]);
+        assert!(draft_of(&world, ids[2]) < draft_of(&world, ids[1]));
+    }
+
+    #[test]
+    fn the_second_wheel_gets_the_second_wheels_draft() {
+        let (world, ids) = line_of(flat_loop(10_000.0), &[104.0, 102.0, 100.0], &[1, 1, 1]);
+        let config = SimConfig::default();
+        let expected = config.draft.group_factor(&GroupPlace {
+            wheel: Some(Wheel {
+                gap: 2.0,
+                max_reduction: config.draft.max_reduction,
+                depth: 2,
+            }),
+            ..GroupPlace::default()
+        });
+        assert!((draft_of(&world, ids[2]) - expected).abs() < 1e-12);
+    }
+
+    #[test]
+    fn the_leader_rides_with_less_drag_with_a_wheel_right_behind() {
+        let (world, ids) = line_of(flat_loop(10_000.0), &[102.0, 100.0], &[1, 1]);
+        assert!((draft_of(&world, ids[0]) - (1.0 - DraftParams::default().leader)).abs() < 1e-12);
+    }
+
+    #[test]
+    fn a_rider_alongside_adds_shelter() {
+        let (world, ids) = line_of(flat_loop(10_000.0), &[102.0, 100.0], &[1, 1]);
+        let (flanked, flanked_ids) = line_of(flat_loop(10_000.0), &[102.0, 100.0, 101.0], &[1, 1, 2]);
+        assert!(draft_of(&flanked, flanked_ids[1]) < draft_of(&world, ids[1]));
+    }
+
+    #[test]
+    fn a_ring_of_riders_on_a_short_loop_terminates() {
+        // Every rider has a wheel ahead: the line runs round and round.
+        let (world, ids) = line_of(flat_loop(10.0), &[0.0, 2.5, 5.0, 7.5], &[1, 1, 1, 1]);
+        for id in ids {
+            let draft = draft_of(&world, id);
+            assert!(draft > 0.0 && draft < 1.0, "{draft}");
+        }
     }
 
     #[test]

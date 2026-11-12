@@ -25,7 +25,8 @@ are not case sensitive and work as long as the vehicle exists.
 
 - **Power:** the vehicle's power is the sum of all seats. A beer bike is heavy
   and blunt: nine riders at about 135 W each make roughly 20 km/h on the flat.
-  Behind it other riders draft more than behind a normal bike.
+  Behind it other riders draft more than behind a normal bike: at least 50 %
+  on every wheel of the line behind it.
 - **Your trainer** feels the vehicle's grade, scaled by your own difficulty
   and gear. Gears are per rider: shifting only changes your resistance.
 - **Cockpit:** the gauge shows your power, plus a line such as

@@ -65,6 +65,11 @@ that died after its rider was taken over by a new one can't touch the rider.
 3. Drafting: the nearest rider up to 6.5 m ahead in the same lane reduces CdA by up to 30 %,
    most from 2 m (a bike length, middle to middle) in
    (on your route, or on the same road in the same direction on another route).
+   Deeper in a line of such wheels it saves up to 40, 45 and 48 %, each rider
+   up to 4 m ahead in a neighbouring lane adds 4 %, up to 60 % in a bunch, and
+   a rider with a wheel close behind saves up to 2.6 %
+   ([ADR 25](adr/0025-group-drafting-from-the-server.md)). Each client gets its
+   rider's result in `state` (`drag_factor`, `draft`).
 4. Physics integrates speed; position advances and wraps around the loop.
    Nobody rides through the wheel ahead: closing in, a rider slows to sit on
    it 2 m behind, and pulls out into a free neighbouring lane to pass when it
