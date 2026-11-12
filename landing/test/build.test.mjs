@@ -21,19 +21,16 @@ function allCss() {
 }
 
 /**
- * Every animation and transition declaration in `css`, with the selectors and
- * at-rules around it, e.g. "@media (...) > .button { transition: ... }".
- * Keyframes are left out: they only describe a motion that a rule starts.
+ * Every declaration in `css`, with the selectors and at-rules around it, e.g.
+ * "@media (...) > .button { transition: ... }".
  */
-function motionRules(css) {
+function declarations(css) {
   const stack = [];
   const found = [];
   let text = "";
   const declaration = () => {
-    const property = text.trim().match(/^([a-z-]+)\s*:/)?.[1];
-    if (property && /^(animation|transition)(-|$)/.test(property) && !stack.some((p) => p.startsWith("@keyframes"))) {
-      found.push({ context: [...stack], rule: `${stack.join(" > ")} { ${text.trim()} }` });
-    }
+    const [, property, value] = text.trim().match(/^([a-z-]+)\s*:\s*([\s\S]*)$/) ?? [];
+    if (property) found.push({ context: [...stack], property, value, rule: `${stack.join(" > ")} { ${text.trim()} }` });
     text = "";
   };
   for (const ch of css.replace(/\/\*[\s\S]*?\*\//g, "")) {
@@ -48,6 +45,26 @@ function motionRules(css) {
   }
   return found;
 }
+
+/**
+ * Every animation and transition declaration in `css`. Keyframes are left
+ * out: they only describe a motion that a rule starts.
+ */
+const motionRules = (css) =>
+  declarations(css).filter(
+    ({ context, property }) =>
+      /^(animation|transition)(-|$)/.test(property) && !context.some((p) => p.startsWith("@keyframes")),
+  );
+
+/** Whether `css` keeps the text of elements matching `selector` on one line, at every width. */
+const neverWraps = (css, selector) =>
+  declarations(css).some(
+    ({ context, property, value }) =>
+      property === "white-space" &&
+      value.trim() === "nowrap" &&
+      !context.some((p) => p.startsWith("@")) &&
+      selector.test(context.at(-1)),
+  );
 
 const allowsMotion = (context) => context.some((p) => /prefers-reduced-motion\s*:\s*no-preference/.test(p));
 
@@ -177,6 +194,16 @@ test("the page describes the app for search engines without claiming ratings", {
     [app["@type"], app.offers.price, "aggregateRating" in app, "review" in app],
     ["WebApplication", "0", false, false],
   );
+});
+
+// The header holds the wordmark and one button on a single row, down to a
+// 320 px phone; a label broken over two lines makes the header twice as tall.
+test("the header's button keeps its label on one line", { skip }, () => {
+  assert.equal(neverWraps(allCss(), /\.button\.compact/), true);
+});
+
+test("the header's wordmark keeps GO and indoor on one line", { skip }, () => {
+  assert.equal(neverWraps(allCss(), /\.brand\S* span/), true);
 });
 
 test("the header's monogram is drawn as SVG, sharp on every screen", { skip }, () => {

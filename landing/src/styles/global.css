@@ -217,10 +217,12 @@ code {
   padding: 0.85em 1.6em;
 }
 
-/* The header's button: a 44 px touch target that doesn't outweigh the logo. */
+/* The header's button: a 44 px touch target that doesn't outweigh the logo.
+   Its short label stays on one line, so the header stays one row. */
 .button.compact {
   font-size: 1rem;
   padding: 0.45em 1.1em;
+  white-space: nowrap;
 }
 
 .skip {

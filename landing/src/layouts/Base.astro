@@ -116,6 +116,11 @@ const ogImage = new URL(href("og.png"), site.url).href;
     color: var(--silver);
   }
 
+  /* The wordmark is one word: GO and indoor never part. */
+  .brand span {
+    white-space: nowrap;
+  }
+
   .brand:hover {
     color: var(--text);
   }
@@ -158,6 +163,14 @@ const ogImage = new URL(href("og.png"), site.url).href;
   @media (max-width: 30rem) {
     .nav-link {
       display: none;
+    }
+  }
+  /* The smallest phones (320 px): a smaller wordmark keeps the logo and the
+     button on one row. */
+  @media (max-width: 22rem) {
+    .brand {
+      font-size: 1.375rem;
+      gap: 0.45rem;
     }
   }
 </style>
