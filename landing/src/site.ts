@@ -2,6 +2,8 @@
 // variables override them (see landing/README.md), so a self-hoster can build
 // the page for their own domains.
 
+import { appHostOf } from "./lib/app";
+
 const env = import.meta.env;
 
 const githubUrl = "https://github.com/rgvduarte/GOwift";
@@ -37,10 +39,8 @@ export const hasApp = site.appUrl !== "";
 /** Where the *Ride now* buttons go: the server, or the self-hosting quick start. */
 export const rideUrl = hasApp ? site.appUrl : `${githubUrl}#quick-start`;
 
-/** The app's address without the scheme, for button captions. */
-export const appHost = hasApp
-  ? site.appUrl.replace(/^https?:\/\//, "").replace(/\/$/, "")
-  : "your own server";
+/** The app's address without the scheme, for captions. */
+export const appHost = hasApp ? appHostOf(site.appUrl) : "your own server";
 
 /** A path inside the site, under the base path (e.g. "icons/x.png" → "/GOwift/icons/x.png"). */
 export function href(path = ""): string {

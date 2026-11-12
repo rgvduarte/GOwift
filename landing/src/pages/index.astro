@@ -3,6 +3,7 @@ import { Picture } from "astro:assets";
 import Base from "../layouts/Base.astro";
 import Profile from "../components/Profile.astro";
 import { site, appHost, hasApp } from "../site";
+import { startLabel } from "../lib/app";
 import hero from "../assets/hero.png";
 import ride from "../assets/ride.png";
 import studio from "../assets/studio.png";
@@ -11,7 +12,7 @@ const devicesUrl = `${site.githubUrl}/blob/main/docs/devices.md`;
 
 // Without a public server yet, the main buttons lead to "Host your own".
 const startUrl = hasApp ? site.appUrl : "#host";
-const startLabel = hasApp ? `Ride now on ${appHost}` : "Get started";
+const start = startLabel(hasApp);
 
 const features = [
   {
@@ -92,7 +93,7 @@ const faq = [
         Open source, no subscription.
       </p>
       <div class="actions">
-        <a class="button primary large" href={startUrl}>{startLabel}</a>
+        <a class="button primary large" href={startUrl}>{start}</a>
         {
           hasApp ? (
             <a class="button large" href="#host">Host your own server</a>
@@ -101,6 +102,7 @@ const faq = [
           )
         }
       </div>
+      {hasApp && <p class="cta-note">Opens {appHost} in Chrome or Edge. No download, no account.</p>}
     </div>
     <div class="hero-ground">
       <Profile route="col-de-la-forge" />
@@ -226,7 +228,7 @@ make up</code></pre>
   <section class="section last-call" aria-label="Start riding">
     <div class="wrap last-call-inner">
       <p class="last-call-line">The road is open.</p>
-      <a class="button primary large" href={startUrl}>{startLabel}</a>
+      <a class="button primary large" href={startUrl}>{start}</a>
       <p class="community muted">
         {
           site.discordUrl ? (
@@ -299,6 +301,18 @@ make up</code></pre>
   }
   .actions .button:not(.primary) {
     background: rgb(255 255 255 / 0.09);
+  }
+  /* On phones the buttons take the full width, one under the other, so the
+     page never scrolls sideways. */
+  @media (max-width: 30rem) {
+    .actions .button {
+      flex: 1 1 100%;
+    }
+  }
+  .cta-note {
+    margin-top: 0.75rem;
+    font-size: 0.875rem;
+    color: var(--muted);
   }
   .hero-ground {
     margin-bottom: -1px;
