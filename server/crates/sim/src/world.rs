@@ -163,6 +163,13 @@ pub struct Rider {
     pub pass_urge: f64,
     /// Acceleration in the last tick (m/s²): what a rider behind compares itself with.
     pub accel: f64,
+    /// Multiplier on the drag area from the riders around, in the last tick:
+    /// 1 in clear air, below 1 in a draft (a seat: its vehicle's).
+    pub draft: f64,
+    /// Everything the last tick scaled the rider's air drag `½·ρ·CdA·v²` by,
+    /// `draft` included: what the client's virtual shifting needs to push
+    /// the pedals as hard as the physics pushed back.
+    pub drag_factor: f64,
 }
 
 /// A rider off their route: the road they ride and how far into it.
@@ -621,6 +628,8 @@ impl World {
                 boxed_s: 0.0,
                 pass_urge: 0.0,
                 accel: 0.0,
+                draft: 1.0,
+                drag_factor: 1.0,
             },
         );
         self.events.push(WorldEvent::RiderJoined {
@@ -945,6 +954,8 @@ impl World {
                 field.draft_ahead(me, me.lane)
             };
             let cda_factor = ahead.map_or(1.0, |(gap, ahead)| ahead.draft.cda_factor(gap));
+            rider.draft = cda_factor;
+            rider.drag_factor = cda_factor;
             let power_watts = if rider.parked {
                 0.0
             } else {
@@ -1608,6 +1619,8 @@ impl World {
                 boxed_s: 0.0,
                 pass_urge: 0.0,
                 accel: 0.0,
+                draft: 1.0,
+                drag_factor: 1.0,
             },
         );
         self.events.push(WorldEvent::RiderJoined {
@@ -2203,6 +2216,47 @@ mod tests {
             world.rider(leader).unwrap().position,
         );
         assert!(gap < 3.0, "gap should shrink in the draft, was {gap}");
+    }
+
+    #[test]
+    fn drag_factor_matches_the_draft_curve_behind_a_wheel() {
+        let mut world = empty_world(flat_loop(10_000.0));
+        let leader = world.join_human("Leader", 75.0);
+        let follower = world.join_human("Follower", 75.0);
+        put(&mut world, leader, 103.5, 1, 8.0);
+        put(&mut world, follower, 100.0, 1, 8.0);
+
+        ride(&mut world, DT, &[(leader, 200.0), (follower, 200.0)]);
+
+        let rider = world.rider(follower).unwrap();
+        let expected = DraftParams::default().cda_factor(3.5);
+        assert!((rider.draft - expected).abs() < 1e-12, "{} vs {expected}", rider.draft);
+        assert!((rider.drag_factor - expected).abs() < 1e-12, "{}", rider.drag_factor);
+    }
+
+    #[test]
+    fn a_rider_in_clear_air_has_no_draft() {
+        let mut world = empty_world(flat_loop(10_000.0));
+        let solo = world.join_human("Solo", 75.0);
+        put(&mut world, solo, 100.0, 1, 8.0);
+
+        ride(&mut world, DT, &[(solo, 200.0)]);
+
+        assert_eq!(world.rider(solo).unwrap().draft, 1.0);
+    }
+
+    #[test]
+    fn a_parked_rider_has_no_draft() {
+        let mut world = empty_world(flat_loop(10_000.0));
+        let leader = world.join_human("Leader", 75.0);
+        let parked = world.join_human("Parked", 75.0);
+        put(&mut world, leader, 102.0, 1, 0.0);
+        put(&mut world, parked, 100.0, 1, 0.0);
+        world.park(parked).unwrap();
+
+        ride(&mut world, DT, &[(leader, 0.0)]);
+
+        assert_eq!(world.rider(parked).unwrap().draft, 1.0);
     }
 
     /// Puts a rider in `lane` at `position`, already riding at `speed`.

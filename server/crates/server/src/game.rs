@@ -360,6 +360,8 @@ impl GameCore {
             mut route_riders,
             event,
             vehicle,
+            drag_factor,
+            draft,
         } = state
         else {
             return state;
@@ -380,6 +382,8 @@ impl GameCore {
             route_riders,
             event,
             vehicle,
+            drag_factor,
+            draft,
         }
     }
 

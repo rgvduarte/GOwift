@@ -28,7 +28,7 @@ import { bindStravaUpload } from "./view/stravaUploadView.js";
 import { levelAfterRace, levelAfterRide, levelLabel, levelOf } from "./profile/level.js";
 import { eventBanner, groupGapLine, eventResultRows, eventRideName, eventRows, renderEventList, sharingLine } from "./view/events.js";
 import { ProfileStore, keepValid, validateProfile } from "./profile/profileStore.js";
-import { draftInfo } from "./ride/draft.js";
+import { rideDraft } from "./ride/draft.js";
 import { applyDifficulty } from "./ride/difficulty.js";
 import { RideSession } from "./ride/rideSession.js";
 import { TrainingControl } from "./ride/trainingControl.js";
@@ -1721,8 +1721,8 @@ async function joinRide(restored = null) {
         const physics = app.connection?.physics ?? null;
         if (!app.gearbox) return { grade: applyDifficulty(roadGrade, app.profile.difficulty), ...(physics?.crr && { crr: physics.crr }) };
         const me = app.state ? myRider(app.state.riders) : null;
-        const draft = me && !app.studio ? draftInfo(me, app.state.riders, app.route) : null;
-        const dragFactor = 1 - (draft?.savingPercent ?? 0) / 100;
+        // The server's own drag factor (its draft, the air), so the pedals feel what its physics applied.
+        const dragFactor = app.state && !app.studio ? rideDraft({ state: app.state, me, riders: app.state.riders, route: app.route }).dragFactor : 1;
         return shiftingCommand({ roadGrade, gearbox: app.gearbox, profile: app.profile, physics, me, dragFactor });
       };
       return app.studio ? app.studio.command(road, now()) : app.training.command(road);
@@ -4438,7 +4438,7 @@ function frame() {
   if (me && !app.finished) collectLemons(me);
   const ghost = me && !app.finished ? updateGhostLap(me, time) : null;
 
-  const draft = me ? draftInfo(me, riders, app.route) : null;
+  const draft = rideDraft({ state: app.state, me, riders, route: app.route }).shown;
   if (app.viewMode === "3d") {
     app.view3d.render({ riders: ghost ? [...everyone, ghost] : everyone, myId: app.riderId, myCadence: app.session.latest.cadence, timeS: time, colors });
   } else {

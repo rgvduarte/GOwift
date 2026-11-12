@@ -273,6 +273,14 @@ pub enum ServerMessage {
         /// The viewer's own vehicle, while they sit in one.
         #[serde(skip_serializing_if = "Option::is_none")]
         vehicle: Option<VehicleState>,
+        /// Everything the viewer's air drag was scaled by in the last tick,
+        /// rounded to 0.001: virtual shifting pushes the pedals with it, so
+        /// they feel the drag the physics applied (not a client-side guess).
+        drag_factor: f64,
+        /// The viewer's drag-area multiplier from drafting alone, rounded to
+        /// 0.001, for display; left out in clear air.
+        #[serde(skip_serializing_if = "Option::is_none")]
+        draft: Option<f64>,
     },
     /// The spin studio's counterpart of `State`, for the rider's room only.
     StudioState {
@@ -662,6 +670,10 @@ pub enum GameEvent {
 // Mapping from the simulation
 // ---------------------------------------------------------------------------
 
+fn round3(x: f64) -> f64 {
+    (x * 1000.0).round() / 1000.0
+}
+
 fn round2(x: f64) -> f64 {
     (x * 100.0).round() / 100.0
 }
@@ -934,6 +946,8 @@ pub fn state_message(
         },
         event,
         vehicle: own_vehicle.map(|v| vehicle_state(world, v)),
+        drag_factor: round3(me.drag_factor),
+        draft: Some(round3(me.draft)).filter(|&draft| draft < 1.0),
     })
 }
 
@@ -1353,6 +1367,8 @@ mod tests {
                     None,
                 ],
             }),
+            drag_factor: 1.0,
+            draft: None,
         }
         .to_json();
         assert!(json.contains(r#""vehicle":{"id":3,"code":"ABC234","kind":"tandem","captain":1,"bots":true,"seats":[{"rider_id":1,"name":"Anna","is_bot":false,"power":200.0,"share":0.5},null]}"#));
@@ -1388,6 +1404,8 @@ mod tests {
             },
             event: None,
             vehicle: None,
+            drag_factor: 1.0,
+            draft: None,
         }
         .to_json();
         assert!(!json.contains("vehicle"));
@@ -1469,11 +1487,13 @@ mod tests {
             },
             event: None,
             vehicle: None,
+            drag_factor: 1.0,
+            draft: None,
         }
         .to_json();
         assert_eq!(
             json,
-            r#"{"type":"state","tick":1,"riders":[],"race":{"phase":"idle"},"route_riders":{"humans":1,"bots":2}}"#
+            r#"{"type":"state","tick":1,"riders":[],"race":{"phase":"idle"},"route_riders":{"humans":1,"bots":2},"drag_factor":1.0}"#
         );
     }
 
@@ -1529,6 +1549,8 @@ mod tests {
             },
             event: None,
             vehicle: None,
+            drag_factor: 1.0,
+            draft: None,
         }
         .to_json();
         assert!(!json.contains("event"));
@@ -1574,5 +1596,66 @@ mod tests {
             json.contains(&format!("\"team\":\"{}\"", Team::of_name(&bot.name).id())),
             "{json}"
         );
+    }
+
+    /// A flat road with `leader` 3.5 m ahead of `follower` in the middle lane, after one tick.
+    fn two_in_a_line() -> (World, RiderId, RiderId) {
+        use goindoor_sim::rng::SplitMix64;
+        use goindoor_sim::route::{Point, Route, RouteSpec};
+        use goindoor_sim::SimConfig;
+        let route = Route::new(RouteSpec {
+            id: "r".into(),
+            name: "R".into(),
+            lanes: 4,
+            seed: 1,
+            points: vec![Point::new(0.0, 0.0, 0.0), Point::new(2000.0, 0.0, 0.0)],
+            markers: vec![],
+            walk: vec![],
+        })
+        .unwrap();
+        let config = SimConfig {
+            target_riders: 0,
+            ..SimConfig::default()
+        };
+        let mut world = World::new(route, config, Box::new(SplitMix64::new(1)));
+        let leader = world.join_human("Leader", 75.0);
+        let follower = world.join_human("Follower", 75.0);
+        world.place_at(leader, 103.5);
+        world.place_at(follower, 100.0);
+        world.tick(0.05);
+        (world, leader, follower)
+    }
+
+    fn state_json(world: &World, viewer: RiderId) -> String {
+        state_message(world, 1, viewer, 50, None, &|_| RiderTags::default())
+            .expect("a state for the viewer")
+            .to_json()
+    }
+
+    #[test]
+    fn state_carries_the_viewers_draft_while_drafting() {
+        let (world, _, follower) = two_in_a_line();
+        let draft = world.rider(follower).unwrap().draft;
+        assert!(draft < 1.0, "in the draft: {draft}");
+        let json = state_json(&world, follower);
+        assert!(json.contains(&format!("\"draft\":{}", round3(draft))), "{json}");
+    }
+
+    #[test]
+    fn state_always_carries_the_viewers_drag_factor() {
+        let (world, _, follower) = two_in_a_line();
+        let factor = world.rider(follower).unwrap().drag_factor;
+        let json = state_json(&world, follower);
+        assert!(json.contains(&format!("\"drag_factor\":{}", round3(factor))), "{json}");
+    }
+
+    #[test]
+    fn state_leaves_the_draft_out_in_clear_air() {
+        let (mut world, leader, follower) = two_in_a_line();
+        world.leave(follower);
+        world.tick(0.05);
+        let json = state_json(&world, leader);
+        assert!(!json.contains("\"draft\""), "{json}");
+        assert!(json.contains("\"drag_factor\":1.0"), "{json}");
     }
 }

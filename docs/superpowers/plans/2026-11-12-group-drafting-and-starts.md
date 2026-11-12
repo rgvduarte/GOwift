@@ -33,11 +33,11 @@
 
 ### Task 1: The server's own drag factor
 
-- [ ] Sim tests: `drag_factor_matches_the_draft_curve_behind_a_wheel`, `a_rider_in_clear_air_has_no_draft`, `a_parked_rider_has_no_draft`, `every_seat_carries_its_vehicles_draft_factor`.
-- [ ] `Rider::draft`, `Rider::drag_factor`, set in `World::tick` and `step_vehicles`.
-- [ ] Protocol tests: `state_carries_the_viewers_draft_while_drafting`, `state_always_carries_the_viewers_drag_factor`, `state_leaves_the_draft_out_in_clear_air`; `ServerMessage::State` gains the two fields.
-- [ ] Client tests in `ride.test.js` for `rideDraft`; `main.js` uses it for shifting and the HUD.
-- [ ] `docs/protocol.md`, `docs/devices.md`.
+- [x] Sim tests: `drag_factor_matches_the_draft_curve_behind_a_wheel`, `a_rider_in_clear_air_has_no_draft`, `a_parked_rider_has_no_draft`, `every_seat_carries_its_vehicles_draft_factor`.
+- [x] `Rider::draft`, `Rider::drag_factor`, set in `World::tick` and `step_vehicles`.
+- [x] Protocol tests: `state_carries_the_viewers_draft_while_drafting`, `state_always_carries_the_viewers_drag_factor`, `state_leaves_the_draft_out_in_clear_air`; `ServerMessage::State` gains the two fields.
+- [x] Client tests in `ride.test.js` for `rideDraft`; `main.js` uses it for shifting and the HUD.
+- [x] `docs/protocol.md`, `docs/devices.md`.
 
 ### Task 2: Group-aware drafting
 

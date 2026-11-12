@@ -369,6 +369,8 @@ impl World {
                 r.target_lane = c.target_lane;
                 r.turn = c.turn;
                 r.odometer += advance;
+                r.draft = cda_factor;
+                r.drag_factor = cda_factor;
             }
         }
     }
@@ -412,6 +414,8 @@ impl World {
                 boxed_s: 0.0,
                 pass_urge: 0.0,
                 accel: 0.0,
+                draft: 1.0,
+                drag_factor: 1.0,
             },
         );
         self.events.push(WorldEvent::RiderJoined {
@@ -928,6 +932,39 @@ mod tests {
         }
         // Two lanes over is clear air.
         assert!((follower_speed(0.0, Some(2.0)) - alone).abs() < 1e-12);
+    }
+
+    #[test]
+    fn every_seat_carries_its_vehicles_draft_factor() {
+        let config = SimConfig::default();
+        let mut world = empty_world(flat_loop(10_000.0));
+        let leader = human(&mut world, "Leader", 3.0);
+        let captain = human(&mut world, "Captain", 3.0);
+        let id = world
+            .create_vehicle(captain, VehicleKind::Tandem, false, &no_codes_taken)
+            .unwrap();
+        let both = crew(&mut world, id, captain, 1);
+        place(&mut world, leader, 103.5, 8.0);
+        place(&mut world, captain, 100.0, 8.0);
+        for &seat in both.iter().chain([&leader]) {
+            let r = world.riders.get_mut(&seat).unwrap();
+            r.lane = 1.0;
+            r.target_lane = 1;
+        }
+
+        ride(&mut world, DT, &powers(&both, 150.0));
+
+        let expected = config.draft.cda_factor(3.5);
+        for seat in both {
+            let r = world.rider(seat).unwrap();
+            assert!(
+                (r.draft - expected).abs() < 1e-12,
+                "{}: {} vs {expected}",
+                r.name,
+                r.draft
+            );
+            assert!((r.drag_factor - expected).abs() < 1e-12, "{}", r.drag_factor);
+        }
     }
 
     #[test]

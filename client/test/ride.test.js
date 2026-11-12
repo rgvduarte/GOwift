@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { applyDifficulty } from "../public/js/ride/difficulty.js";
-import { draftInfo } from "../public/js/ride/draft.js";
+import { draftInfo, rideDraft } from "../public/js/ride/draft.js";
 import { RideSession } from "../public/js/ride/rideSession.js";
 import { RiderSmoother } from "../public/js/ride/smoothing.js";
 import { Emitter } from "../public/js/util/emitter.js";
@@ -36,6 +36,45 @@ test("drafting works across the start line and picks the nearest leader", () => 
   const me = { id: 1, distance: 999, lane: 0 };
   const info = draftInfo(me, [me, { id: 2, distance: 3, lane: 0 }, { id: 3, distance: 1.5, lane: 0 }], route);
   assert.equal(info.leader.id, 3);
+});
+
+// A rider 3.5 m ahead in my lane: the local mirror sees a 20 % draft.
+const mirrored = () => {
+  const me = { id: 1, distance: 100, lane: 1 };
+  return { me, riders: [me, { id: 2, distance: 103.5, lane: 1 }], route: squareRoute() };
+};
+
+test("the server's drag factor drives the ride over the local mirror", () => {
+  const { me, riders, route } = mirrored();
+  const state = { drag_factor: 0.552, draft: 0.552 };
+  assert.equal(rideDraft({ state, me, riders, route }).dragFactor, 0.552);
+});
+
+test("without the server's drag factor, the local mirror drives the ride", () => {
+  const { me, riders, route } = mirrored();
+  assert.equal(rideDraft({ state: {}, me, riders, route }).dragFactor, 0.8);
+});
+
+test("the drafting shown is the server's saving", () => {
+  const { me, riders, route } = mirrored();
+  const state = { drag_factor: 0.552, draft: 0.552 };
+  assert.equal(rideDraft({ state, me, riders, route }).shown.savingPercent, 45);
+});
+
+test("the server's draft keeps the mirror's gap to draw the band to the wheel", () => {
+  const { me, riders, route } = mirrored();
+  const shown = rideDraft({ state: { drag_factor: 0.8, draft: 0.8 }, me, riders, route }).shown;
+  assert.deepEqual({ gap: shown.gap, leader: shown.leader.id }, { gap: 3.5, leader: 2 });
+});
+
+test("no drafting is shown when the server says clear air, whatever the mirror sees", () => {
+  const { me, riders, route } = mirrored();
+  assert.equal(rideDraft({ state: { drag_factor: 1 }, me, riders, route }).shown, null);
+});
+
+test("an older server's draft is shown from the mirror", () => {
+  const { me, riders, route } = mirrored();
+  assert.equal(rideDraft({ state: {}, me, riders, route }).shown.savingPercent, 20);
 });
 
 test("smoother extrapolates with speed and wraps at the line", () => {
