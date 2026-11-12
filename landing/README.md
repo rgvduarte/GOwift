@@ -53,4 +53,5 @@ Docker Compose fills them from `.env` (`GOINDOOR_LANDING_URL`,
 touches it and publishes it at <https://rgvduarte.github.io/GOwift/>. Turn it
 on once under *Settings → Pages → Source: GitHub Actions*. The workflow takes
 `PUBLIC_SITE_URL` from Pages itself and `PUBLIC_APP_URL` from the repository
-variable `GOINDOOR_PUBLIC_URL` (unset until there is a public server).
+variable `GOINDOOR_PUBLIC_URL`, or the public server on Render
+(`https://goindoor.onrender.com`) when it is unset.

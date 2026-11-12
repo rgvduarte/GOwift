@@ -8,6 +8,7 @@
 <p align="center">
   Open-source indoor cycling in the browser, with friends — and bots, so the road is never empty.<br>
   <sub>Owner and developer: <a href="https://github.com/rgvduarte">GD</a> ·
+  Ride now: <a href="https://goindoor.onrender.com">goindoor.onrender.com</a> ·
   Website: <a href="https://rgvduarte.github.io/GOwift/">rgvduarte.github.io/GOwift</a> ·
   Based on <a href="https://github.com/Lethonium/OpenRadlr">OpenRadlr</a></sub>
 </p>
