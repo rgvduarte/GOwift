@@ -2,7 +2,7 @@
 import "@fontsource/barlow-condensed/700-italic.css";
 import "@fontsource/barlow-condensed/800-italic.css";
 import "../styles/global.css";
-import { site, appHost } from "../site";
+import { site, appHost, rideUrl, href } from "../site";
 
 interface Props {
   title?: string;
@@ -14,7 +14,7 @@ interface Props {
 const { title, description = site.description, overlay = false } = Astro.props;
 const fullTitle = title ? `${title} – ${site.name}` : `${site.name} – free indoor cycling, together`;
 const canonical = new URL(Astro.url.pathname, site.url).href;
-const ogImage = new URL("/og.png", site.url).href;
+const ogImage = new URL(href("og.png"), site.url).href;
 ---
 
 <!doctype html>
@@ -26,10 +26,10 @@ const ogImage = new URL("/og.png", site.url).href;
     <meta name="description" content={description} />
     <link rel="canonical" href={canonical} />
     <meta name="theme-color" content="#0f1216" />
-    <link rel="icon" href="/icons/favicon-32.png" type="image/png" sizes="32x32" />
-    <link rel="icon" href="/icons/favicon-64.png" type="image/png" sizes="64x64" />
-    <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
-    <link rel="sitemap" href="/sitemap-index.xml" />
+    <link rel="icon" href={href("icons/favicon-32.png")} type="image/png" sizes="32x32" />
+    <link rel="icon" href={href("icons/favicon-64.png")} type="image/png" sizes="64x64" />
+    <link rel="apple-touch-icon" href={href("icons/apple-touch-icon.png")} />
+    <link rel="sitemap" href={href("sitemap-index.xml")} />
 
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content={site.name} />
@@ -47,13 +47,13 @@ const ogImage = new URL("/og.png", site.url).href;
     <a class="skip button" href="#content">Skip to content</a>
     <header class:list={["top", { overlay }]}>
       <div class="wrap top-inner">
-        <a class="brand" href="/" aria-label="OpenRadlr home">
-          <img src="/icons/brand-mark.png" alt="" width="46" height="36" />
-          <span>Open<span>Radlr</span></span>
+        <a class="brand" href={href()} aria-label="GOwift home">
+          <img src={href("icons/brand-mark.png")} alt="" width="46" height="36" />
+          <span><span>GO</span>wift</span>
         </a>
         <nav aria-label="Main">
           <a class="nav-link" href={site.githubUrl}>GitHub</a>
-          <a class="button primary" href={site.appUrl} aria-label={`Ride now on ${appHost}`}>Ride now</a>
+          <a class="button primary" href={rideUrl} aria-label={`Ride now on ${appHost}`}>Ride now</a>
         </nav>
       </div>
     </header>
@@ -65,12 +65,12 @@ const ogImage = new URL("/og.png", site.url).href;
     <footer class="foot">
       <div class="wrap foot-inner">
         <p>
-          <span class="brand-word">Open<span>Radlr</span></span> is open source.
-          <span class="muted"><i>Radler</i>: German for a cyclist, and for half beer, half lemonade.</span>
+          <span class="brand-word"><span>GO</span>wift</span> is open source.
+          <span class="muted">Created and developed by <a href={site.ownerUrl}>{site.owner}</a>. Based on <a href={site.upstreamUrl}>OpenRadlr</a>.</span>
         </p>
         <nav aria-label="Footer">
-          <a href={site.appUrl}>Open the app</a>
-          <a href="/changelog/">Changelog</a>
+          <a href={rideUrl}>Open the app</a>
+          <a href={href("changelog/")}>Changelog</a>
           <a href={site.githubUrl}>GitHub</a>
           {site.privacyUrl && <a href={site.privacyUrl}>Privacy</a>}
           {site.imprintUrl && <a href={site.imprintUrl}>Imprint</a>}
@@ -107,7 +107,7 @@ const ogImage = new URL("/og.png", site.url).href;
   }
   .brand > span > span,
   .brand-word span {
-    color: var(--lemon);
+    color: var(--brand);
   }
   .brand:hover {
     color: var(--text);

@@ -1,4 +1,4 @@
-# OpenRadlr landing page: Astro builds static files, Caddy serves them.
+# GOwift landing page: Astro builds static files, Caddy serves them.
 # Build from the repository root (the page reads ../routes and ../CHANGELOG.md):
 #
 #   docker build -f landing/Dockerfile .
@@ -12,8 +12,8 @@ COPY CHANGELOG.md /src/CHANGELOG.md
 COPY landing/ ./
 
 # Addresses baked into the page (see landing/README.md).
-ARG PUBLIC_SITE_URL=https://openradlr.com
-ARG PUBLIC_APP_URL=https://app.openradlr.com
+ARG PUBLIC_SITE_URL=http://landing.localhost
+ARG PUBLIC_APP_URL=
 ARG PUBLIC_DISCORD_URL=
 ARG PUBLIC_PRIVACY_URL=
 ARG PUBLIC_IMPRINT_URL=
