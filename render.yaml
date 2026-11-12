@@ -1,0 +1,42 @@
+# One-click deploy of the GOindoor game server on Render's free plan
+# (https://render.com/deploy?repo=https://github.com/rgvduarte/GOwift).
+# See docs/deploy.md#render-free for what the free plan does and doesn't do.
+services:
+  - type: web
+    name: goindoor
+    runtime: docker
+    plan: free
+    region: frankfurt
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    healthCheckPath: /healthz
+    branch: main
+    autoDeploy: true
+    # Rebuild only when the server, the client or the routes change: a Rust
+    # build takes minutes, and the free plan has a monthly build allowance.
+    buildFilter:
+      paths:
+        - server/**
+        - client/public/**
+        - routes/**
+        - Dockerfile
+        - render.yaml
+    envVars:
+      # Render sends traffic to this port; the image listens on 8080.
+      - key: PORT
+        value: "8080"
+      # Client addresses come from Render's proxy (X-Forwarded-For). The public
+      # https address comes from RENDER_EXTERNAL_URL unless GOINDOOR_PUBLIC_URL is set.
+      - key: GOINDOOR_TRUST_PROXY
+        value: "true"
+      - key: GOINDOOR_SERVER_NAME
+        value: GOindoor
+      # The free plan has 0.1 CPU and 5 GB of traffic a month. State updates are
+      # uncompressed JSON: measured, a rider receives about 150 MB an hour with
+      # the defaults and about 56 MB with these (so ~90 riding hours a month).
+      - key: GOINDOOR_TARGET_RIDERS
+        value: "6"
+      - key: GOINDOOR_MAX_VISIBLE_RIDERS
+        value: "15"
+      # Strava: add GOINDOOR_STRAVA_CLIENT_ID and GOINDOOR_STRAVA_CLIENT_SECRET
+      # in the Render dashboard (Environment) once you have a Strava API app.

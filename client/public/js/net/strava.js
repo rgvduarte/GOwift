@@ -82,11 +82,13 @@ export class StravaClient {
 
   /**
    * Uploads a ride: a FIT file (bytes), or TCX (text); resolves with
-   * Strava's upload status ({id, status, error, activity_id}).
+   * Strava's upload status ({id, status, error, activity_id}). `summary`, the
+   * ride's totals one per line, goes into the activity description.
    */
-  async upload(file, name) {
+  async upload(file, name, summary = "") {
     const fit = typeof file !== "string";
-    const response = await this.fetch(`/api/strava/upload?name=${encodeURIComponent(name)}`, {
+    const query = `name=${encodeURIComponent(name)}${summary ? `&summary=${encodeURIComponent(summary)}` : ""}`;
+    const response = await this.fetch(`/api/strava/upload?${query}`, {
       method: "POST",
       credentials: "same-origin",
       signal: this.timeoutSignal(30_000),

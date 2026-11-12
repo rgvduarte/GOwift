@@ -8,11 +8,17 @@
 
 import { formatDistanceWithUnit, formatDuration, formatNumber, formatSpeed, speedUnit } from "../util/format.js";
 import { getLocale, t } from "../i18n/i18n.js";
+import { GD_BOX, GD_PATH, GO_BOX, GO_PATH, fillMark } from "./brandMarks.js";
+import { coastOutline, islandOf, mapFrame, roadSamples } from "./mapPreview.js";
 
 export const MAX_PHOTOS = 30;
-const SANS = 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'; // i18n-ok
-const NUM = '"Barlow Condensed", "Roboto Condensed", "Arial Narrow", system-ui, sans-serif'; // i18n-ok
+// The GD design system: Helvetica, white on near black, glass cards.
+const SANS = 'Helvetica, "Helvetica Neue", Arial, system-ui, sans-serif'; // i18n-ok
+const NUM = SANS;
 const ACCENT = "#ffffff";
+const INK = "#0b0b0c";
+const SILVER = "#cfcfd4";
+const GREY = "#8a8a8e";
 
 /** "goindoor-2026-10-14-1530-rolling-hills-3.png" */
 export function photoFileName(t, routeId = "ride", suffix = "") {
@@ -192,107 +198,264 @@ export function composePhoto(scene, { routeName, stats, when }, doc = document) 
 }
 
 /**
- * Draws the end-of-ride card (1600 × 1200): the last view of the world
- * behind a dark panel with the totals, an elevation profile and the power
- * line of the whole ride. It is 4:3 because that's the shape Strava shows
- * activity photos in; a wider card loses its sides there.
- * @param {{routeName: string, serverName: string, when: Date, stats: [string, string][],
- *          power: number[], elevation: (number|null)[], scene?: HTMLCanvasElement | null}} info
+ * Where the ride went, as world points [x, z] (north up, as on the maps):
+ * every sample that was on a known route, thinned to about `maxPoints`, and
+ * always ending where the ride ended.
+ * @param {{route: ?string, routeM: ?number}[]} samples
+ * @param {Map<string, {positionAt: (d: number) => {x: number, y: number}}>} routesById
  */
-export function composeSummary({ routeName, serverName, when, stats, power, elevation, scene = null }, doc = document) {
+export function rideTrack(samples, routesById, maxPoints = 600) {
+  const onRoute = samples.filter((s) => s.route && Number.isFinite(s.routeM) && routesById.has(s.route));
+  const step = Math.max(1, Math.ceil(onRoute.length / maxPoints));
+  const kept = onRoute.filter((_, i) => i % step === 0);
+  if (onRoute.length && kept.at(-1) !== onRoute.at(-1)) kept.push(onRoute.at(-1));
+  return kept.map((s) => {
+    const { x, y } = routesById.get(s.route).positionAt(s.routeM);
+    return [x, -y];
+  });
+}
+
+/** The summary card's parts (1600 × 1200): every text stays inside one of them. */
+export const SUMMARY_LAYOUT = Object.freeze({
+  header: Object.freeze({ x: 64, y: 48, w: 1472, h: 200 }),
+  stats: Object.freeze({ x: 64, y: 272, w: 900, h: 520 }),
+  map: Object.freeze({ x: 988, y: 272, w: 548, h: 520 }),
+  chart: Object.freeze({ x: 64, y: 816, w: 1472, h: 336 }),
+});
+
+/** A rounded rectangle path (no reliance on ctx.roundRect). */
+function roundedRect(ctx, { x, y, w, h }, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.lineTo(x + w - r, y);
+  ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+  ctx.lineTo(x + w, y + h - r);
+  ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+  ctx.lineTo(x + r, y + h);
+  ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+  ctx.lineTo(x, y + r);
+  ctx.quadraticCurveTo(x, y, x + r, y);
+  ctx.closePath();
+}
+
+/** A GD glass card: dark tint, white at 9 %, a 22 % outline and a brighter top edge. */
+function glassCard(ctx, box, r = 28) {
+  roundedRect(ctx, box, r);
+  ctx.fillStyle = "rgba(11, 11, 12, 0.55)";
+  ctx.fill();
+  ctx.fillStyle = "rgba(255, 255, 255, 0.09)";
+  ctx.fill();
+  ctx.strokeStyle = "rgba(255, 255, 255, 0.22)";
+  ctx.lineWidth = 2;
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(box.x + r, box.y + 1);
+  ctx.lineTo(box.x + box.w - r, box.y + 1);
+  ctx.strokeStyle = "rgba(255, 255, 255, 0.4)";
+  ctx.stroke();
+}
+
+/** A small uppercase label, spaced out, as on the GD pages. */
+function label(ctx, text, x, y, maxWidth, { color = SILVER, size = 20, align = "left" } = {}) {
+  ctx.font = `700 ${size}px ${SANS}`;
+  ctx.fillStyle = color;
+  ctx.textAlign = align;
+  ctx.fillText(fit(ctx, text.toUpperCase(), maxWidth), x, y);
+  ctx.textAlign = "left";
+}
+
+/** The largest bold size (from `size` down) at which `text` fits `maxWidth`. */
+function fitFont(ctx, text, maxWidth, size, min = 24) {
+  do ctx.font = `700 ${size}px ${NUM}`;
+  while (ctx.measureText(text).width > maxWidth && (size -= 2) > min);
+  return size;
+}
+
+/** The island, its roads and the ridden track, drawn into `box`. */
+function drawTrackMap(ctx, box, { routes = [], network = null, track = [] }) {
+  const island = network?.island?.() ?? (routes.length ? islandOf(routes) : null);
+  const coast = island ? coastOutline(island) : [];
+  const roads = [...(network?.roads?.() ?? []), ...routes].map((route) => roadSamples([route], 25).map((s) => [s.x, s.z]));
+  const points = coast.length ? coast : track.length ? track : roads.flat();
+  if (!points.length) return;
+  const frame = mapFrame(points, box.w, box.h, 6);
+  const at = ([x, z]) => {
+    const [sx, sy] = frame.toScreen(x, z);
+    return [box.x + sx, box.y + sy];
+  };
+  const line = (pts, close = false) => {
+    ctx.beginPath();
+    pts.forEach((p, i) => (i === 0 ? ctx.moveTo(...at(p)) : ctx.lineTo(...at(p))));
+    if (close) ctx.closePath();
+  };
+  ctx.lineCap = "round";
+  ctx.lineJoin = "round";
+  if (coast.length) {
+    line(coast, true);
+    ctx.fillStyle = "rgba(255, 255, 255, 0.07)";
+    ctx.fill();
+    ctx.strokeStyle = "rgba(255, 255, 255, 0.28)";
+    ctx.lineWidth = 2;
+    ctx.stroke();
+  }
+  ctx.strokeStyle = "rgba(255, 255, 255, 0.16)";
+  ctx.lineWidth = 2;
+  for (const road of roads) if (road.length > 1) (line(road), ctx.stroke());
+  if (track.length > 1) {
+    line(track);
+    ctx.strokeStyle = "rgba(255, 255, 255, 0.25)";
+    ctx.lineWidth = 14;
+    ctx.stroke();
+    ctx.strokeStyle = ACCENT;
+    ctx.lineWidth = 6;
+    ctx.stroke();
+  }
+  if (track.length) {
+    const [sx, sy] = at(track[0]);
+    const [ex, ey] = at(track.at(-1));
+    ctx.beginPath();
+    ctx.arc(sx, sy, 9, 0, Math.PI * 2);
+    ctx.fillStyle = INK;
+    ctx.fill();
+    ctx.strokeStyle = ACCENT;
+    ctx.lineWidth = 4;
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(ex, ey, 10, 0, Math.PI * 2);
+    ctx.fillStyle = ACCENT;
+    ctx.fill();
+  }
+}
+
+/**
+ * Draws the end-of-ride card (1600 × 1200) in the GD design: the GD monogram
+ * and the GOindoor wordmark, the route and date, then glass cards with the
+ * totals, a map of where the ride went and the power and elevation of the
+ * whole ride, over the last view of the world. It is 4:3 because that's the
+ * shape Strava shows activity photos in; a wider card loses its sides there.
+ * Every text is fitted to its card (see SUMMARY_LAYOUT).
+ * @param {{routeName: string, serverName: string, when: Date, stats: [string, string][],
+ *          power: number[], elevation: (number|null)[], scene?: HTMLCanvasElement | null,
+ *          map?: {routes?: object[], network?: object | null, track?: number[][]} | null}} info
+ */
+export function composeSummary({ routeName, serverName, when, stats, power, elevation, scene = null, map = null }, doc = document) {
   const W = 1600;
   const H = 1200;
   const canvas = doc.createElement("canvas");
   canvas.width = W;
   canvas.height = H;
   const ctx = canvas.getContext("2d");
+  const { header, stats: statsBox, map: mapBox, chart } = SUMMARY_LAYOUT;
 
-  ctx.fillStyle = "#0f1216";
+  // Ground: the last view of the world, darkened, with the GD grey glows.
+  ctx.fillStyle = INK;
   ctx.fillRect(0, 0, W, H);
   if (scene && scene.width > 0 && scene.height > 0) {
-    // Cover: scale to fill, crop the overflow.
     const scale = Math.max(W / scene.width, H / scene.height);
     const sw = W / scale;
     const sh = H / scale;
     ctx.drawImage(scene, (scene.width - sw) / 2, (scene.height - sh) / 2, sw, sh, 0, 0, W, H);
   }
-  const shade = ctx.createLinearGradient(0, 0, W, 0);
-  shade.addColorStop(0, "rgba(15, 18, 22, 0.94)");
-  shade.addColorStop(0.62, "rgba(15, 18, 22, 0.86)");
-  shade.addColorStop(1, "rgba(15, 18, 22, 0.6)");
+  const shade = ctx.createLinearGradient(0, 0, W, H);
+  shade.addColorStop(0, "rgba(11, 11, 12, 0.94)");
+  shade.addColorStop(0.55, "rgba(11, 11, 12, 0.8)");
+  shade.addColorStop(1, "rgba(11, 11, 12, 0.62)");
   ctx.fillStyle = shade;
   ctx.fillRect(0, 0, W, H);
+  const glow = ctx.createRadialGradient?.(W * 0.12, H * 0.06, 0, W * 0.12, H * 0.06, W * 0.6);
+  if (glow) {
+    glow.addColorStop(0, "rgba(138, 138, 142, 0.22)");
+    glow.addColorStop(1, "rgba(138, 138, 142, 0)");
+    ctx.fillStyle = glow;
+    ctx.fillRect(0, 0, W, H);
+  }
 
-  const left = 100;
-  const width = W - 2 * left;
+  // Header: GD monogram, the GOindoor wordmark, the date and the route.
+  const markH = 52;
+  const markY = header.y + 24;
+  let x = header.x + 24;
+  x += fillMark(ctx, GD_PATH, GD_BOX, { x, y: markY, height: markH });
+  ctx.fillStyle = "rgba(255, 255, 255, 0.22)";
+  ctx.fillRect(x + 22, markY + 4, 2, markH - 8);
+  x += 46;
+  const goH = 36;
+  x += fillMark(ctx, GO_PATH, GO_BOX, { x, y: markY + markH - goH, height: goH });
   ctx.textBaseline = "alphabetic";
+  ctx.fillStyle = SILVER;
+  ctx.font = `700 ${Math.round(goH / 0.72)}px ${SANS}`;
+  ctx.fillText("indoor", x + 3, markY + markH);
+  const right = header.x + header.w - 24;
+  const dateText = when.toLocaleString(getLocale(), { dateStyle: "long", timeStyle: "short" });
+  ctx.font = `500 26px ${SANS}`;
+  ctx.fillStyle = SILVER;
+  ctx.textAlign = "right";
+  ctx.fillText(fit(ctx, dateText, header.w * 0.4), right, markY + 30);
+  ctx.textAlign = "left";
+  label(ctx, serverName, right, markY + markH + 10, header.w * 0.4, { color: GREY, size: 18, align: "right" });
   ctx.fillStyle = ACCENT;
-  ctx.font = `800 24px ${SANS}`;
-  ctx.fillText(t("photos.cardTitle"), left, 140);
-  ctx.fillStyle = "#fff";
   ctx.font = `700 64px ${SANS}`;
-  ctx.fillText(fit(ctx, routeName, width), left, 220);
-  ctx.fillStyle = "#aab3c0";
-  ctx.font = `500 28px ${SANS}`;
-  ctx.fillText(fit(ctx, `${when.toLocaleString(getLocale(), { dateStyle: "long", timeStyle: "short" })} · ${serverName}`, width), left, 270);
+  ctx.fillText(fit(ctx, routeName, header.w - 48), header.x + 24, header.y + header.h - 22);
 
-  // Totals in a grid of up to 4 columns.
-  const columns = 4;
-  const cellW = width / columns;
-  stats.slice(0, 8).forEach(([label, value], i) => {
-    const x = left + (i % columns) * cellW;
-    const y = 390 + Math.floor(i / columns) * 160;
-    ctx.fillStyle = "#8a94a3";
-    ctx.font = `700 20px ${SANS}`;
-    ctx.fillText(label.toUpperCase(), x, y);
-    ctx.fillStyle = "#fff";
-    let size = 80;
-    do ctx.font = `700 ${size}px ${NUM}`;
-    while (ctx.measureText(value).width > cellW - 32 && (size -= 4) > 28);
-    ctx.fillText(value, x, y + 80);
+  // Totals: up to nine, three to a row.
+  glassCard(ctx, statsBox);
+  const pad = 36;
+  const columns = 3;
+  const cellW = (statsBox.w - 2 * pad) / columns;
+  stats.slice(0, 9).forEach(([name, value], i) => {
+    const cx = statsBox.x + pad + (i % columns) * cellW;
+    const cy = statsBox.y + pad + Math.floor(i / columns) * 152;
+    label(ctx, name, cx, cy + 22, cellW - 20);
+    fitFont(ctx, value, cellW - 20, 68);
+    ctx.fillStyle = ACCENT;
+    ctx.fillText(value, cx, cy + 100);
+    if (i % columns === 0 && i > 0) {
+      ctx.fillStyle = "rgba(255, 255, 255, 0.12)";
+      ctx.fillRect(statsBox.x + pad, cy - 16, statsBox.w - 2 * pad, 2);
+    }
   });
 
-  // Elevation (filled) and power (line) over the ride.
-  const chart = { x: left, y: 800, w: width, h: 280 };
-  ctx.fillStyle = "#8a94a3";
+  // Where the ride went.
+  glassCard(ctx, mapBox);
+  label(ctx, t("photos.cardRoute"), mapBox.x + 28, mapBox.y + 46, mapBox.w - 56);
+  if (map) drawTrackMap(ctx, { x: mapBox.x + 24, y: mapBox.y + 66, w: mapBox.w - 48, h: mapBox.h - 90 }, map);
+
+  // Power (line) and elevation (filled) over the whole ride.
+  glassCard(ctx, chart);
+  label(ctx, t("photos.cardPower"), chart.x + 32, chart.y + 46, 300, { color: ACCENT });
   ctx.font = `700 20px ${SANS}`;
-  ctx.fillText("POWER", chart.x, chart.y - 20);
-  ctx.fillStyle = "#5fb47c";
-  ctx.fillText("ELEVATION", chart.x + 110, chart.y - 20);
+  const powerWidth = ctx.measureText(t("photos.cardPower").toUpperCase()).width;
+  label(ctx, t("photos.cardElevation"), chart.x + 32 + powerWidth + 32, chart.y + 46, 300, { color: GREY });
+  const plot = { x: chart.x + 32, y: chart.y + 72, w: chart.w - 64, h: chart.h - 104 };
   const heights = elevation.filter((v) => v !== null && Number.isFinite(v));
   if (heights.length > 1) {
-    const series = downsample(elevation.map((v) => (v === null || !Number.isFinite(v) ? heights[0] : v)), 240);
+    const series = downsample(elevation.map((v) => (v === null || !Number.isFinite(v) ? heights[0] : v)), 300);
     const lo = Math.min(...series);
     const hi = Math.max(...series, lo + 20);
     ctx.beginPath();
-    ctx.moveTo(chart.x, chart.y + chart.h);
-    series.forEach((v, i) => ctx.lineTo(chart.x + (i / (series.length - 1)) * chart.w, chart.y + chart.h - ((v - lo) / (hi - lo)) * chart.h * 0.7));
-    ctx.lineTo(chart.x + chart.w, chart.y + chart.h);
+    ctx.moveTo(plot.x, plot.y + plot.h);
+    series.forEach((v, i) => ctx.lineTo(plot.x + (i / (series.length - 1)) * plot.w, plot.y + plot.h - ((v - lo) / (hi - lo)) * plot.h * 0.75));
+    ctx.lineTo(plot.x + plot.w, plot.y + plot.h);
     ctx.closePath();
-    ctx.fillStyle = "rgba(95, 180, 124, 0.28)";
+    ctx.fillStyle = "rgba(138, 138, 142, 0.35)";
     ctx.fill();
   }
   if (power.length > 1) {
-    const series = downsample(power, 240);
+    const series = downsample(power, 300);
     const top = Math.max(...series, 100) * 1.1;
     ctx.beginPath();
     series.forEach((v, i) => {
-      const x = chart.x + (i / (series.length - 1)) * chart.w;
-      const y = chart.y + chart.h - (v / top) * chart.h;
-      if (i === 0) ctx.moveTo(x, y);
-      else ctx.lineTo(x, y);
+      const px = plot.x + (i / (series.length - 1)) * plot.w;
+      const py = plot.y + plot.h - (v / top) * plot.h;
+      if (i === 0) ctx.moveTo(px, py);
+      else ctx.lineTo(px, py);
     });
     ctx.strokeStyle = ACCENT;
     ctx.lineWidth = 4;
     ctx.lineJoin = "round";
     ctx.stroke();
   }
-  ctx.strokeStyle = "rgba(255, 255, 255, 0.15)";
-  ctx.lineWidth = 1;
-  ctx.beginPath();
-  ctx.moveTo(chart.x, chart.y + chart.h + 0.5);
-  ctx.lineTo(chart.x + chart.w, chart.y + chart.h + 0.5);
-  ctx.stroke();
+  ctx.fillStyle = "rgba(255, 255, 255, 0.12)";
+  ctx.fillRect(plot.x, plot.y + plot.h, plot.w, 2);
   return canvas;
 }
 

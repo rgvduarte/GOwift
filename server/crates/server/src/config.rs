@@ -269,9 +269,12 @@ impl Config {
             .filter(|origin| !origin.is_empty())
             .collect();
 
+        // On Render the service's own https address comes in RENDER_EXTERNAL_URL,
+        // so a one-click deploy works without setting the address by hand.
         let public_url = reader
             .raw("GOINDOOR_PUBLIC_URL")
             .filter(|url| !url.is_empty())
+            .or_else(|| reader.raw("RENDER_EXTERNAL_URL").filter(|url| !url.is_empty()))
             .map(|url| url.trim_end_matches('/').to_owned());
         if let Some(url) = &public_url {
             reader.check(
@@ -533,6 +536,22 @@ mod tests {
     fn config(vars: &[(&str, &str)]) -> Result<Config, ConfigError> {
         let map: HashMap<String, String> = vars.iter().map(|(k, v)| (k.to_string(), v.to_string())).collect();
         Config::from_lookup(|key| map.get(key).cloned())
+    }
+
+    #[test]
+    fn the_public_url_falls_back_to_the_address_render_gives_the_service() {
+        let c = config(&[("RENDER_EXTERNAL_URL", "https://goindoor.onrender.com/")]).unwrap();
+        assert_eq!(c.public_url.as_deref(), Some("https://goindoor.onrender.com"));
+    }
+
+    #[test]
+    fn an_own_public_url_wins_over_render_s_address() {
+        let c = config(&[
+            ("RENDER_EXTERNAL_URL", "https://goindoor.onrender.com"),
+            ("GOINDOOR_PUBLIC_URL", "https://ride.example.org"),
+        ])
+        .unwrap();
+        assert_eq!(c.public_url.as_deref(), Some("https://ride.example.org"));
     }
 
     #[test]

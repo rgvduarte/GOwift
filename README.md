@@ -131,6 +131,10 @@ and pre-push hooks (see [CONTRIBUTING.md](CONTRIBUTING.md#git-hooks)).
 
 ## Deploying to a server
 
+**Free, in one click:** [![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/rgvduarte/GOwift)
+— Render's free plan builds the Dockerfile and serves it over HTTPS. It sleeps
+when nobody rides and keeps no data; see [docs/deploy.md](docs/deploy.md#render-free).
+
 Full guide, including your own reverse proxy and Strava: [docs/deploy.md](docs/deploy.md).
 
 ```bash
@@ -183,7 +187,7 @@ All settings live in `.env`; see [`.env.example`](.env.example) for descriptions
 | `GOINDOOR_MAX_PLAYERS` | `50` | Maximum human riders on trainers at the same time, all routes (phone riders not counted) |
 | `GOINDOOR_MAX_PADDLE_PLAYERS` | `20` | Maximum riders on phone paddles at the same time, on top of the above |
 | `GOINDOOR_MAX_VISIBLE_RIDERS` | `200` | Most riders in one state message; humans first, then the nearest bots |
-| `GOINDOOR_PUBLIC_URL` | – | Public address, e.g. `https://ride.example.org` (Strava, allowed origin) |
+| `GOINDOOR_PUBLIC_URL` | – | Public address, e.g. `https://ride.example.org` (Strava, allowed origin); on Render it defaults to the service's `RENDER_EXTERNAL_URL` |
 | `GOINDOOR_TRUST_PROXY` | `false` | Client IPs from `X-Forwarded-For` behind a reverse proxy |
 | `GOINDOOR_MAX_CONNECTIONS_PER_IP` | `4` | Game connections per IP |
 | `GOINDOOR_MESSAGES_PER_SECOND` | `20` | Message rate limit per connection |

@@ -30,7 +30,7 @@ export function uploadPresentation(state, account) {
 }
 
 /** Bind a single ride's panel; disposing prevents late effects on another ride. */
-export function bindStravaUpload({ elements, client, receipts, key, account, makeFile, name, onSuccess = () => {}, onConnect, confirm = () => false }) {
+export function bindStravaUpload({ elements, client, receipts, key, account, makeFile, name, summary = () => "", onSuccess = () => {}, onConnect, confirm = () => false }) {
   const job = account ? new StravaUpload({ client, receipts, key }) : null;
   let notified = false;
   const render = (state) => {
@@ -68,7 +68,7 @@ export function bindStravaUpload({ elements, client, receipts, key, account, mak
   const run = () => {
     const resubmit = job?.state.phase === "uncertain";
     if (resubmit && !confirm(t("strava.confirmAgain"))) return;
-    return job?.run(makeFile, name, { resubmit });
+    return job?.run(makeFile, name, { resubmit, summary: summary() });
   };
   const connect = (event) => {
     if (!onConnect) return;

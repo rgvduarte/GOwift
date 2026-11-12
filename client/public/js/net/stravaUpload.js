@@ -81,7 +81,7 @@ export class StravaUpload {
   }
 
   /** Explicit user action only; a known upload is checked instead of submitted. */
-  run(makeFile, name, { resubmit = false } = {}) {
+  run(makeFile, name, { resubmit = false, summary = "" } = {}) {
     if (this.#running) return this.#running;
     if (!this.#active) return Promise.resolve();
     // The previous screen may have received its POST response after this one opened.
@@ -93,11 +93,11 @@ export class StravaUpload {
       return Promise.resolve();
     }
     if (this.#state.phase === "uncertain" && !resubmit) return Promise.resolve();
-    this.#running = this.#execute(makeFile, name).finally(() => { this.#running = null; });
+    this.#running = this.#execute(makeFile, name, summary).finally(() => { this.#running = null; });
     return this.#running;
   }
 
-  async #execute(makeFile, name) {
+  async #execute(makeFile, name, summary) {
     let receipt = { id: this.#state.uploadId };
     if (!receipt.id) {
       let file;
@@ -109,7 +109,7 @@ export class StravaUpload {
       }
       this.#set({ phase: "uploading", error: null, code: null });
       try {
-        receipt = await this.client.upload(file, name);
+        receipt = await this.client.upload(file, name, summary);
       } catch (error) {
         // A lost POST response can mean Strava accepted it. Never auto-repost.
         const refused = error.status >= 400 && error.status < 500;

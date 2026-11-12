@@ -16,6 +16,27 @@ const iso = (t) => new Date(t).toISOString().replace(/\.\d{3}Z$/, "Z");
 
 const hasPosition = (p) => p.lat !== null && p.lon !== null;
 
+/**
+ * Normalized power: the fourth-power mean of the 30-second rolling average,
+ * which weighs hard efforts the way the body feels them. `window` is the
+ * number of samples in 30 seconds. Null for a ride shorter than that.
+ */
+export function normalizedPower(powers, window = 30) {
+  if (powers.length < window) return null;
+  let sum = 0;
+  let total = 0;
+  let count = 0;
+  for (let i = 0; i < powers.length; i += 1) {
+    sum += powers[i];
+    if (i >= window) sum -= powers[i - window];
+    if (i >= window - 1) {
+      total += (sum / window) ** 4;
+      count += 1;
+    }
+  }
+  return Math.round((total / count) ** 0.25);
+}
+
 export class RideRecorder {
   /** @type {{t: number, distance: number, power: number, cadence: ?number, heartRate: ?number, speed: number, elevation: ?number, lat: ?number, lon: ?number, route: ?string, routeM: ?number}[]} */
   samples = [];
@@ -119,7 +140,7 @@ export class RideRecorder {
   /** Totals for the end-of-ride screen. */
   summary() {
     const s = this.samples;
-    if (s.length === 0) return { durationS: 0, distanceM: 0, avgPower: 0, maxPower: 0, avgHeartRate: null, avgSpeed: 0, elevationGainM: 0, kilojoules: 0 };
+    if (s.length === 0) return { durationS: 0, distanceM: 0, avgPower: 0, maxPower: 0, normalizedPower: null, avgCadence: null, avgHeartRate: null, avgSpeed: 0, elevationGainM: 0, kilojoules: 0 };
     // A pause is neither riding time nor work.
     const durationS = (s[s.length - 1].t - s[0].t - this.#pausedMs()) / 1000;
     const distanceM = s[s.length - 1].distance - s[0].distance;
@@ -130,11 +151,15 @@ export class RideRecorder {
       if (s[i].elevation !== null && s[i - 1].elevation !== null) gain += Math.max(0, s[i].elevation - s[i - 1].elevation);
     }
     const heartRates = s.map((x) => x.heartRate).filter((x) => x !== null);
+    // Zero cadence is coasting, not pedalling slowly: it stays out of the average.
+    const cadences = s.map((x) => x.cadence).filter((x) => x !== null && x > 0);
     return {
       durationS,
       distanceM,
       avgPower: durationS > 0 ? Math.round(joules / durationS) : 0,
       maxPower: Math.round(Math.max(...s.map((x) => x.power))),
+      normalizedPower: normalizedPower(s.map((x) => x.power), Math.max(1, Math.round(30_000 / this.intervalMs))),
+      avgCadence: cadences.length ? Math.round(cadences.reduce((a, b) => a + b, 0) / cadences.length) : null,
       avgHeartRate: heartRates.length ? Math.round(heartRates.reduce((a, b) => a + b, 0) / heartRates.length) : null,
       avgSpeed: durationS > 0 ? distanceM / durationS : 0,
       elevationGainM: Math.round(gain),

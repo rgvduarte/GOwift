@@ -93,10 +93,27 @@ impl RideFile {
     }
 }
 
-/// The activity description. Strava descriptions are plain text, but it turns
-/// full URLs into links, so the server links to itself.
-pub fn description(public_url: &str) -> String {
-    format!("Ridden on GOindoor: {public_url}")
+/// Longest ride summary kept in a description (characters).
+pub const SUMMARY_MAX_CHARS: usize = 1000;
+
+/// The activity description: the ride's summary from the client (its totals,
+/// one per line), then a link to the server. Strava descriptions are plain
+/// text, but it turns full URLs into links. The summary loses control
+/// characters except line breaks and is cut to [`SUMMARY_MAX_CHARS`].
+pub fn description(public_url: &str, summary: Option<&str>) -> String {
+    let link = format!("Ridden on GOindoor: {public_url}");
+    let summary: String = summary
+        .unwrap_or("")
+        .chars()
+        .filter(|c| *c == '\n' || !c.is_control())
+        .take(SUMMARY_MAX_CHARS)
+        .collect();
+    let summary = summary.trim();
+    if summary.is_empty() {
+        link
+    } else {
+        format!("{summary}\n\n{link}")
+    }
 }
 
 /// Uploads a ride file. A TCX ride is turned into a virtual ride by
@@ -191,8 +208,44 @@ mod tests {
     #[test]
     fn description_links_to_the_server() {
         assert_eq!(
-            description("https://ride.example.com"),
+            description("https://ride.example.com", None),
             "Ridden on GOindoor: https://ride.example.com"
+        );
+    }
+
+    #[test]
+    fn description_puts_the_ride_summary_above_the_link() {
+        assert_eq!(
+            description("https://ride.example.com", Some("Time: 1:02:38\nAvg power: 168 W")),
+            "Time: 1:02:38\nAvg power: 168 W\n\nRidden on GOindoor: https://ride.example.com"
+        );
+    }
+
+    #[test]
+    fn description_drops_control_characters_but_keeps_line_breaks() {
+        assert_eq!(
+            description("https://r.example", Some("a\u{7}b\r\nc\t")),
+            "ab\nc\n\nRidden on GOindoor: https://r.example"
+        );
+    }
+
+    #[test]
+    fn description_keeps_the_summary_short() {
+        let long = "x".repeat(5000);
+        let text = description("https://r.example", Some(&long));
+        assert!(
+            text.chars().count() <= SUMMARY_MAX_CHARS + 50,
+            "{}",
+            text.chars().count()
+        );
+        assert!(text.ends_with("Ridden on GOindoor: https://r.example"));
+    }
+
+    #[test]
+    fn a_blank_summary_is_left_out() {
+        assert_eq!(
+            description("https://r.example", Some(" \n ")),
+            "Ridden on GOindoor: https://r.example"
         );
     }
 

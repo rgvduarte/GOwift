@@ -92,3 +92,9 @@ test("leaving the screen while waiting stops the next status request", async () 
   await strava.waitForActivity({ id: 9 }, { shouldContinue: () => active });
   assert.equal(requests, 0);
 });
+
+test("upload sends the ride summary for the description when there is one", async () => {
+  const { strava, calls } = client([reply(200, { id: 9 })]);
+  await strava.upload("<?xml ...", "Ride", "Time: 1:00\nAvg power: 200 W");
+  assert.equal(calls[0].url, "/api/strava/upload?name=Ride&summary=Time%3A%201%3A00%0AAvg%20power%3A%20200%20W");
+});

@@ -4,6 +4,50 @@ A server is one Docker container. It serves the browser client, the routes and
 the WebSocket game on one port (8080 inside the container). TLS belongs to a
 reverse proxy in front of it: browsers only allow Bluetooth on `https://` pages.
 
+## Render (free)
+
+The quickest way to put a server online for free: Render builds the
+repository's Dockerfile and serves it on `https://<name>.onrender.com`. No
+credit card is needed, and HTTPS, so Bluetooth, works from the start.
+
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/rgvduarte/GOwift)
+
+1. Click the button, sign in to Render (with GitHub works) and confirm the
+   blueprint (`render.yaml`): one free web service named `goindoor`.
+2. Wait for the first build (a Rust build, several minutes), then open the
+   service's address. The server takes its public address from Render
+   (`RENDER_EXTERNAL_URL`); set `GOINDOOR_PUBLIC_URL` only for your own domain.
+3. Optional, Strava: create a Strava API app (see [Strava](#strava-optional))
+   with the service's host as *Authorization Callback Domain*, then add
+   `GOINDOOR_STRAVA_CLIENT_ID` and `GOINDOOR_STRAVA_CLIENT_SECRET` under the
+   service's *Environment*.
+4. Optional, landing page: set the repository variable `GOINDOOR_PUBLIC_URL`
+   (Settings → Secrets and variables → Actions → Variables) to the service's
+   address, so the GitHub Pages site's *Ride now* buttons open it.
+
+What the free plan means for riders:
+
+- **It sleeps after 15 minutes without riders** and takes about a minute to
+  wake on the next visit. Riding keeps it awake.
+- **Nothing is kept across restarts:** no disk on the free plan, so Strava
+  logins (`/app/data`) are lost when it sleeps or redeploys; riders connect
+  Strava again. Rides themselves are saved in each rider's browser.
+- **0.1 CPU, 512 MB and 5 GB of traffic a month.** The server needs about 1 %
+  of a CPU and 30 MB. Traffic is the limit: state updates are uncompressed
+  JSON, and a rider receives about 150 MB an hour with the defaults
+  (measured). `render.yaml` keeps 6 riders on each road
+  (`GOINDOOR_TARGET_RIDERS`) and at most 15 in each update
+  (`GOINDOOR_MAX_VISIBLE_RIDERS`): about 56 MB an hour, so roughly 90 riding
+  hours a month in total. Over the allowance Render stops the service until
+  the next month.
+- Pushes to `main` that touch the server, the client or the routes redeploy it
+  (`buildFilter` in `render.yaml`).
+
+For a server that is always on and keeps its data: Fly.io runs the same
+image on its smallest machine (shared-cpu-1x, 256 MB) with a 1 GB volume for
+about US$2.30 a month, which Fly waives for bills under US$5 (a card is
+required). Or use your own machine or VM with Caddy, below.
+
 ## Behind your own Caddy (recommended for production)
 
 ### 1. The GOindoor server

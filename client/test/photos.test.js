@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { PhotoAlbum, canShareFiles, composeSummary, photoActions, downsample, photoFileName, photoStats } from "../public/js/view/photos.js";
+import { PhotoAlbum, SUMMARY_LAYOUT, canShareFiles, composeSummary, photoActions, downsample, photoFileName, photoStats, rideTrack } from "../public/js/view/photos.js";
 
 test("names photo files after the date, route and number", () => {
   const t = new Date(2026, 9, 14, 15, 30).getTime();
@@ -142,4 +142,49 @@ test("ride photos can be saved and shared before the summary is ready", () => {
   const { photos } = album();
   photos.add("photo", { name: "photo.png" });
   assert.deepEqual(photoActions(photos, true), { summaryEnabled: false, allVisible: true, shareVisible: true });
+});
+
+test("the ride track puts every sample on its route into world points, north up", () => {
+  const road = { positionAt: (d) => ({ x: d, y: 2 * d }) };
+  const samples = [
+    { route: "loop", routeM: 10 },
+    { route: null, routeM: null },
+    { route: "elsewhere", routeM: 5 },
+    { route: "loop", routeM: 20 },
+  ];
+  assert.deepEqual(rideTrack(samples, new Map([["loop", road]])), [[10, -20], [20, -40]]);
+});
+
+test("the ride track keeps at most the points it is asked for", () => {
+  const road = { positionAt: (d) => ({ x: d, y: 0 }) };
+  const samples = Array.from({ length: 5000 }, (_, i) => ({ route: "loop", routeM: i }));
+  const track = rideTrack(samples, new Map([["loop", road]]), 500);
+  assert.ok(track.length <= 501, `${track.length}`);
+  assert.deepEqual(track.at(-1), [4999, -0], "the last point is where the ride ended");
+});
+
+/** True when the text drawn at (x, y) sits inside `box` with some padding. */
+function inside({ x, y, align, width }, box, pad = 12) {
+  const from = align === "right" ? x - width : align === "center" ? x - width / 2 : x;
+  return from >= box.x + pad && from + width <= box.x + box.w - pad && y >= box.y + pad && y <= box.y + box.h - pad / 2;
+}
+
+test("every text on the summary card sits inside its header or one of its glass cards", () => {
+  const { doc, texts } = recordingDoc();
+  composeSummary(RIDE, doc);
+  const boxes = Object.values(SUMMARY_LAYOUT);
+  const loose = texts.filter((text) => !boxes.some((box) => inside(text, box)));
+  assert.deepEqual(loose.map((t) => t.text), []);
+});
+
+test("long names and big numbers shrink to stay inside their cards", () => {
+  const { doc, texts } = recordingDoc();
+  composeSummary({
+    ...RIDE,
+    routeName: "A very long route name that goes on and on around the whole island and back again",
+    serverName: "A community server with a long name",
+    stats: [["Time", "12:34:56"], ["Distance", "1234.56 km"], ["Avg speed", "123.4 km/h"], ["Climbed", "12,345 m"], ["Avg power", "1234 W"], ["Normalized power", "1234 W"], ["Max power", "2345 W"], ["Work", "12345 kJ"], ["Avg heart rate", "199 bpm"]],
+  }, doc);
+  const boxes = Object.values(SUMMARY_LAYOUT);
+  assert.deepEqual(texts.filter((text) => !boxes.some((box) => inside(text, box))).map((t) => t.text), []);
 });
