@@ -1,4 +1,4 @@
-# AGENTS.md — GOwift
+# AGENTS.md — GOindoor
 
 Guidance for AI agents working in this repo. **Read `CONTRIBUTING.md` first** — it
 defines the workflow (TDD, dependency injection, code style) and this file does not
@@ -6,7 +6,7 @@ repeat it. Here is the operational knowledge on top of that.
 
 ## Running locally
 - `make dev` — Rust server on 127.0.0.1:8080, serves `client/public` statically
-  (`GOWIFT_STATIC_DIR=../client/public`, route file `rolling-hills.json`).
+  (`GOINDOOR_STATIC_DIR=../client/public`, route file `rolling-hills.json`).
   Cold cargo build takes ~75s. It reads `.env.dev` if present (gitignored; see
   `.env.dev.example`): e.g. all routes, or Strava as in production.
 - `make up` — Docker Compose stack (creates `.env` from `.env.example` via `make setup`).
@@ -30,7 +30,7 @@ repeat it. Here is the operational knowledge on top of that.
 - `playwright` is a client devDependency; `client/screenshot.mjs` drives the
   running server with headless chromium. Start the app first (`make dev`), then:
     make screenshot ARGS="--out shot.png"   # or: cd client && npm run screenshot -- [url] [--width n] [--height n] [--wait ms]
-  It prints the saved path; default output is `~/.cache/gowift/screenshots/`.
+  It prints the saved path; default output is `~/.cache/goindoor/screenshots/`.
   Keep screenshots out of the repo (that cache dir, not `/tmp`).
 - On a fresh machine: `cd client && npx playwright install chromium` (the npm
   package does not bundle browsers).
@@ -38,7 +38,7 @@ repeat it. Here is the operational knowledge on top of that.
   which has neither browsers nor access to the host's `localhost`): run the target in
   the Playwright image matching the version in `client/package.json` (tag
   `v<version>-noble`), on the host network:
-    make screenshot NPM="docker run --rm --network host -v $PWD/client:/app -v $HOME/.cache/gowift:/root/.cache/gowift -w /app mcr.microsoft.com/playwright:v1.65.0-noble npm" ARGS="--out shot.png"
+    make screenshot NPM="docker run --rm --network host -v $PWD/client:/app -v $HOME/.cache/goindoor:/root/.cache/goindoor -w /app mcr.microsoft.com/playwright:v1.65.0-noble npm" ARGS="--out shot.png"
 - A fresh headless browser has empty localStorage → the Rider panel shows default
   profile values (165.3 lb, FTP 200 W), not real data.
 - Client *tests* stay plain node (no browser); Playwright is for ad-hoc UI

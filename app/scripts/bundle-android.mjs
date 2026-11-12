@@ -19,8 +19,8 @@ const fail = (message) => {
   process.exit(1);
 };
 
-if (!existsSync(SIGNING) && !process.env.GOWIFT_UPLOAD_STORE_FILE) {
-  fail(`no upload key: create ${SIGNING} (docs/app.md#google-play) or set GOWIFT_UPLOAD_STORE_FILE`);
+if (!existsSync(SIGNING) && !process.env.GOINDOOR_UPLOAD_STORE_FILE) {
+  fail(`no upload key: create ${SIGNING} (docs/app.md#google-play) or set GOINDOOR_UPLOAD_STORE_FILE`);
 }
 
 execFileSync("npx", ["cap", "sync", "android"], { stdio: "inherit" });
@@ -28,7 +28,7 @@ execFileSync("npx", ["cap", "sync", "android"], { stdio: "inherit" });
 // What the bundle will open: a store build must not point at a dev server.
 const { server } = JSON.parse(readFileSync(`${ANDROID}/app/src/main/assets/capacitor.config.json`, "utf8"));
 if (!server?.url?.startsWith("https://") || server.cleartext) {
-  fail(`the app opens ${server?.url}, a store build needs an https server: unset GOWIFT_APP_URL`);
+  fail(`the app opens ${server?.url}, a store build needs an https server: unset GOINDOOR_APP_URL`);
 }
 
 const env = { ...process.env };

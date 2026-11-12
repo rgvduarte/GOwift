@@ -20,7 +20,7 @@ the constants, which could drift from the server's (#22).
   31–32 km/h for 75 kg and 29–31 km/h for 90 kg, heavier riders are slower at
   the same watts and faster at the same W/kg, 3 W/kg climbs 8 % at 10–13 km/h,
   and coasting at −8 % stays between 54 and 62 km/h, faster for heavier riders.
-  `cargo run -p gowift-sim --example calibration` prints the table.
+  `cargo run -p goindoor-sim --example calibration` prints the table.
 - **Drag area scaled by weight.** `rider_cda = cda · (m / 75 kg)^(2/3)`, with
   `m` clamped to 30–200 kg: a rider grows alike in every direction, so frontal
   area goes with length² and length with mass^(1/3). There is no height field;

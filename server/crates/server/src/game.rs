@@ -16,11 +16,11 @@ use crate::resume::{Attachments, JoinedRider, ResumeTokens};
 use crate::runtime::Game;
 use crate::stats::DistanceStats;
 use crate::vehicle_codes::VehicleCodes;
-use gowift_sim::bot::human_level_wkg;
-use gowift_sim::events::Events;
-use gowift_sim::vehicle::VehicleKind;
-use gowift_sim::world::{VehicleChange, WorldError};
-use gowift_sim::{RiderId, RouteIndex, World, WorldEvent};
+use goindoor_sim::bot::human_level_wkg;
+use goindoor_sim::events::Events;
+use goindoor_sim::vehicle::VehicleKind;
+use goindoor_sim::world::{VehicleChange, WorldError};
+use goindoor_sim::{RiderId, RouteIndex, World, WorldEvent};
 use std::collections::HashMap;
 use std::fmt;
 use tokio::sync::mpsc;
@@ -829,7 +829,7 @@ impl GameCore {
         };
         let result = match &mut self.events {
             Some((events, clock)) => events.join(&mut self.world, rider_id, event_id, clock()),
-            None => Err(gowift_sim::events::EventError::Unknown),
+            None => Err(goindoor_sim::events::EventError::Unknown),
         };
         if let Err(e) = result {
             let _ = client.sink.deliver(ServerMessage::error(e.code(), e.to_string()));
@@ -1148,9 +1148,9 @@ impl Game for GameCore {
 mod tests {
     use super::*;
     use crate::protocol::{Exercise, GameEvent, RaceState, RouteRiders, Side};
-    use gowift_sim::rng::SplitMix64;
-    use gowift_sim::route::{Point, Route, RouteSpec};
-    use gowift_sim::SimConfig;
+    use goindoor_sim::rng::SplitMix64;
+    use goindoor_sim::route::{Point, Route, RouteSpec};
+    use goindoor_sim::SimConfig;
     use std::sync::{Arc, Mutex};
 
     /// In-memory sink that records messages and can simulate a disconnect.
@@ -1724,8 +1724,8 @@ mod tests {
     }
 
     fn event_game() -> GameCore {
-        use gowift_sim::events::{EventDef, EventKind, EventLength, Events};
-        use gowift_sim::schedule::Schedule;
+        use goindoor_sim::events::{EventDef, EventKind, EventLength, Events};
+        use goindoor_sim::schedule::Schedule;
         let def = EventDef {
             id: "ride".into(),
             name: "Test ride".into(),
@@ -1794,8 +1794,8 @@ mod tests {
     }
 
     fn race_game() -> GameCore {
-        use gowift_sim::events::{EventDef, EventKind, EventLength, Events};
-        use gowift_sim::schedule::Schedule;
+        use goindoor_sim::events::{EventDef, EventKind, EventLength, Events};
+        use goindoor_sim::schedule::Schedule;
         let def = EventDef {
             id: "race".into(),
             name: "Test race".into(),

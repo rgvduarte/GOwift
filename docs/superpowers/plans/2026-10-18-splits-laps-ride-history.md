@@ -132,7 +132,7 @@
 
 - [ ] **Step 1: Write failing tests** for `splitRows`: hint `"+3 %"` / `"−2 %"` on comparable rows, `""` on free ones; exactly one `best: true` row; `heartRate "–"` when null.
 - [ ] **Step 2: Run** — FAIL.
-- [ ] **Step 3: Implement.** In `openFinish`: `const splits = computeSplits(…, { final: true })`, `renderSplits($("finish-splits"), splits, unitM)`; when `!app.recorder.empty`, `app.history.save(rideRecord({ … measured: hasRealPowerSource(app.trainer) … }))` (fire and forget). `app.history = new RideHistory({ store: indexedDbStore("gowift-history") })` next to the autosave setup. Best row gets class `best`.
+- [ ] **Step 3: Implement.** In `openFinish`: `const splits = computeSplits(…, { final: true })`, `renderSplits($("finish-splits"), splits, unitM)`; when `!app.recorder.empty`, `app.history.save(rideRecord({ … measured: hasRealPowerSource(app.trainer) … }))` (fire and forget). `app.history = new RideHistory({ store: indexedDbStore("goindoor-history") })` next to the autosave setup. Best row gets class `best`.
 - [ ] **Step 4: Run** `npm run check` — PASS.
 - [ ] **Step 5: Commit** `Client: splits table on the finish screen, rides saved to history (#83)`.
 

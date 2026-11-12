@@ -1,6 +1,6 @@
 # Name and logo
 
-"GOwift" and the GOwift logo (the green G-shaped wheel with speed lines)
+"GOindoor" and the GOindoor logo (the green G-shaped wheel with speed lines)
 identify this project, owned and developed by
 [rgvduarte](https://github.com/rgvduarte), and its official site at
 <https://rgvduarte.github.io/GOwift/>. The code licence (AGPL) and the artwork
@@ -10,8 +10,8 @@ own product or service.
 
 ## Fine without asking
 
-- Saying what your server or fork is based on: "a fork of GOwift",
-  "runs GOwift", "compatible with GOwift".
+- Saying what your server or fork is based on: "a fork of GOindoor",
+  "runs GOindoor", "compatible with GOindoor".
 - Running the unmodified software, or software with only configuration
   changes, under its own name and logo, e.g. a club server.
 - Using the name and logo to talk about the project: articles, videos, talks,
@@ -19,7 +19,7 @@ own product or service.
 
 ## Please ask first
 
-- Naming a modified version, a fork or a commercial service "GOwift" or
+- Naming a modified version, a fork or a commercial service "GOindoor" or
   something easily confused with it.
 - Using the logo as the logo or app icon of a modified version or a service.
 - Merchandise with the name or logo.
@@ -29,8 +29,8 @@ which project they are using. Ask in a GitHub Discussion if unsure.
 
 ## Upstream
 
-GOwift is a fork of [OpenRadlr](https://github.com/Lethonium/OpenRadlr).
+GOindoor is a fork of [OpenRadlr](https://github.com/Lethonium/OpenRadlr).
 "OpenRadlr" and its lemon logo belong to the OpenRadlr project and are not
-part of GOwift's brand; they appear here only to say where GOwift comes from.
+part of GOindoor's brand; they appear here only to say where GOindoor comes from.
 Other product names (Zwift, Wahoo, Strava, …) belong to their owners and only
-say which products GOwift works with.
+say which products GOindoor works with.

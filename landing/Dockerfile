@@ -1,4 +1,4 @@
-# GOwift landing page: Astro builds static files, Caddy serves them.
+# GOindoor landing page: Astro builds static files, Caddy serves them.
 # Build from the repository root (the page reads ../routes and ../CHANGELOG.md):
 #
 #   docker build -f landing/Dockerfile .

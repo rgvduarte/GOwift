@@ -3,7 +3,7 @@
 //! seeded simulation RNG (whose seed is logged and may be fixed) is for
 //! gameplay only.
 
-use gowift_sim::rng::RandomSource;
+use goindoor_sim::rng::RandomSource;
 use std::fmt::Write as _;
 use std::io::Read;
 

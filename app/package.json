@@ -1,8 +1,8 @@
 {
-  "name": "gowift-app",
+  "name": "goindoor-app",
   "version": "0.1.0",
   "private": true,
-  "description": "GOwift for iOS and Android: the browser client in a native shell with Bluetooth (Capacitor).",
+  "description": "GOindoor for iOS and Android: the browser client in a native shell with Bluetooth (Capacitor).",
   "license": "AGPL-3.0-or-later",
   "type": "module",
   "engines": {
@@ -13,7 +13,7 @@
     "ios": "cap sync ios && cap open ios",
     "android": "cap sync android && cap open android",
     "android:bundle": "node scripts/bundle-android.mjs",
-    "assets": "node scripts/make-assets.mjs && npx --yes @capacitor/assets@3.0.5 generate --ios --android --iconBackgroundColor \"#080a0e\" --iconBackgroundColorDark \"#080a0e\" --splashBackgroundColor \"#080a0e\" --splashBackgroundColorDark \"#080a0e\""
+    "assets": "node scripts/make-assets.mjs && npx --yes @capacitor/assets@3.0.5 generate --ios --android --iconBackgroundColor \"#0b0b0c\" --iconBackgroundColorDark \"#0b0b0c\" --splashBackgroundColor \"#0b0b0c\" --splashBackgroundColorDark \"#0b0b0c\""
   },
   "dependencies": {
     "@capacitor-community/bluetooth-le": "^8.3.0",

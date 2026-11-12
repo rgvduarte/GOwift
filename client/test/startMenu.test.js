@@ -200,9 +200,9 @@ test("the privacy link comes from the server, only as a web address", () => {
   assert.equal(privacyUrl({ privacy_url: "javascript:alert(1)" }), null);
 });
 
-test("the server pill names the server only when it isn't the default GOwift", () => {
+test("the server pill names the server only when it isn't the default GOindoor", () => {
   assert.equal(serverName({ name: "Club Tuesday" }), "Club Tuesday");
-  assert.equal(serverName({ name: "GOwift" }), "");
+  assert.equal(serverName({ name: "GOindoor" }), "");
   assert.equal(serverName({}), "");
   assert.equal(serverName(null), "");
 });

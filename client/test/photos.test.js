@@ -4,9 +4,9 @@ import { PhotoAlbum, canShareFiles, composeSummary, photoActions, downsample, ph
 
 test("names photo files after the date, route and number", () => {
   const t = new Date(2026, 9, 14, 15, 30).getTime();
-  assert.equal(photoFileName(t, "rolling-hills", 3), "gowift-2026-10-14-1530-rolling-hills-3.png");
-  assert.equal(photoFileName(t, "Col de la Forge!", "summary"), "gowift-2026-10-14-1530-col-de-la-forge-summary.png");
-  assert.equal(photoFileName(t, "", ""), "gowift-2026-10-14-1530-ride.png");
+  assert.equal(photoFileName(t, "rolling-hills", 3), "goindoor-2026-10-14-1530-rolling-hills-3.png");
+  assert.equal(photoFileName(t, "Col de la Forge!", "summary"), "goindoor-2026-10-14-1530-col-de-la-forge-summary.png");
+  assert.equal(photoFileName(t, "", ""), "goindoor-2026-10-14-1530-ride.png");
 });
 
 function album(max) {
@@ -107,7 +107,7 @@ function recordingDoc() {
 
 const RIDE = {
   routeName: "Col de la Forge",
-  serverName: "GOwift",
+  serverName: "GOindoor",
   when: new Date(2026, 10, 10, 15, 48),
   stats: [["Time", "1:02:38"], ["Distance", "30.53 km"], ["Avg power", "168 W"], ["Max power", "484 W"], ["Elevation", "510 m"], ["Work", "831 kJ"]],
   power: [100, 200, 150],

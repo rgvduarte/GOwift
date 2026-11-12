@@ -129,7 +129,7 @@ with default parameters:
 
 Each check is one test with one reason to fail (CONTRIBUTING.md).
 
-`cargo run -p gowift-sim --example calibration` prints the table as Markdown,
+`cargo run -p goindoor-sim --example calibration` prints the table as Markdown,
 so a retune shows up readably in review.
 
 Expected table with the new defaults (from the design calculation; the test is

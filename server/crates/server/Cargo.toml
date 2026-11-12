@@ -1,6 +1,6 @@
 [package]
-name = "gowift-server"
-description = "GOwift multiplayer game server: WebSocket protocol, game loop and static client hosting."
+name = "goindoor-server"
+description = "GOindoor multiplayer game server: WebSocket protocol, game loop and static client hosting."
 version.workspace = true
 edition.workspace = true
 license.workspace = true
@@ -10,11 +10,11 @@ rust-version.workspace = true
 workspace = true
 
 [[bin]]
-name = "gowift-server"
+name = "goindoor-server"
 path = "src/main.rs"
 
 [dependencies]
-gowift-sim = { path = "../sim" }
+goindoor-sim = { path = "../sim" }
 axum = { version = "0.8", features = ["ws"] }
 futures-util = { version = "0.3", default-features = false, features = ["sink", "std"] }
 # Strava: token exchange and uploads over HTTPS (rustls with bundled roots, no system OpenSSL).

@@ -13,7 +13,7 @@ Today nothing removes them. The only timeout, `idle_timeout` (120 s), fires
 when a connection sends **no messages**, but a riding client sends telemetry
 about 4 times a second whether anyone pedals or not (`power: 0` without a
 trainer or rider). Grafana shows such a rider connected for hours. They hold
-one of the `GOWIFT_MAX_PLAYERS` seats (or a paddle seat), a simulation slot
+one of the `GOINDOOR_MAX_PLAYERS` seats (or a paddle seat), a simulation slot
 and a state stream, and they inflate the rider count.
 
 ## Decisions
@@ -22,15 +22,15 @@ and a state stream, and they inflate the rider count.
 | --- | --- |
 | What counts as away | Every `telemetry` since a moment had `power == 0`. Raw telemetry power, so a paused rider counts as away too (they send 0 W on a break) |
 | What counts as back | Any `telemetry` with `power > 0`: resets the clock and the warning count, closes an open warning |
-| First warning | After 30 min away (`GOWIFT_AFK_TIMEOUT_S`, default 1800) |
+| First warning | After 30 min away (`GOINDOOR_AFK_TIMEOUT_S`, default 1800) |
 | Answer window | Each warning counts down 2 min; no answer ends the ride |
-| Stay | Restarts the clock: the next warning comes after 10 more min away (`GOWIFT_AFK_REMINDER_S`, default 600) |
+| Stay | Restarts the clock: the next warning comes after 10 more min away (`GOINDOOR_AFK_REMINDER_S`, default 600) |
 | How many | Three warnings with **Stay** and **Leave now**; the fourth is a final one with **Leave now** only, then the ride ends after its countdown |
 | Ending | Error `afk_timeout`, connection closed, rider removed as if they sent `leave`: no grace period, no resume |
 | Decided by | The server (authoritative, covers old clients) |
 | Exempt | Workout riders (`device: workout`): they send no telemetry by design |
-| Off switch | `GOWIFT_AFK_TIMEOUT_S=0` turns the whole thing off |
-| Metric | Counter `gowift_afk_events_total{event}` on `/internal/metrics`, `event` one of `warning`, `stayed`, `left`, `timeout`, plus a panel on the GOwift Grafana dashboard |
+| Off switch | `GOINDOOR_AFK_TIMEOUT_S=0` turns the whole thing off |
+| Metric | Counter `goindoor_afk_events_total{event}` on `/internal/metrics`, `event` one of `warning`, `stayed`, `left`, `timeout`, plus a panel on the GOindoor Grafana dashboard |
 | Protocol | Additive within version 2: one new server message, one new client message, one new error code. No `PROTOCOL_VERSION` bump |
 
 Timeline for a rider who never pedals and presses Stay every time:
@@ -53,7 +53,7 @@ In:
 - Client: the warning dialog, sending `stay` and `leave`, the end-of-ride
   notice, no automatic reconnect after `afk_timeout`.
 - `docs/protocol.md`, `.env.example`, CHANGELOG, en + de texts.
-- The `gowift_afk_events_total` counter and its Grafana panels (Monitoring
+- The `goindoor_afk_events_total` counter and its Grafana panels (Monitoring
   repo, its own PR).
 
 Out:
@@ -108,7 +108,7 @@ The 2 min answer window and the 3 warnings are constants.
 
 ## Metric
 
-`gowift_afk_events_total{event}`, a Prometheus counter next to the
+`goindoor_afk_events_total{event}`, a Prometheus counter next to the
 existing ones in `http.rs` (`/internal/metrics`), counting per server since
 start:
 
@@ -124,13 +124,13 @@ in `stats.rs`) handed to each connection through the app state; the
 connection loop counts the `AfkEvent`s it acts on. All four series are
 printed from start at 0, so `increase()` works from the first scrape.
 
-Grafana (`Monitoring/grafana/dashboards/gowift.json`, a separate PR in
+Grafana (`Monitoring/grafana/dashboards/goindoor.json`, a separate PR in
 that repo): a new row below the existing panels with
 
 - a stat "AFK removals · selected range":
-  `increase(gowift_afk_events_total{event="timeout"}[$__range])`;
+  `increase(goindoor_afk_events_total{event="timeout"}[$__range])`;
 - a timeseries "AFK warnings and outcomes":
-  `sum by (event) (increase(gowift_afk_events_total[1h]))`, legend per event.
+  `sum by (event) (increase(goindoor_afk_events_total[1h]))`, legend per event.
 
 Together these answer "how often does it happen" (timeouts) and "do people
 take a break or are they gone" (stayed and left against timeout).

@@ -159,7 +159,7 @@ stages 2 and 3 the map becomes a real network, decided as follows:
   two comes with #27).
 - **Races, markers, laps** are per route: each route has its own race,
   entrants and results; `start_race` starts one on the starter's route.
-- **Bots** keep `GOWIFT_TARGET_RIDERS` on every route. A new bot starts at
+- **Bots** keep `GOINDOOR_TARGET_RIDERS` on every route. A new bot starts at
   the spot of its route furthest from everybody (best of a few seeded
   tries), so bots don't pile up on shared roads; surplus bots leave only when
   no human anywhere on the map is near them.

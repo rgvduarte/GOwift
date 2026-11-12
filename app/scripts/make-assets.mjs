@@ -5,9 +5,9 @@
  */
 import sharp from "sharp";
 
-const BG = { r: 8, g: 10, b: 14, alpha: 1 }; // #080a0e, the icon's own background
+const BG = { r: 11, g: 11, b: 12, alpha: 1 }; // #0b0b0c, the icon's own background
 const ICON = "../client/public/icons/icon-maskable-512.png";
-const EMBLEM = "../docs/assets/gowift-emblem.png";
+const EMBLEM = "../docs/assets/goindoor-emblem.png";
 const OUT = "assets";
 
 const resized = (file, width) => sharp(file).resize({ width, kernel: "lanczos3" }).png().toBuffer();

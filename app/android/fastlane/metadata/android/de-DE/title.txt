@@ -1,1 +1,1 @@
-GOwift: Indoor-Radfahren
+GOindoor: Indoor-Radfahren

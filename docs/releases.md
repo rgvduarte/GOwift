@@ -1,6 +1,6 @@
 # Releases
 
-GOwift ships as one application. [Release Please](https://github.com/googleapis/release-please)
+GOindoor ships as one application. [Release Please](https://github.com/googleapis/release-please)
 maintains a release PR on `main`; merging it creates a `vX.Y.Z` tag and a GitHub
 Release. It does not publish packages, build release assets, or deploy a server.
 

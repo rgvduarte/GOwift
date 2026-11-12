@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
-    <string name="app_name">GOwift</string>
-    <string name="title_activity_main">GOwift</string>
-    <string name="package_name">io.github.rgvduarte.gowift</string>
-    <string name="custom_url_scheme">io.github.rgvduarte.gowift</string>
+    <string name="app_name">GOindoor</string>
+    <string name="title_activity_main">GOindoor</string>
+    <string name="package_name">io.github.rgvduarte.goindoor</string>
+    <string name="custom_url_scheme">io.github.rgvduarte.goindoor</string>
 </resources>

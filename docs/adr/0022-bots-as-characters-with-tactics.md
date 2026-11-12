@@ -21,7 +21,7 @@ They never reacted to humans. On longer routes a rider was mostly alone, and mee
   - Attacks and answers need a human close by (or a race), so bots alone on the map ride quietly.
   - Moves only change power and lane choice. The physics, drafting and races are untouched.
 - **Spawning follows the humans.**
-  - A route still keeps `GOWIFT_TARGET_RIDERS` riders (`target_riders`), humans plus bots, and `0` still means no bots. Company comes out of that count; it adds none.
+  - A route still keeps `GOINDOOR_TARGET_RIDERS` riders (`target_riders`), humans plus bots, and `0` still means no bots. Company comes out of that count; it adds none.
   - Every human riding freely keeps `bots_near_human` bots within a window: 1.5 km ahead, 400 m behind.
   - Missing company spawns in groups, out of sight. Mostly the groups are ahead and a bit slower (to chase), sometimes behind and a bit faster (to come by).
   - On a full route, bots far from everyone make room.
@@ -30,7 +30,7 @@ They never reacted to humans. On longer routes a rider was mostly alone, and mee
 ## Consequences
 
 - **Every ride has company and something happens.** In a simulated hour on Col de la Forge, the rider was alone (no bot within 300 m) for 29 s instead of half the hour, with about one move nearby every four minutes.
-- **The bot count and the server's load don't change.** `GOWIFT_TARGET_RIDERS` stays the one setting. With a small target and many humans on one route, the company is thinner.
+- **The bot count and the server's load don't change.** `GOINDOOR_TARGET_RIDERS` stays the one setting. With a small target and many humans on one route, the company is thinner.
 - **Bots now spawn in groups,** so the old test "bots start apart" became "groups start apart".
 - **Bot tuning lives in `bot.rs` (`tactics`) and `SimConfig`.** Further characters (rivalries, a bot remembering you) can build on the stable cast.
 - **Overlap with #17:** the spacing and passing PR (#17) touches the same files. The two combine (moves set power and a lane wish; spacing caps speed and steers past), but whichever merges second needs a rebase.

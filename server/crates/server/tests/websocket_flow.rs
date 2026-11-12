@@ -1,8 +1,8 @@
 //! End-to-end tests: a real server on a random port, a real WebSocket client.
 
 use futures_util::{SinkExt, StreamExt};
-use gowift_server::config::Config;
-use gowift_server::{app, healthcheck};
+use goindoor_server::config::Config;
+use goindoor_server::{app, healthcheck};
 use serde_json::Value;
 use std::net::SocketAddr;
 use std::path::PathBuf;
@@ -22,7 +22,7 @@ fn test_config(target_riders: usize) -> Config {
         bot_seed: Some(1),
         // The built-in timetable follows the wall clock and reserves routes
         // for its lobbies; tests that need events bring their own file.
-        events: gowift_server::config::EventsSetting::Off,
+        events: goindoor_server::config::EventsSetting::Off,
         ..Config::default()
     }
 }
@@ -572,7 +572,7 @@ async fn every_response_carries_security_headers() {
             env!("CARGO_MANIFEST_DIR"),
             "/../../../client/public"
         ))),
-        analytics: Some(gowift_server::config::Analytics {
+        analytics: Some(goindoor_server::config::Analytics {
             domain: "ride.example.org".into(),
             script: "https://stats.example.org/js/script.js".into(),
         }),
@@ -688,7 +688,7 @@ async fn riders_pick_the_road_at_the_next_junction() {
 
 #[tokio::test]
 async fn info_lists_scheduled_events() {
-    let dir = std::env::temp_dir().join(format!("gowift-events-{}", std::process::id()));
+    let dir = std::env::temp_dir().join(format!("goindoor-events-{}", std::process::id()));
     std::fs::create_dir_all(&dir).unwrap();
     let file = dir.join("events.json");
     std::fs::write(
@@ -698,7 +698,7 @@ async fn info_lists_scheduled_events() {
     )
     .unwrap();
     let config = Config {
-        events: gowift_server::config::EventsSetting::File(file),
+        events: goindoor_server::config::EventsSetting::File(file),
         ..test_config(0)
     };
     let addr = start_server_with(config).await;
@@ -766,7 +766,7 @@ async fn info_has_no_analytics_by_default() {
 #[tokio::test]
 async fn info_tells_the_client_which_analytics_to_load() {
     let addr = start_server_with(Config {
-        analytics: Some(gowift_server::config::Analytics {
+        analytics: Some(goindoor_server::config::Analytics {
             domain: "ride.example.org".into(),
             script: "https://plausible.io/js/script.js".into(),
         }),
@@ -813,11 +813,11 @@ async fn phone_paddlers_are_marked_for_everyone() {
 
 #[tokio::test]
 async fn info_reports_distance_ridden_by_trainers_and_paddlers_across_restarts() {
-    use gowift_server::protocol::DeviceKind;
-    use gowift_server::stats::DistanceStats;
+    use goindoor_server::protocol::DeviceKind;
+    use goindoor_server::stats::DistanceStats;
 
     let path = std::env::temp_dir()
-        .join(format!("gowift-stats-flow-{}", std::process::id()))
+        .join(format!("goindoor-stats-flow-{}", std::process::id()))
         .join("stats.json");
     let before = DistanceStats::default();
     before.add(DeviceKind::Trainer, 12_345_678.0);
@@ -1044,11 +1044,11 @@ async fn afk_rider_is_warned_then_removed_without_grace() {
 
     let (_, metrics) = http_get(addr, "/internal/metrics").await;
     assert!(
-        metrics.contains(r#"gowift_afk_events_total{event="timeout"} 1"#),
+        metrics.contains(r#"goindoor_afk_events_total{event="timeout"} 1"#),
         "{metrics}"
     );
     assert!(
-        metrics.contains(r#"gowift_afk_events_total{event="warning"} 1"#),
+        metrics.contains(r#"goindoor_afk_events_total{event="warning"} 1"#),
         "{metrics}"
     );
 }
@@ -1067,7 +1067,7 @@ async fn afk_stay_then_leave_counts_each_outcome() {
 
     let (_, metrics) = http_get(addr, "/internal/metrics").await;
     for (event, count) in [("warning", 2), ("stayed", 1), ("left", 1), ("timeout", 0)] {
-        let line = format!(r#"gowift_afk_events_total{{event="{event}"}} {count}"#);
+        let line = format!(r#"goindoor_afk_events_total{{event="{event}"}} {count}"#);
         assert!(metrics.contains(&line), "{line} missing in {metrics}");
     }
 }

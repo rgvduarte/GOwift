@@ -7,7 +7,7 @@ const env = import.meta.env;
 const githubUrl = "https://github.com/rgvduarte/GOwift";
 
 export const site = {
-  name: "GOwift",
+  name: "GOindoor",
   // The page's public address. Its path is also the base path every link is
   // built on, e.g. /GOwift/ on GitHub Pages (see astro.config.mjs).
   url: env.PUBLIC_SITE_URL || "https://rgvduarte.github.io/GOwift",

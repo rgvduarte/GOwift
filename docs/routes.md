@@ -3,7 +3,7 @@
 A route is a JSON file in `routes/`. Riders pick one on the start screen.
 Routes on one map share one world on the server (#14): riders of different
 routes see each other and draft where they share a road; a route without a
-map is a world of its own. `GOWIFT_ROUTE` names the default, listed first. Files are
+map is a world of its own. `GOINDOOR_ROUTE` names the default, listed first. Files are
 served unchanged at `/api/route?id=…`, so every client sees exactly the same
 route. A broken file is skipped with a warning in the log.
 

@@ -21,7 +21,7 @@ lemon on the logo.
 | Laps | They grow back each time the rider crosses the line |
 | Jumps | A move of more than 60 m between two frames (rejoin, junction, teleport) collects nothing |
 | How present | An easter egg: no counter on the HUD. A pickup adds a line to the ticker ("🍋 Golden lemon! 2 this ride · 17 in all"), and the finish screen lists them when there were any |
-| Count kept | The all-time count in the browser (`gowift.lemons`); nothing on the server |
+| Count kept | The all-time count in the browser (`goindoor.lemons`); nothing on the server |
 | Where not | Studio, workouts, off the routes (on a network road) |
 
 ## Client

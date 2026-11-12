@@ -7,7 +7,7 @@ use crate::game::{JoinError, MessageSink, SinkClosed};
 use crate::obn::remote::RemoteEvent;
 use crate::protocol::{DeviceKind, EventInfoWire, Exercise, InputAction, ServerMessage, Side};
 use crate::resume::JoinedRider;
-use gowift_sim::RiderId;
+use goindoor_sim::RiderId;
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::{Arc, Mutex};
 use std::time::Duration;

@@ -1,16 +1,21 @@
 :root {
   color-scheme: dark;
-  --bg: #0f1216;
-  --surface: #171b21;
-  --surface-2: #1f252d;
-  --border: #2a313b;
-  --text: #e8ecf1;
-  --muted: #8a94a3;
-  --accent: #2ee88a;
-  --accent-text: #04140b;
-  --brand: #2ee88a;
+  /* GD design system: near black, white and greys, glass surfaces. */
+  --bg: #0b0b0c;
+  --surface: rgba(24, 24, 26, 0.62);
+  --surface-2: rgba(255, 255, 255, 0.09);
+  --border: rgba(255, 255, 255, 0.22);
+  --glass-top: rgba(255, 255, 255, 0.4);
+  --divider: rgba(255, 255, 255, 0.12);
+  --text: #ffffff;
+  --muted: #a3a3a8;
+  --silver: #cfcfd4;
+  --accent: #ffffff;
+  --accent-text: #0b0b0c;
+  --brand: #ffffff;
+  --warning: #f5b83d;
   --danger: #ff5d5d;
-  --grid: #3a434f;
+  --grid: rgba(255, 255, 255, 0.16);
   --road: #2b3139;
   --terrain: #24402f;
   --terrain-edge: #5fb47c;
@@ -20,8 +25,9 @@
   --remote: #2ec4a6;
   --climb: rgba(255, 93, 93, 0.12);
   --sprint: rgba(76, 195, 255, 0.12);
-  --radius: 10px;
-  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --radius: 14px;
+  --font: "Helvetica Neue", Helvetica, Arial, system-ui, sans-serif;
+  font-family: var(--font);
 }
 
 * {
@@ -129,8 +135,9 @@ kbd {
   min-height: 100vh;
   padding: 0 24px 40px;
   background:
-    radial-gradient(1200px 500px at 15% -10%, rgba(46, 232, 138, 0.14), transparent 60%),
-    radial-gradient(900px 500px at 100% 0%, rgba(76, 195, 255, 0.08), transparent 60%),
+    radial-gradient(900px 700px at 12% 6%, rgba(138, 138, 142, 0.2), transparent 70%),
+    radial-gradient(700px 600px at 95% 50%, rgba(107, 107, 112, 0.14), transparent 70%),
+    radial-gradient(600px 500px at 85% 100%, rgba(90, 90, 95, 0.14), transparent 70%),
     var(--bg);
 }
 
@@ -242,7 +249,7 @@ kbd {
 .start.world-ready .route-card[aria-pressed="true"] {
   background: rgba(31, 26, 22, 0.9);
   border-color: var(--accent);
-  box-shadow: 0 0 0 1px var(--accent) inset, 0 8px 30px rgba(46, 232, 138, 0.16);
+  box-shadow: 0 0 0 1px var(--accent) inset, 0 8px 30px rgba(255, 255, 255, 0.16);
 }
 
 /* The window the drone camera looks through: the map until the island is ready. */
@@ -596,27 +603,37 @@ kbd {
   gap: 12px;
 }
 
-/* The mark leans forward on hover: GO. */
+/* The GD monogram brightens on hover. */
 .brand-mark {
-  height: 54px;
+  height: 40px;
   width: auto;
-  transition: transform 0.25s ease;
+  opacity: 0.92;
+  transition: opacity 0.2s ease;
 }
 
 .brand:hover .brand-mark {
-  transform: translateX(3px) rotate(-6deg);
+  opacity: 1;
 }
 
 .brand-word {
   font-size: 28px;
-  font-weight: 900;
-  font-style: italic;
-  letter-spacing: -0.01em;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  color: var(--silver);
 }
 
-.brand-word span,
-.hud-brand span {
-  color: var(--brand);
+/* "GO" drawn in the GD letterforms, as tall as a capital, sitting on the baseline. */
+.go-glyphs {
+  display: inline-block;
+  height: 0.72em;
+  width: auto;
+  margin-right: 0.06em;
+  vertical-align: baseline;
+  fill: var(--brand);
+}
+
+.hud-brand .go-glyphs {
+  margin-right: 0.14em;
 }
 
 .server-status {
@@ -757,7 +774,7 @@ kbd {
 
 .route-card[aria-pressed="true"] {
   border-color: var(--accent);
-  box-shadow: 0 0 0 1px var(--accent) inset, 0 8px 30px rgba(46, 232, 138, 0.12);
+  box-shadow: 0 0 0 1px var(--accent) inset, 0 8px 30px rgba(255, 255, 255, 0.12);
 }
 
 .route-head {
@@ -897,8 +914,8 @@ label output {
   margin: 0;
   padding: 10px;
   border-radius: 8px;
-  background: rgba(46, 232, 138, 0.1);
-  border: 1px solid rgba(46, 232, 138, 0.4);
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.4);
   font-size: 14px;
 }
 
@@ -1065,7 +1082,7 @@ label output {
 .mode-card[aria-checked="true"] {
   border-color: var(--accent);
   box-shadow: 0 0 0 1px var(--accent) inset;
-  background: rgba(46, 232, 138, 0.1);
+  background: rgba(255, 255, 255, 0.1);
 }
 
 .mode-card[aria-checked="true"] svg {
@@ -1196,8 +1213,8 @@ label output {
 
 .device-line[data-state="pending"] .device-dot,
 .device-line[data-state="reconnecting"] .device-dot {
-  border-color: var(--brand);
-  background: var(--brand);
+  border-color: var(--warning);
+  background: var(--warning);
   animation: device-breathe 1.4s ease-in-out infinite;
 }
 
@@ -1222,8 +1239,8 @@ label output {
 
 /* Connected but silent (asleep, taken by another app), or a connect that failed: what to try, in full. */
 .device-line[data-state="silent"] .device-dot {
-  border-color: var(--brand);
-  background: var(--brand);
+  border-color: var(--warning);
+  background: var(--warning);
 }
 
 .device-line[data-state="error"] .device-dot {
@@ -1237,7 +1254,7 @@ label output {
 }
 
 .device-line[data-state="silent"] .device-status {
-  color: var(--brand);
+  color: var(--warning);
 }
 
 .device-line[data-state="error"] {
@@ -1291,8 +1308,8 @@ button.small {
   margin: 0;
   padding: 12px 14px;
   border-radius: 10px;
-  border: 1px solid rgba(46, 232, 138, 0.35);
-  background: rgba(46, 232, 138, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  background: rgba(255, 255, 255, 0.08);
   font-size: 14px;
   line-height: 1.45;
   color: var(--muted);
@@ -1575,11 +1592,11 @@ button.small {
 /* ===================================================================== */
 
 :root {
-  --glass: rgba(15, 18, 22, 0.72);
-  --glass-strong: rgba(15, 18, 22, 0.86);
-  --glass-line: rgba(255, 255, 255, 0.1);
-  --hud-text: #f2f4f7;
-  --hud-muted: #c3cad3;
+  --glass: rgba(20, 20, 22, 0.58);
+  --glass-strong: rgba(14, 14, 16, 0.82);
+  --glass-line: rgba(255, 255, 255, 0.22);
+  --hud-text: #ffffff;
+  --hud-muted: #cfcfd4;
   --num: "Barlow Condensed", "Roboto Condensed", "Arial Narrow", system-ui, sans-serif;
   --gap: 20px;
   --band-height: 250px;
@@ -1641,9 +1658,10 @@ body.riding {
 .glass {
   background: var(--glass);
   border: 1px solid var(--glass-line);
-  border-radius: 14px;
-  -webkit-backdrop-filter: blur(8px);
-  backdrop-filter: blur(8px);
+  border-top-color: var(--glass-top);
+  border-radius: 16px;
+  -webkit-backdrop-filter: blur(14px) saturate(120%);
+  backdrop-filter: blur(14px) saturate(120%);
 }
 
 .caption {
@@ -1723,9 +1741,8 @@ body.riding {
 
 .hud-brand {
   font-size: 12px;
-  font-weight: 800;
-  font-style: italic;
-  letter-spacing: 0.08em;
+  font-weight: 700;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--hud-text);
 }
@@ -2119,7 +2136,7 @@ body.riding {
 }
 
 .nearby .rider.me {
-  background: rgba(46, 232, 138, 0.18);
+  background: rgba(255, 255, 255, 0.18);
 }
 
 .canvas-minimap {
@@ -2451,7 +2468,7 @@ body.riding {
 }
 
 .group-list li.mine {
-  background: rgba(46, 232, 138, 0.18);
+  background: rgba(255, 255, 255, 0.18);
   font-weight: 700;
 }
 
@@ -2676,8 +2693,8 @@ body.riding {
 }
 
 .menu-nav-item[aria-current="true"] {
-  background: rgba(46, 232, 138, 0.14);
-  border-color: rgba(46, 232, 138, 0.28);
+  background: rgba(255, 255, 255, 0.14);
+  border-color: rgba(255, 255, 255, 0.28);
   color: var(--accent);
 }
 
@@ -2811,9 +2828,9 @@ body.riding {
 
 .menu-foot .finish-confirm {
   padding: 12px 14px;
-  border: 1px solid rgba(46, 232, 138, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.35);
   border-radius: var(--radius);
-  background: rgba(46, 232, 138, 0.08);
+  background: rgba(255, 255, 255, 0.08);
 }
 
 .menu-foot .finish-confirm[hidden] {
@@ -3954,7 +3971,7 @@ body.riding {
 
 .junction-option[aria-pressed="true"] {
   border-color: var(--accent);
-  background: rgba(46, 232, 138, 0.22);
+  background: rgba(255, 255, 255, 0.22);
 }
 
 .junction-arrow {
@@ -3994,7 +4011,7 @@ body.riding {
   padding: 8px 8px 8px 16px;
   font-size: 15px;
   white-space: nowrap;
-  border-color: rgba(46, 232, 138, 0.6);
+  border-color: rgba(255, 255, 255, 0.6);
   z-index: 2;
 }
 
@@ -4435,7 +4452,7 @@ body:not(.riding)::after {
   }
 
   .lane-button:active {
-    background: rgba(46, 232, 138, 0.35);
+    background: rgba(255, 255, 255, 0.35);
     border-color: var(--accent);
   }
 
@@ -4490,7 +4507,7 @@ body:not(.riding)::after {
   }
 
   .sim-stepper button:active {
-    background: rgba(46, 232, 138, 0.45);
+    background: rgba(255, 255, 255, 0.45);
   }
 
   .sim-readout {
@@ -4886,11 +4903,11 @@ body:not(.riding)::after {
 
 /* The paddle to tap next glows: the rhythm reads at a glance. */
 .paddle.next {
-  background: linear-gradient(to top, rgba(46, 232, 138, 0.38), rgba(46, 232, 138, 0.06));
+  background: linear-gradient(to top, rgba(255, 255, 255, 0.38), rgba(255, 255, 255, 0.06));
 }
 
 .paddle.next .paddle-label {
-  color: rgba(46, 232, 138, 0.55);
+  color: rgba(255, 255, 255, 0.55);
 }
 
 .paddle.hit .paddle-label {
@@ -4908,7 +4925,7 @@ body:not(.riding)::after {
   height: 140px;
   margin: -70px 0 0 -70px;
   border-radius: 50%;
-  border: 3px solid rgba(46, 232, 138, 0.8);
+  border: 3px solid rgba(255, 255, 255, 0.8);
   pointer-events: none;
   animation: paddle-ripple 0.45s ease-out forwards;
 }
@@ -5768,7 +5785,7 @@ body.working-out #paddles {
 
 .workout-card.selected .workout-card-body {
   border-color: var(--accent);
-  box-shadow: 0 0 0 1px var(--accent) inset, 0 8px 30px rgba(46, 232, 138, 0.12);
+  box-shadow: 0 0 0 1px var(--accent) inset, 0 8px 30px rgba(255, 255, 255, 0.12);
 }
 
 .block-strip {
@@ -5884,7 +5901,7 @@ body.working-out #paddles {
 }
 .strava-upload[data-tone="success"] .upload-action::after { content: "↗"; }
 .strava-upload[data-tone="error"] .upload-action { color: var(--danger); border-color: var(--danger); }
-.strava-upload[data-tone="warning"] .upload-action { color: var(--brand); border-color: var(--brand); }
+.strava-upload[data-tone="warning"] .upload-action { color: var(--warning); border-color: var(--warning); }
 .strava-upload:is([data-tone="error"], [data-tone="warning"]) .upload-action:first-child::before {
   content: "!";
   display: inline-grid;
@@ -6567,3 +6584,22 @@ body.working-out #paddles {
   }
 }
 
+/* GD glass: panels over the 3D world blur what is behind them and catch the
+   light on their top edge. */
+.activity-tabs,
+.menu-profile,
+.server-status,
+.update-banner,
+.route-card,
+.card,
+.modal-card,
+.modal-nav,
+.lang-select,
+.vehicle-share-bar,
+.afk-prompt,
+.workout-card-body,
+.pause-pill {
+  -webkit-backdrop-filter: blur(16px) saturate(120%);
+  backdrop-filter: blur(16px) saturate(120%);
+  border-top-color: var(--glass-top);
+}

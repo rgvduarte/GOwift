@@ -3,11 +3,11 @@
 //! ones on a world's routes into simulation [`EventDef`]s.
 
 use crate::config::{ConfigError, EventsSetting};
-use gowift_sim::events::{EventDef, EventKind, EventLength};
-use gowift_sim::schedule::Schedule;
+use goindoor_sim::events::{EventDef, EventKind, EventLength};
+use goindoor_sim::schedule::Schedule;
 use serde::Deserialize;
 
-const KEY: &str = "GOWIFT_EVENTS";
+const KEY: &str = "GOINDOOR_EVENTS";
 const HOUR_S: f64 = 3600.0;
 const GROUP_RIDE_DURATION_S: f64 = 2700.0;
 const GROUP_RIDE_DISTANCE_M: f64 = 18_000.0;
@@ -36,7 +36,7 @@ pub struct EventEntry {
     pub every_s: f64,
     #[serde(default)]
     pub offset_s: f64,
-    /// Falls back to `GOWIFT_EVENT_LOBBY_S`.
+    /// Falls back to `GOINDOOR_EVENT_LOBBY_S`.
     pub lobby_s: Option<f64>,
     pub duration_s: f64,
 }
@@ -232,7 +232,7 @@ pub fn validate(entries: &[EventEntry], all_route_ids: &[String], lobby_s: f64) 
 }
 
 /// The definitions of the entries on this world's routes; a route's index in
-/// `world_routes` is its [`RouteIndex`](gowift_sim::world::RouteIndex).
+/// `world_routes` is its [`RouteIndex`](goindoor_sim::world::RouteIndex).
 pub fn resolve(entries: &[EventEntry], world_routes: &[String], lobby_s: f64) -> Result<Vec<EventDef>, ConfigError> {
     let mut defs = Vec::new();
     for entry in entries {
@@ -409,7 +409,7 @@ mod tests {
         assert_eq!(entries[0].offset_s, 0.0);
         assert!(parse_entries(r#"[{"id":"x","bogus":1}]"#).is_err());
 
-        let dir = std::env::temp_dir().join(format!("gowift-events-{}", std::process::id()));
+        let dir = std::env::temp_dir().join(format!("goindoor-events-{}", std::process::id()));
         std::fs::create_dir_all(&dir).unwrap();
         let path = dir.join("events.json");
         std::fs::write(&path, text).unwrap();

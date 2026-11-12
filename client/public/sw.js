@@ -1,11 +1,11 @@
 /**
- * GOwift service worker: makes the client installable and lets it open
+ * GOindoor service worker: makes the client installable and lets it open
  * without a network (the start screen then says the server is unreachable).
  *
  * Network first, so `make update` on the server reaches riders right away;
  * the cache is only a fallback. Live data is never cached: /api, /ws, /auth.
  */
-const CACHE = "gowift-shell-v2";
+const CACHE = "goindoor-shell-v2";
 const SHELL = ["/", "/index.html", "/styles.css", "/manifest.webmanifest", "/js/main.js", "/js/i18n/i18n.js", "/js/i18n/apply.js", "/js/i18n/en.js", "/js/i18n/de.js", "/js/i18n/selector.js", "/icons/icon-192.png", "/icons/brand-mark.png"];
 
 self.addEventListener("install", (event) => {

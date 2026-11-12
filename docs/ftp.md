@@ -1,6 +1,6 @@
 # Measured FTP and the ramp test
 
-GOwift can measure your FTP instead of asking you to know it: from your own
+GOindoor can measure your FTP instead of asking you to know it: from your own
 rides, or with a guided ramp test. Design: [the spec](superpowers/specs/2026-10-19-ftp-estimation-design.md).
 
 ## What is measured
@@ -18,7 +18,7 @@ whether the power came from a real trainer or power meter):
   hour at FTP (hours × (weighted power / FTP)² × 100).
 
 These are the same ideas other training tools use under trademarked names;
-GOwift only says "weighted power" and "Load".
+GOindoor only says "weighted power" and "Load".
 
 ## Estimating FTP from rides
 
@@ -38,7 +38,7 @@ then count, so a lowered FTP is not argued back up by older rides:
 An estimate is offered ("New FTP detected") only if it passes all of these:
 
 - **Only higher.** It must be at least 5 W or 3 % (whichever is larger) above
-  your profile FTP. GOwift never proposes lowering it: a ride without a
+  your profile FTP. GOindoor never proposes lowering it: a ride without a
   hard effort says little about your ceiling, so a low estimate would be noise,
   and for a lower FTP you can type it or take the ramp test.
 - It is between 50 and 600 W.

@@ -1,6 +1,6 @@
 /**
  * Optional page analytics (Plausible-compatible). The operator enables them with
- * GOWIFT_ANALYTICS_DOMAIN; the server then lists them in /api/info. Without
+ * GOINDOOR_ANALYTICS_DOMAIN; the server then lists them in /api/info. Without
  * that, no third-party script is ever loaded.
  */
 

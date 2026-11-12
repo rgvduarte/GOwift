@@ -263,7 +263,7 @@ test("a record without heart rate has hr null");
 - [ ] **Step 2: Run** `NODE_T` (`test/workoutStudioView.test.js`) — expect FAIL.
 - [ ] **Step 3: Implement** the view, the cue and the `main.js` wiring.
 - [ ] **Step 4: Run** `NODE_T`, `NODE_LINT` — expect PASS.
-- [ ] **Step 5: Manual check**: `make dev`, then `make screenshot ARGS="--out ~/.cache/gowift/screenshots/workout-menu.png"` with the card picked and one of the HUD (see AGENTS.md for the Playwright docker recipe). Start a Tabata, pause, resume, skip, end: summary shows.
+- [ ] **Step 5: Manual check**: `make dev`, then `make screenshot ARGS="--out ~/.cache/goindoor/screenshots/workout-menu.png"` with the card picked and one of the HUD (see AGENTS.md for the Playwright docker recipe). Start a Tabata, pause, resume, skip, end: summary shows.
 - [ ] **Step 6: Commit** `Client: workout HUD, pause, skip, end and summary (#77)`
 
 ---

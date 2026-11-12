@@ -10,7 +10,7 @@ import { temperate } from "./biomes/index.js";
 import { roadFrame, roadHalfWidth } from "./world.js";
 
 /** What each arch says, by marker type. */
-export const ARCH_TEXT = Object.freeze({ start_finish: "GOWIFT", climb: "KOM", sprint: "SPRINT" });
+export const ARCH_TEXT = Object.freeze({ start_finish: "GOINDOOR", climb: "KOM", sprint: "SPRINT" });
 
 export const BANNERS = Object.freeze({
   text: Object.freeze({ halfway: "1/2", climb1000: "1 KM ^", climb500: "500 M ^" }),

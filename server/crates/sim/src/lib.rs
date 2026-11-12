@@ -1,6 +1,6 @@
-//! # gowift-sim
+//! # goindoor-sim
 //!
-//! The simulation core of GOwift. It is deliberately free of I/O, networking,
+//! The simulation core of GOindoor. It is deliberately free of I/O, networking,
 //! async runtimes and third-party dependencies so that it can be
 //!
 //! * unit-tested deterministically (all randomness is injected via [`rng::RandomSource`]),

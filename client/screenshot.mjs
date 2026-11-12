@@ -5,7 +5,7 @@
 // or via the Makefile:  make screenshot ARGS="--out shot.png"
 //
 // Defaults: http://localhost:8080, 1280x800, a short settle wait, and
-// ~/.cache/gowift/screenshots/screenshot-<UTC timestamp>.png.
+// ~/.cache/goindoor/screenshots/screenshot-<UTC timestamp>.png.
 // Prints the saved path on success. A fresh headless browser has empty
 // localStorage, so the rider panel shows default profile values.
 
@@ -17,7 +17,7 @@ import { chromium } from "playwright";
 
 import { parseArgs } from "./screenshotArgs.mjs";
 
-const DEFAULT_OUT_DIR = path.join(os.homedir(), ".cache", "gowift", "screenshots");
+const DEFAULT_OUT_DIR = path.join(os.homedir(), ".cache", "goindoor", "screenshots");
 
 function defaultOut() {
   const d = new Date();

@@ -11,7 +11,7 @@ current global ride, even when the originating ride had already been left.
 ## Decision
 
 Use an injected `StravaUpload` controller and a shared panel binding for finish
-and recovery. Store receipts under `gowift.strava-upload.<athlete>:<first-sample>`
+and recovery. Store receipts under `goindoor.strava-upload.<athlete>:<first-sample>`
 in localStorage: phase, upload ID, activity ID, and failure metadata. Keep ride
 files/photos in the existing IndexedDB autosave, never in the receipt. The origin
 scopes the server, and the athlete scopes the Strava account.

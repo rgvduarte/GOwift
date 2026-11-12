@@ -1,4 +1,4 @@
-# Deploying GOwift
+# Deploying GOindoor
 
 A server is one Docker container. It serves the browser client, the routes and
 the WebSocket game on one port (8080 inside the container). TLS belongs to a
@@ -6,10 +6,10 @@ reverse proxy in front of it: browsers only allow Bluetooth on `https://` pages.
 
 ## Behind your own Caddy (recommended for production)
 
-### 1. The GOwift server
+### 1. The GOindoor server
 
 ```bash
-git clone <your-repo-url> gowift && cd gowift
+git clone <your-repo-url> goindoor && cd goindoor
 make setup          # creates .env from .env.example; later runs add new settings
 $EDITOR .env
 make up
@@ -18,27 +18,27 @@ make up
 Settings for production in `.env`:
 
 ```bash
-GOWIFT_SERVER_NAME=Leon's Ride Club
-GOWIFT_PUBLIC_URL=https://ride.example.org
-GOWIFT_TRUST_PROXY=true                 # client IPs from X-Forwarded-For (per-IP limit)
-GOWIFT_MAX_PLAYERS=50                   # trainer riders at the same time, all routes together
-GOWIFT_MAX_PADDLE_PLAYERS=20            # phone riders, in seats of their own
-GOWIFT_MAX_VISIBLE_RIDERS=200           # riders per state message, humans first
-GOWIFT_ALLOW_SIMULATED_TRAINER=false    # only real trainers on the start screen
-GOWIFT_ALLOW_PADDLE_MODE=true           # phone paddles (marked 📱, no Strava, no ride files)
-GOWIFT_PRIVACY_URL=https://ride.example.org/privacy/  # your privacy policy, linked in the start menu
-GOWIFT_ANALYTICS_DOMAIN=              # optional Plausible analytics, off when empty (see .env.example)
-# GOWIFT_OBN_URL=wss://obn.example/v0   # optional: share the velodrome with other apps (see OpenBikeNet below)
-GOWIFT_HTTP_BIND=127.0.0.1              # only the proxy on this machine can reach it
-GOWIFT_HTTP_PORT=8080
+GOINDOOR_SERVER_NAME=Leon's Ride Club
+GOINDOOR_PUBLIC_URL=https://ride.example.org
+GOINDOOR_TRUST_PROXY=true                 # client IPs from X-Forwarded-For (per-IP limit)
+GOINDOOR_MAX_PLAYERS=50                   # trainer riders at the same time, all routes together
+GOINDOOR_MAX_PADDLE_PLAYERS=20            # phone riders, in seats of their own
+GOINDOOR_MAX_VISIBLE_RIDERS=200           # riders per state message, humans first
+GOINDOOR_ALLOW_SIMULATED_TRAINER=false    # only real trainers on the start screen
+GOINDOOR_ALLOW_PADDLE_MODE=true           # phone paddles (marked 📱, no Strava, no ride files)
+GOINDOOR_PRIVACY_URL=https://ride.example.org/privacy/  # your privacy policy, linked in the start menu
+GOINDOOR_ANALYTICS_DOMAIN=              # optional Plausible analytics, off when empty (see .env.example)
+# GOINDOOR_OBN_URL=wss://obn.example/v0   # optional: share the velodrome with other apps (see OpenBikeNet below)
+GOINDOOR_HTTP_BIND=127.0.0.1              # only the proxy on this machine can reach it
+GOINDOOR_HTTP_PORT=8080
 COMPOSE_PROFILES=                         # leave the bundled Caddy off
 ```
 
-`GOWIFT_PUBLIC_URL` also becomes the only page origin allowed to open game
-connections (`GOWIFT_ALLOWED_ORIGINS` in `docker-compose.yml`). Without it,
+`GOINDOOR_PUBLIC_URL` also becomes the only page origin allowed to open game
+connections (`GOINDOOR_ALLOWED_ORIGINS` in `docker-compose.yml`). Without it,
 any web page may open a game connection to your server, which is fine on a
 home network but not for a public server: always set it there. Only set
-`GOWIFT_TRUST_PROXY=true` when the proxy is the only way in, otherwise
+`GOINDOOR_TRUST_PROXY=true` when the proxy is the only way in, otherwise
 anyone could fake their address in the header.
 
 Deploy new commits later with `make update` (git pull, rebuild, restart,
@@ -87,7 +87,7 @@ and point Caddy at the container name:
 ```caddyfile
 ride.example.org {
 	encode zstd gzip
-	reverse_proxy gowift-server-1:8080
+	reverse_proxy goindoor-server-1:8080
 }
 ```
 
@@ -104,13 +104,13 @@ don't want a landing page leave this out; nothing changes for them.
 
    ```bash
    COMPOSE_PROFILES=tls,landing
-   GOWIFT_DOMAIN=app.example.org
-   GOWIFT_PUBLIC_URL=https://app.example.org
-   GOWIFT_LANDING_DOMAIN=example.org, www.example.org
-   GOWIFT_LANDING_URL=https://example.org
-   GOWIFT_LANDING_PLAUSIBLE_DOMAIN=example.org   # optional, cookie-free analytics
-   # GOWIFT_PRIVACY_URL=https://...                # optional, privacy link (start menu + landing footer)
-   # GOWIFT_LANDING_IMPRINT_URL=https://...        # optional, imprint link in the footer
+   GOINDOOR_DOMAIN=app.example.org
+   GOINDOOR_PUBLIC_URL=https://app.example.org
+   GOINDOOR_LANDING_DOMAIN=example.org, www.example.org
+   GOINDOOR_LANDING_URL=https://example.org
+   GOINDOOR_LANDING_PLAUSIBLE_DOMAIN=example.org   # optional, cookie-free analytics
+   # GOINDOOR_PRIVACY_URL=https://...                # optional, privacy link (start menu + landing footer)
+   # GOINDOOR_LANDING_IMPRINT_URL=https://...        # optional, imprint link in the footer
    ```
 
 3. `make up`. The bundled Caddy serves the landing page on the bare domain,
@@ -120,7 +120,7 @@ don't want a landing page leave this out; nothing changes for them.
    app, then check *Connect with Strava* once.
 
 Behind your own Caddy, leave `tls` out of `COMPOSE_PROFILES`; the landing
-container is published on `127.0.0.1:8081` (`GOWIFT_LANDING_PORT`):
+container is published on `127.0.0.1:8081` (`GOINDOOR_LANDING_PORT`):
 
 ```caddyfile
 example.org {
@@ -147,10 +147,10 @@ again after changing them. Details: [landing/README.md](../landing/README.md).
 2. In `.env`:
 
    ```bash
-   GOWIFT_STRAVA_CLIENT_ID=12345
-   GOWIFT_STRAVA_CLIENT_SECRET=…
-   GOWIFT_REQUIRE_STRAVA=false   # true: riders must connect Strava to ride
-   GOWIFT_SECRET_KEY=…           # openssl rand -hex 32; keeps logins across updates
+   GOINDOOR_STRAVA_CLIENT_ID=12345
+   GOINDOOR_STRAVA_CLIENT_SECRET=…
+   GOINDOOR_REQUIRE_STRAVA=false   # true: riders must connect Strava to ride
+   GOINDOOR_SECRET_KEY=…           # openssl rand -hex 32; keeps logins across updates
    ```
 
 3. `make up`.
@@ -158,7 +158,7 @@ again after changing them. Details: [landing/README.md](../landing/README.md).
 To try it locally, copy `.env.dev.example` to `.env.dev` and run `make dev`
 (see the comments in that file). Strava accepts `localhost` and `127.0.0.1` as
 callback domains, so the same Strava app works locally. Open the app at
-`http://localhost:8080` (the `GOWIFT_PUBLIC_URL` in that file).
+`http://localhost:8080` (the `GOINDOOR_PUBLIC_URL` in that file).
 
 Riders then see *Connect with Strava* on the start screen. After a ride,
 *Finish ride* offers *Upload to Strava* (and `.tcx`, `.gpx` and `.fit` downloads either way).
@@ -166,24 +166,24 @@ Strava gets a FIT file marked as a virtual ride (`sub_sport` virtual activity):
 Strava files it as a *Virtual Ride* and keeps the ride's own elevation. Its
 elevation map would see open sea there and drop the climbing, as it did for
 the TCX uploads before.
-With `GOWIFT_REQUIRE_STRAVA=true` every rider needs a real Strava account,
+With `GOINDOOR_REQUIRE_STRAVA=true` every rider needs a real Strava account,
 and one account can ride only once at a time — a simple hurdle against bots
 and scripts.
 
 Strava logins are saved in a SQLite database on the `data` Docker volume
 (`/app/data`), so riders stay connected through `make update` and restarts.
 Session ids are stored only as hashes and refresh tokens are encrypted with
-`GOWIFT_SECRET_KEY`, which must stay the same across deploys (changing it
+`GOINDOOR_SECRET_KEY`, which must stay the same across deploys (changing it
 logs everyone out once, which is harmless). Without the key logins stay in
 memory and are lost on every restart. Back the volume up like any data:
 
 ```bash
-docker run --rm -v gowift_data:/data -v "$PWD":/backup alpine tar czf /backup/gowift-data.tgz -C /data .
+docker run --rm -v goindoor_data:/data -v "$PWD":/backup alpine tar czf /backup/goindoor-data.tgz -C /data .
 ```
 
 The start menu also shows how far everyone has ridden on the server, on
 trainers and on phones. Only the two kilometre totals are kept, in `stats.json`
-next to the database (set `GOWIFT_STATS_FILE` to put it elsewhere); without a
+next to the database (set `GOINDOOR_STATS_FILE` to put it elsewhere); without a
 data directory they restart from zero. Riders declare their own device, so the
 numbers are for fun, not a leaderboard.
 
@@ -200,7 +200,7 @@ Things to know:
 
 ## OpenBikeNet (optional)
 
-Set `GOWIFT_OBN_URL` (a `ws://` or `wss://` URL of an OpenBikeNet server) to share the
+Set `GOINDOOR_OBN_URL` (a `ws://` or `wss://` URL of an OpenBikeNet server) to share the
 velodrome with riders of other apps. The server then sends the name, position, speed, power
 and cadence of the riders on the velodrome, and shows the riders of other apps next to yours
 (they have no bots there). Empty or unset = not connected; nothing is sent. If the connection
@@ -218,16 +218,16 @@ a minute). `/api/info` marks the route with `"shared": true` while the link is c
 
 | Setting | Default | What it limits |
 | --- | --- | --- |
-| `GOWIFT_MAX_PLAYERS` | 50 | Trainer riders at the same time across all routes (phone riders not counted) |
-| `GOWIFT_MAX_PADDLE_PLAYERS` | 20 | Phone-paddle riders at the same time, in seats of their own so they never block a trainer rider |
-| `GOWIFT_MAX_VISIBLE_RIDERS` | 200 | Riders in one state message; humans first, then the nearest bots |
-| `GOWIFT_MAX_CONNECTIONS_PER_IP` | 4 | Open game connections per IP (needs `GOWIFT_TRUST_PROXY` behind a proxy) |
-| `GOWIFT_MESSAGES_PER_SECOND` | 20 | Messages per connection (the client sends about 4); floods are dropped, then the connection is closed |
-| `GOWIFT_ALLOWED_ORIGINS` | the public URL | Pages from other sites can't open game connections |
-| `GOWIFT_REQUIRE_STRAVA` | false | Riders need a Strava account; one ride per account |
-| `GOWIFT_GRACE_S` | 60 | How long a rider whose connection dropped is kept (coasting, holding their place) before being removed; 0 removes at once |
-| `GOWIFT_AFK_TIMEOUT_S` | 1800 | Seconds of 0 W before a "Still riding?" warning; an unanswered warning removes the rider. 0 turns it off |
-| `GOWIFT_AFK_REMINDER_S` | 600 | Seconds of 0 W after "Stay" before the next warning |
+| `GOINDOOR_MAX_PLAYERS` | 50 | Trainer riders at the same time across all routes (phone riders not counted) |
+| `GOINDOOR_MAX_PADDLE_PLAYERS` | 20 | Phone-paddle riders at the same time, in seats of their own so they never block a trainer rider |
+| `GOINDOOR_MAX_VISIBLE_RIDERS` | 200 | Riders in one state message; humans first, then the nearest bots |
+| `GOINDOOR_MAX_CONNECTIONS_PER_IP` | 4 | Open game connections per IP (needs `GOINDOOR_TRUST_PROXY` behind a proxy) |
+| `GOINDOOR_MESSAGES_PER_SECOND` | 20 | Messages per connection (the client sends about 4); floods are dropped, then the connection is closed |
+| `GOINDOOR_ALLOWED_ORIGINS` | the public URL | Pages from other sites can't open game connections |
+| `GOINDOOR_REQUIRE_STRAVA` | false | Riders need a Strava account; one ride per account |
+| `GOINDOOR_GRACE_S` | 60 | How long a rider whose connection dropped is kept (coasting, holding their place) before being removed; 0 removes at once |
+| `GOINDOOR_AFK_TIMEOUT_S` | 1800 | Seconds of 0 W before a "Still riding?" warning; an unanswered warning removes the rider. 0 turns it off |
+| `GOINDOOR_AFK_REMINDER_S` | 600 | Seconds of 0 W after "Stay" before the next warning |
 
 Connections must say hello and join within 15 s, and silent connections are
 closed after 120 s. Chat is limited to bursts of 5, then one message every
@@ -238,11 +238,11 @@ determined cheater.
 ## Routes
 
 Every `*.json` file in `routes/` becomes a world riders can pick on the start
-screen; `GOWIFT_ROUTE` is the default and listed first. Routes are mounted
+screen; `GOINDOOR_ROUTE` is the default and listed first. Routes are mounted
 read-only, so a new file only needs `make restart`. See [routes](routes.md).
 
 ## Without your own proxy
 
 For a server without a reverse proxy, the bundled Caddy can handle TLS:
-`COMPOSE_PROFILES=tls` and `GOWIFT_DOMAIN=ride.example.org` in `.env`
+`COMPOSE_PROFILES=tls` and `GOINDOOR_DOMAIN=ride.example.org` in `.env`
 (ports 80 and 443 must be reachable).

@@ -6,7 +6,7 @@
 
 use std::collections::BTreeMap;
 
-use gowift_sim::RiderId;
+use goindoor_sim::RiderId;
 
 use super::wire::{AppMessage, RiderEntry, RiderState};
 use super::{OBN_LENGTH_M, OBN_ROOM};

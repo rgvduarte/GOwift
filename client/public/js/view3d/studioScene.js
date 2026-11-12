@@ -57,7 +57,7 @@ export function studioCamera(mode, mySeat) {
   return { eye: [seat[0] * 0.9, seat[1] + 2.25, seat[2] + 1.9], target: [coachHead[0], coachHead[1] - 0.4, coachHead[2]] };
 }
 
-// Colours: dark walls, a warm wooden floor, neon in the brand green and orange.
+// Colours: dark walls, a warm wooden floor, white neon (the GD brand) and orange.
 const WALL = [0.12, 0.11, 0.16];
 const FLOOR = [0.36, 0.27, 0.2];
 const CEILING = [0.06, 0.06, 0.08];
@@ -67,7 +67,7 @@ const SCREEN = [0.04, 0.05, 0.08];
 const TRAINER = [0.1, 0.1, 0.12];
 const TRAINER_FOOT = [0.3, 0.31, 0.34];
 const SPEAKER = [0.08, 0.08, 0.09];
-const BRAND_GREEN = [0.18, 0.91, 0.54];
+const BRAND_NEON = [0.96, 0.96, 0.98];
 const ORANGE = [1.0, 0.48, 0.1];
 const NEON_BLUE = [0.3, 0.6, 1.0];
 
@@ -118,10 +118,10 @@ export function buildStudioRoom() {
 
   const neon = new MeshBuilder();
   // Frame around the screen, strips along the walls and the stage edge.
-  neon.box([0, 3.85, f + 0.1], [7.6, 0.06, 0.04], BRAND_GREEN);
-  neon.box([0, 1.15, f + 0.1], [7.6, 0.06, 0.04], BRAND_GREEN);
+  neon.box([0, 3.85, f + 0.1], [7.6, 0.06, 0.04], BRAND_NEON);
+  neon.box([0, 1.15, f + 0.1], [7.6, 0.06, 0.04], BRAND_NEON);
   for (const side of [-1, 1]) {
-    neon.box([side * 3.8, 2.5, f + 0.1], [0.06, 2.76, 0.04], BRAND_GREEN);
+    neon.box([side * 3.8, 2.5, f + 0.1], [0.06, 2.76, 0.04], BRAND_NEON);
     neon.box([side * (w - 0.05), 3.9, (f + b) / 2], [0.04, 0.07, b - f - 0.4], ORANGE);
     neon.box([side * (w - 0.05), 0.15, (f + b) / 2], [0.04, 0.05, b - f - 0.4], NEON_BLUE);
   }

@@ -7,7 +7,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>en</string>
 	<key>CFBundleDisplayName</key>
-        <string>GOwift</string>
+        <string>GOindoor</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -65,9 +65,9 @@
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
 	<key>NSBluetoothAlwaysUsageDescription</key>
-	<string>GOwift connects to your smart trainer, power meter, heart rate strap and Zwift controllers over Bluetooth.</string>
+	<string>GOindoor connects to your smart trainer, power meter, heart rate strap and Zwift controllers over Bluetooth.</string>
 	<key>NSLocalNetworkUsageDescription</key>
-	<string>GOwift can ride on a GOwift server in your home network.</string>
+	<string>GOindoor can ride on a GOindoor server in your home network.</string>
 	<key>NSAppTransportSecurity</key>
 	<dict>
 		<!-- Self-hosted servers on the LAN usually speak plain http:// (docs/app.md). -->

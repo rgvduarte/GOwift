@@ -59,8 +59,8 @@ jobs:
         with:
           context: .
           push: false
-          tags: gowift-server:ci
+          tags: goindoor-server:ci
           build-args: |
-            GOWIFT_BUILD_SHA=${{ github.sha }}
+            GOINDOOR_BUILD_SHA=${{ github.sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max

@@ -1,10 +1,10 @@
-# HTTPS reverse proxy for public GOwift servers.
+# HTTPS reverse proxy for public GOindoor servers.
 # Caddy fetches and renews certificates automatically and proxies WebSockets.
 
 # Landing page (optional, COMPOSE_PROFILES=tls,landing). One or more addresses,
 # e.g. "example.org, www.example.org"; www. redirects to the bare domain.
 # Unset, it falls back to a local-only address nobody reaches from outside.
-{$GOWIFT_LANDING_DOMAIN:http://landing.localhost} {
+{$GOINDOOR_LANDING_DOMAIN:http://landing.localhost} {
 	@www header_regexp www Host ^www\.(.+)$
 	redir @www https://{re.www.1}{uri} permanent
 
@@ -16,7 +16,7 @@
 }
 
 # The app: game server, client and WebSocket (e.g. app.example.org).
-{$GOWIFT_DOMAIN} {
+{$GOINDOOR_DOMAIN} {
 	encode zstd gzip
 
 	header {

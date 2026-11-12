@@ -81,7 +81,7 @@ const faq = [
       fallbackFormat="jpg"
       widths={[800, 1280, 1920]}
       sizes="100vw"
-      alt="A rider in the GOwift 3D world on a winding country road in evening light, seen from the drone camera."
+      alt="A rider in the GOindoor 3D world on a winding country road in evening light, seen from the drone camera."
       loading="eager"
       fetchpriority="high"
     />
@@ -115,7 +115,7 @@ const faq = [
       <ul class="feature-list">
         {
           features.map((f) => (
-            <li>
+            <li class="glass">
               <h3>{f.title}</h3>
               <p>{f.text}</p>
             </li>
@@ -134,7 +134,7 @@ const faq = [
           fallbackFormat="jpg"
           widths={[640, 1080, 1600]}
           sizes="(min-width: 68rem) 34rem, 100vw"
-          alt="A ride in GOwift: the rider on a country road, with power, speed, cadence and gradient on screen."
+          alt="A ride in GOindoor: the rider on a country road, with power, speed, cadence and gradient on screen."
         />
         <figcaption>On the road: watts, speed, gradient, and the next sprint or climb.</figcaption>
       </figure>
@@ -145,7 +145,7 @@ const faq = [
           fallbackFormat="jpg"
           widths={[640, 1080, 1600]}
           sizes="(min-width: 68rem) 34rem, 100vw"
-          alt="The GOwift spin studio: Coach Lemon on stage, riders side by side, the room board and the class plan with target and power."
+          alt="The GOindoor spin studio: Coach Lemon on stage, riders side by side, the room board and the class plan with target and power."
         />
         <figcaption>In the spin studio: a class every half hour, bikes side by side.</figcaption>
       </figure>
@@ -175,7 +175,7 @@ const faq = [
         <li>
           <h3>A name</h3>
           <p>
-            {hasApp ? <>Open <a href={site.appUrl}>{appHost}</a>,</> : <>Open your <a href="#host">GOwift server</a>,</>} type
+            {hasApp ? <>Open <a href={site.appUrl}>{appHost}</a>,</> : <>Open your <a href="#host">GOindoor server</a>,</>} type
             a name, connect your trainer and pick a route. No sign-up.
           </p>
         </li>
@@ -190,12 +190,12 @@ const faq = [
       </div>
       <div class="host-body">
         <p>
-          GOwift is open source and every server is a single Docker container. Run one at home for your LAN, on a
+          GOindoor is open source and every server is a single Docker container. Run one at home for your LAN, on a
           small VPS for your club{hasApp ? ", or ride on ours" : ""}. The game server is written in Rust, the client is plain JavaScript.
         </p>
         <pre><code><span class="muted"># needs Docker with Compose and make</span>
 git clone {site.githubUrl}.git
-cd GOwift
+cd GOINDOORKEEP
 make up</code></pre>
         <p>
           Then open <code>http://localhost:8080</code>. Bug reports, routes and pull requests are welcome
@@ -210,7 +210,7 @@ make up</code></pre>
       <div class="split-head">
         <h2 id="faq-title">Questions</h2>
       </div>
-      <div class="faq-list">
+      <div class="faq-list glass">
         {
           faq.map((item) => (
             <details>
@@ -271,8 +271,8 @@ make up</code></pre>
     inset: 0;
     z-index: -1;
     background:
-      linear-gradient(to right, rgb(15 18 22 / 0.85) 0%, rgb(15 18 22 / 0.35) 55%, rgb(15 18 22 / 0) 80%),
-      linear-gradient(to bottom, rgb(15 18 22 / 0.6) 0%, rgb(15 18 22 / 0) 25%);
+      linear-gradient(to right, rgb(11 11 12 / 0.88) 0%, rgb(11 11 12 / 0.4) 55%, rgb(11 11 12 / 0) 80%),
+      linear-gradient(to bottom, rgb(11 11 12 / 0.6) 0%, rgb(11 11 12 / 0) 25%);
   }
   .hero-text {
     align-self: end;
@@ -283,13 +283,13 @@ make up</code></pre>
     font-size: clamp(3.5rem, 11vw, 8.5rem);
     line-height: 0.88;
     max-width: 11ch;
-    text-shadow: 0 2px 24px rgb(15 18 22 / 0.5);
+    text-shadow: 0 2px 24px rgb(11 11 12 / 0.5);
   }
   .lede {
     margin-top: 1.5rem;
     font-size: clamp(1.125rem, 2vw, 1.3rem);
     max-width: 40ch;
-    text-shadow: 0 1px 12px rgb(15 18 22 / 0.8);
+    text-shadow: 0 1px 12px rgb(11 11 12 / 0.8);
   }
   .actions {
     display: flex;
@@ -298,8 +298,7 @@ make up</code></pre>
     margin-top: 2rem;
   }
   .actions .button:not(.primary) {
-    background: rgb(23 27 33 / 0.75);
-    backdrop-filter: blur(6px);
+    background: rgb(255 255 255 / 0.09);
   }
   .hero-ground {
     margin-bottom: -1px;
@@ -344,10 +343,14 @@ make up</code></pre>
     padding: 0;
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
-    gap: 2.25rem 2.5rem;
+    gap: 1rem;
+  }
+  .feature-list li {
+    padding: 1.4rem 1.5rem 1.5rem;
   }
   .feature-list h3 {
-    margin-bottom: 0.4rem;
+    font-size: 1.25rem;
+    margin-bottom: 0.5rem;
   }
   .feature-list p {
     color: var(--muted);
@@ -396,8 +399,7 @@ make up</code></pre>
     content: counter(step);
     grid-row: span 2;
     font-family: var(--display);
-    font-style: italic;
-    font-weight: 800;
+    font-weight: 700;
     font-size: 3.5rem;
     line-height: 0.8;
     color: var(--brand);
@@ -418,16 +420,17 @@ make up</code></pre>
     padding: 1.25rem 1.5rem;
     background: var(--surface);
     border: 1px solid var(--border);
+    border-top-color: var(--glass-top);
     border-radius: var(--radius);
     overflow-x: auto;
     line-height: 1.7;
   }
 
   .faq-list {
-    border-top: 1px solid var(--border);
+    padding: 0.25rem 1.5rem;
   }
-  details {
-    border-bottom: 1px solid var(--border);
+  details + details {
+    border-top: 1px solid var(--divider);
   }
   summary {
     cursor: pointer;
@@ -471,8 +474,8 @@ make up</code></pre>
   }
   .last-call-line {
     font-family: var(--display);
-    font-style: italic;
-    font-weight: 800;
+    font-weight: 700;
+    letter-spacing: -0.03em;
     font-size: clamp(2.5rem, 6vw, 4.5rem);
     line-height: 1;
   }

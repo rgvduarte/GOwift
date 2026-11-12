@@ -76,8 +76,8 @@ test("sharing line", () => {
 });
 
 test("ride names", () => {
-  assert.equal(eventRideName("group_ride", "Riverside Flats"), "GOwift group ride · Riverside Flats");
-  assert.equal(eventRideName("race", "Riverside Flats"), "GOwift race · Riverside Flats");
+  assert.equal(eventRideName("group_ride", "Riverside Flats"), "GOindoor group ride · Riverside Flats");
+  assert.equal(eventRideName("race", "Riverside Flats"), "GOindoor race · Riverside Flats");
 });
 
 test("result rows", () => {

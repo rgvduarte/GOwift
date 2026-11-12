@@ -96,7 +96,7 @@ impl RideFile {
 /// The activity description. Strava descriptions are plain text, but it turns
 /// full URLs into links, so the server links to itself.
 pub fn description(public_url: &str) -> String {
-    format!("Ridden on GOwift: {public_url}")
+    format!("Ridden on GOindoor: {public_url}")
 }
 
 /// Uploads a ride file. A TCX ride is turned into a virtual ride by
@@ -112,13 +112,13 @@ pub async fn upload(
     let (file, data_type) = match ride {
         RideFile::Fit(bytes) => (
             reqwest::multipart::Part::bytes(bytes)
-                .file_name("gowift.fit")
+                .file_name("goindoor.fit")
                 .mime_str("application/vnd.ant.fit")?,
             "fit",
         ),
         RideFile::Tcx(text) => (
             reqwest::multipart::Part::text(text)
-                .file_name("gowift.tcx")
+                .file_name("goindoor.tcx")
                 .mime_str("application/vnd.garmin.tcx+xml")?,
             "tcx",
         ),
@@ -192,7 +192,7 @@ mod tests {
     fn description_links_to_the_server() {
         assert_eq!(
             description("https://ride.example.com"),
-            "Ridden on GOwift: https://ride.example.com"
+            "Ridden on GOindoor: https://ride.example.com"
         );
     }
 

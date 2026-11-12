@@ -1,4 +1,4 @@
-# GOwift — proof of concept
+# GOindoor — proof of concept
 #
 #   make up        build and start (http://localhost:8080)
 #   make update    git pull, rebuild, restart
@@ -6,7 +6,7 @@
 # All settings come from .env (see .env.example). Docker Compose reads .env
 # automatically for the ${...} values below.
 
-name: gowift
+name: goindoor
 
 services:
   server:
@@ -15,46 +15,46 @@ services:
       dockerfile: Dockerfile
       args:
         # Exported by the Makefile (git commit and date); `dev` when built by hand.
-        GOWIFT_BUILD_SHA: ${GOWIFT_BUILD_SHA:-dev}
-        GOWIFT_BUILD_DATE: ${GOWIFT_BUILD_DATE:-}
-    image: gowift-server:${GOWIFT_IMAGE_TAG:-local}
+        GOINDOOR_BUILD_SHA: ${GOINDOOR_BUILD_SHA:-dev}
+        GOINDOOR_BUILD_DATE: ${GOINDOOR_BUILD_DATE:-}
+    image: goindoor-server:${GOINDOOR_IMAGE_TAG:-local}
     restart: unless-stopped
     environment:
-      GOWIFT_SERVER_NAME: ${GOWIFT_SERVER_NAME:-GOwift}
-      GOWIFT_ROUTE_FILE: /app/routes/${GOWIFT_ROUTE:-rolling-hills}.json
-      GOWIFT_TARGET_RIDERS: ${GOWIFT_TARGET_RIDERS:-12}
-      GOWIFT_MAX_PLAYERS: ${GOWIFT_MAX_PLAYERS:-50}
-      GOWIFT_MAX_PADDLE_PLAYERS: ${GOWIFT_MAX_PADDLE_PLAYERS:-20}
-      GOWIFT_MAX_VISIBLE_RIDERS: ${GOWIFT_MAX_VISIBLE_RIDERS:-200}
-      GOWIFT_TICK_HZ: ${GOWIFT_TICK_HZ:-20}
-      GOWIFT_BROADCAST_HZ: ${GOWIFT_BROADCAST_HZ:-4}
-      GOWIFT_RACE_COUNTDOWN_S: ${GOWIFT_RACE_COUNTDOWN_S:-30}
-      GOWIFT_MAX_RACE_LAPS: ${GOWIFT_MAX_RACE_LAPS:-20}
-      GOWIFT_BOT_SEED: ${GOWIFT_BOT_SEED:-}
-      GOWIFT_AUTH_MODE: ${GOWIFT_AUTH_MODE:-open}
-      GOWIFT_ROUTES_DIR: /app/routes
-      GOWIFT_PUBLIC_URL: ${GOWIFT_PUBLIC_URL:-}
-      GOWIFT_TRUST_PROXY: ${GOWIFT_TRUST_PROXY:-false}
-      GOWIFT_MAX_CONNECTIONS_PER_IP: ${GOWIFT_MAX_CONNECTIONS_PER_IP:-4}
-      GOWIFT_MESSAGES_PER_SECOND: ${GOWIFT_MESSAGES_PER_SECOND:-20}
-      GOWIFT_ALLOWED_ORIGINS: ${GOWIFT_PUBLIC_URL:-}
-      GOWIFT_STRAVA_CLIENT_ID: ${GOWIFT_STRAVA_CLIENT_ID:-}
-      GOWIFT_STRAVA_CLIENT_SECRET: ${GOWIFT_STRAVA_CLIENT_SECRET:-}
-      GOWIFT_SECRET_KEY: ${GOWIFT_SECRET_KEY:-}
-      GOWIFT_REQUIRE_STRAVA: ${GOWIFT_REQUIRE_STRAVA:-false}
-      GOWIFT_ALLOW_SIMULATED_TRAINER: ${GOWIFT_ALLOW_SIMULATED_TRAINER:-true}
-      GOWIFT_PRIVACY_URL: ${GOWIFT_PRIVACY_URL:-}
-      GOWIFT_OBN_URL: ${GOWIFT_OBN_URL:-}
-      GOWIFT_ANALYTICS_DOMAIN: ${GOWIFT_ANALYTICS_DOMAIN:-}
-      GOWIFT_ANALYTICS_SCRIPT: ${GOWIFT_ANALYTICS_SCRIPT:-}
+      GOINDOOR_SERVER_NAME: ${GOINDOOR_SERVER_NAME:-GOindoor}
+      GOINDOOR_ROUTE_FILE: /app/routes/${GOINDOOR_ROUTE:-rolling-hills}.json
+      GOINDOOR_TARGET_RIDERS: ${GOINDOOR_TARGET_RIDERS:-12}
+      GOINDOOR_MAX_PLAYERS: ${GOINDOOR_MAX_PLAYERS:-50}
+      GOINDOOR_MAX_PADDLE_PLAYERS: ${GOINDOOR_MAX_PADDLE_PLAYERS:-20}
+      GOINDOOR_MAX_VISIBLE_RIDERS: ${GOINDOOR_MAX_VISIBLE_RIDERS:-200}
+      GOINDOOR_TICK_HZ: ${GOINDOOR_TICK_HZ:-20}
+      GOINDOOR_BROADCAST_HZ: ${GOINDOOR_BROADCAST_HZ:-4}
+      GOINDOOR_RACE_COUNTDOWN_S: ${GOINDOOR_RACE_COUNTDOWN_S:-30}
+      GOINDOOR_MAX_RACE_LAPS: ${GOINDOOR_MAX_RACE_LAPS:-20}
+      GOINDOOR_BOT_SEED: ${GOINDOOR_BOT_SEED:-}
+      GOINDOOR_AUTH_MODE: ${GOINDOOR_AUTH_MODE:-open}
+      GOINDOOR_ROUTES_DIR: /app/routes
+      GOINDOOR_PUBLIC_URL: ${GOINDOOR_PUBLIC_URL:-}
+      GOINDOOR_TRUST_PROXY: ${GOINDOOR_TRUST_PROXY:-false}
+      GOINDOOR_MAX_CONNECTIONS_PER_IP: ${GOINDOOR_MAX_CONNECTIONS_PER_IP:-4}
+      GOINDOOR_MESSAGES_PER_SECOND: ${GOINDOOR_MESSAGES_PER_SECOND:-20}
+      GOINDOOR_ALLOWED_ORIGINS: ${GOINDOOR_PUBLIC_URL:-}
+      GOINDOOR_STRAVA_CLIENT_ID: ${GOINDOOR_STRAVA_CLIENT_ID:-}
+      GOINDOOR_STRAVA_CLIENT_SECRET: ${GOINDOOR_STRAVA_CLIENT_SECRET:-}
+      GOINDOOR_SECRET_KEY: ${GOINDOOR_SECRET_KEY:-}
+      GOINDOOR_REQUIRE_STRAVA: ${GOINDOOR_REQUIRE_STRAVA:-false}
+      GOINDOOR_ALLOW_SIMULATED_TRAINER: ${GOINDOOR_ALLOW_SIMULATED_TRAINER:-true}
+      GOINDOOR_PRIVACY_URL: ${GOINDOOR_PRIVACY_URL:-}
+      GOINDOOR_OBN_URL: ${GOINDOOR_OBN_URL:-}
+      GOINDOOR_ANALYTICS_DOMAIN: ${GOINDOOR_ANALYTICS_DOMAIN:-}
+      GOINDOOR_ANALYTICS_SCRIPT: ${GOINDOOR_ANALYTICS_SCRIPT:-}
       RUST_LOG: ${RUST_LOG:-info}
     ports:
-      # Defaults to localhost only. Set GOWIFT_HTTP_BIND=0.0.0.0 to expose it.
-      - "${GOWIFT_HTTP_BIND:-127.0.0.1}:${GOWIFT_HTTP_PORT:-8080}:8080"
+      # Defaults to localhost only. Set GOINDOOR_HTTP_BIND=0.0.0.0 to expose it.
+      - "${GOINDOOR_HTTP_BIND:-127.0.0.1}:${GOINDOOR_HTTP_PORT:-8080}:8080"
     networks:
       default:
       metrics:
-        aliases: [gowift-server]
+        aliases: [goindoor-server]
     volumes:
       # Routes are mounted so new routes need no rebuild.
       - ./routes:/app/routes:ro
@@ -73,28 +73,28 @@ services:
 
   # Optional landing page (static Astro site, see landing/). Enable with
   # COMPOSE_PROFILES=landing (plus tls for the bundled Caddy) and
-  # GOWIFT_LANDING_DOMAIN in .env. Without it, nothing changes.
+  # GOINDOOR_LANDING_DOMAIN in .env. Without it, nothing changes.
   landing:
     build:
       context: .
       dockerfile: landing/Dockerfile
       args:
-        PUBLIC_SITE_URL: ${GOWIFT_LANDING_URL:-http://landing.localhost}
-        PUBLIC_APP_URL: ${GOWIFT_PUBLIC_URL:-}
-        PUBLIC_DISCORD_URL: ${GOWIFT_DISCORD_URL:-}
+        PUBLIC_SITE_URL: ${GOINDOOR_LANDING_URL:-http://landing.localhost}
+        PUBLIC_APP_URL: ${GOINDOOR_PUBLIC_URL:-}
+        PUBLIC_DISCORD_URL: ${GOINDOOR_DISCORD_URL:-}
         # Same privacy policy as the app's start menu, so one setting covers both.
-        PUBLIC_PRIVACY_URL: ${GOWIFT_PRIVACY_URL:-}
-        PUBLIC_IMPRINT_URL: ${GOWIFT_LANDING_IMPRINT_URL:-}
-        PUBLIC_PLAUSIBLE_DOMAIN: ${GOWIFT_LANDING_PLAUSIBLE_DOMAIN:-}
+        PUBLIC_PRIVACY_URL: ${GOINDOOR_PRIVACY_URL:-}
+        PUBLIC_IMPRINT_URL: ${GOINDOOR_LANDING_IMPRINT_URL:-}
+        PUBLIC_PLAUSIBLE_DOMAIN: ${GOINDOOR_LANDING_PLAUSIBLE_DOMAIN:-}
         # Same script as the app, so one setting covers both.
-        PUBLIC_PLAUSIBLE_SCRIPT: ${GOWIFT_ANALYTICS_SCRIPT:-}
-    image: gowift-landing:${GOWIFT_IMAGE_TAG:-local}
+        PUBLIC_PLAUSIBLE_SCRIPT: ${GOINDOOR_ANALYTICS_SCRIPT:-}
+    image: goindoor-landing:${GOINDOOR_IMAGE_TAG:-local}
     profiles: ["landing"]
     restart: unless-stopped
     ports:
       # For your own reverse proxy on this machine; the bundled Caddy uses the
       # Compose network instead.
-      - "${GOWIFT_HTTP_BIND:-127.0.0.1}:${GOWIFT_LANDING_PORT:-8081}:80"
+      - "${GOINDOOR_HTTP_BIND:-127.0.0.1}:${GOINDOOR_LANDING_PORT:-8081}:80"
     read_only: true
     tmpfs:
       - /config
@@ -113,7 +113,7 @@ services:
 
   # Optional HTTPS for public servers without their own reverse proxy
   # (Web Bluetooth needs a secure context). Enable with COMPOSE_PROFILES=tls
-  # and GOWIFT_DOMAIN in .env. Behind your own Caddy/nginx, leave it off.
+  # and GOINDOOR_DOMAIN in .env. Behind your own Caddy/nginx, leave it off.
   caddy:
     image: caddy:2-alpine@sha256:78bd35025c7ba85961dd149ae670315129954e77abe2383ac47c89106b35ade9
     profiles: ["tls"]
@@ -122,8 +122,8 @@ services:
       server:
         condition: service_healthy
     environment:
-      GOWIFT_DOMAIN: ${GOWIFT_DOMAIN:-localhost}
-      GOWIFT_LANDING_DOMAIN: ${GOWIFT_LANDING_DOMAIN:-http://landing.localhost}
+      GOINDOOR_DOMAIN: ${GOINDOOR_DOMAIN:-localhost}
+      GOINDOOR_LANDING_DOMAIN: ${GOINDOOR_LANDING_DOMAIN:-http://landing.localhost}
     ports:
       - "80:80"
       - "443:443"
@@ -145,4 +145,4 @@ volumes:
 
 networks:
   metrics:
-    name: gowift-metrics
+    name: goindoor-metrics

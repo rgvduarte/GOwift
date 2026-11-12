@@ -1,6 +1,6 @@
 # Splits and laps
 
-GOwift splits every ride the way a bike computer does. You see the last
+GOindoor splits every ride the way a bike computer does. You see the last
 split while riding, all splits on the finish screen, and the FIT and TCX files
 carry one lap per split. Design: [the spec](superpowers/specs/2026-10-18-splits-laps-ride-history-design.md).
 
@@ -43,7 +43,7 @@ Forge laps are 12.9 km).
 ## Ride history
 
 When the finish screen opens, a summary of the ride is saved in the browser
-(IndexedDB `gowift-history`): totals, whether the power was measured, the
+(IndexedDB `goindoor-history`): totals, whether the power was measured, the
 profile's FTP and weight, the resolved split mode and the splits (record
 version 2 adds the power curve, weighted power, Load and a flag for ramp-test
 rides). Nothing leaves the browser. It is the base for measured FTP and

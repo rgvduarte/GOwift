@@ -42,7 +42,7 @@ pub type RouteIndex = usize;
 #[derive(Debug, Clone, PartialEq)]
 pub struct SimConfig {
     /// Humans plus bots the world keeps riding on every route
-    /// (`GOWIFT_TARGET_RIDERS`; 0: no bots at all).
+    /// (`GOINDOOR_TARGET_RIDERS`; 0: no bots at all).
     pub target_riders: usize,
     /// Bots every human riding a route keeps around them: up to
     /// `company_radius_m` ahead or `company_behind_m` behind. They come out

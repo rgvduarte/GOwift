@@ -5,7 +5,7 @@ gets its own spec, plan and PR
 
 ## Why
 
-Workouts are where GOwift can stand out from other indoor cycling apps: a
+Workouts are where GOindoor can stand out from other indoor cycling apps: a
 whole-body offer that combines **cycling, bodyweight exercise and yoga**, and
 later joins them in one session (ride → bodyweight → yoga cool-down, the cross
 studio of #26). Every workout we ship is **based on a real, published protocol**

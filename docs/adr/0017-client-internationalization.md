@@ -4,7 +4,7 @@ Date: 2026-10-29 · Status: accepted
 
 ## Context
 
-Many GOwift riders are in Germany, and the client was English only. The
+Many GOindoor riders are in Germany, and the client was English only. The
 client is plain ES modules with no build step and no runtime dependencies, and
 a trainer-side page is rebuilt every frame in places, so whatever translates it
 must be cheap to call.
@@ -13,7 +13,7 @@ must be cheap to call.
 
 - **Own module, no library.** `client/public/js/i18n/` has `t(key, params)`,
   `tn(key, count, params)` (plural via `Intl.PluralRules`), locale detection
-  and a persisted choice (`gowift.locale`). Detection order: saved choice,
+  and a persisted choice (`goindoor.locale`). Detection order: saved choice,
   then the first `navigator.languages` entry whose base language is supported,
   then English.
 - **Flat dotted-key dictionaries** `en.js` (source and fallback) and `de.js`,

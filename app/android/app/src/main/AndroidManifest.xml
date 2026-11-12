@@ -18,12 +18,12 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-            <!-- The Strava sign-in tab hands back with gowift://strava (docs/app.md#strava-sign-in). -->
+            <!-- The Strava sign-in tab hands back with goindoor://strava (docs/app.md#strava-sign-in). -->
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
-                <data android:scheme="gowift" android:host="strava" />
+                <data android:scheme="goindoor" android:host="strava" />
             </intent-filter>
         </activity>
 
@@ -39,7 +39,7 @@
     <!-- Permissions -->
 
     <uses-permission android:name="android.permission.INTERNET" />
-    <!-- Bluetooth without asking for the location: GOwift never derives it from scans. -->
+    <!-- Bluetooth without asking for the location: GOindoor never derives it from scans. -->
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" android:maxSdkVersion="30" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" android:maxSdkVersion="30" />
     <uses-permission

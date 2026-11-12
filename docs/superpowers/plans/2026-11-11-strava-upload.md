@@ -21,7 +21,7 @@ recovery → reload → failed check → success used exactly one POST. Download
 a recovered FIT keeps the activity link/photos available. German disconnected
 and missing-permission states were also checked. No real activity or live
 OAuth round trip was performed. Screenshots are in
-`~/.cache/gowift/screenshots/strava-{ready-desktop,pending-desktop,pending-mobile,success-mobile,permission-mobile-de}.png`.
+`~/.cache/goindoor/screenshots/strava-{ready-desktop,pending-desktop,pending-mobile,success-mobile,permission-mobile-de}.png`.
 
 Visual follow-up: reused the existing compact Strava account row, removed ready
 prose and coloured card treatment, collapsed file formats, and moved the footer

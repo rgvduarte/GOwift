@@ -104,7 +104,7 @@ export class OpenBikeControlController extends Emitter {
   async #sendAppInfo(service) {
     try {
       const info = await service.getCharacteristic(APP_INFO_CHARACTERISTIC);
-      await info.writeValueWithResponse(encodeAppInfo({ appId: "gowift", appVersion: BUILD.sha, buttons: [...OBC_BUTTONS.keys()] }));
+      await info.writeValueWithResponse(encodeAppInfo({ appId: "goindoor", appVersion: BUILD.sha, buttons: [...OBC_BUTTONS.keys()] }));
     } catch (error) {
       this.#log?.info(`Controller: no app information sent (${error.message})`);
     }

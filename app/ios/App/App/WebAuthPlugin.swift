@@ -13,7 +13,7 @@ class AppViewController: CAPBridgeViewController {
 /// Google and Apple sign-in work there, while they block embedded web views.
 /// "Connect with Strava" uses it (docs/app.md#strava-sign-in).
 ///
-///     WebAuth.start({ url, callbackScheme: "gowift" }) → { url: "gowift://strava?…" }
+///     WebAuth.start({ url, callbackScheme: "goindoor" }) → { url: "goindoor://strava?…" }
 @objc(WebAuthPlugin)
 public class WebAuthPlugin: CAPPlugin, CAPBridgedPlugin, ASWebAuthenticationPresentationContextProviding {
     public let identifier = "WebAuthPlugin"

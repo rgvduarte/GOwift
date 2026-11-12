@@ -2,22 +2,22 @@ import type { CapacitorConfig } from "@capacitor/cli";
 import { writeFileSync } from "node:fs";
 
 /**
- * The app loads the client from a running GOwift server, so it is always
+ * The app loads the client from a running GOindoor server, so it is always
  * the version that server speaks (docs/app.md). Point it at your own server
- * with `GOWIFT_APP_URL=http://192.168.1.20:8080 npx cap sync`.
+ * with `GOINDOOR_APP_URL=http://192.168.1.20:8080 npx cap sync`.
  */
-const url = process.env.GOWIFT_APP_URL ?? "https://app.gowift.example";
+const url = process.env.GOINDOOR_APP_URL ?? "https://app.goindoor.example";
 
 // The offline page's "Try again" goes back to the same server.
 writeFileSync("www/server.js", `export const SERVER_URL = ${JSON.stringify(url)};\n`);
 
 const config: CapacitorConfig = {
-  appId: "io.github.rgvduarte.gowift",
-  appName: "GOwift",
+  appId: "io.github.rgvduarte.goindoor",
+  appName: "GOindoor",
   // Only shown when the server can't be reached.
   webDir: "www",
   // The splash screen's colour, so there is no white flash before the page has loaded.
-  backgroundColor: "#080a0e",
+  backgroundColor: "#0b0b0c",
   server: {
     // Other sites (Strava links) open outside; Strava's login uses the system sign-in sheet.
     url,

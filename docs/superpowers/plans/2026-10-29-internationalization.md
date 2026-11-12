@@ -13,7 +13,7 @@
 ## Global Constraints
 
 - Supported locales: `en` (source and fallback), `de`. `de-AT`, `de-CH` etc. map to `de`.
-- Locale key in `localStorage`: `gowift.locale`. Detection order: saved, then first `navigator.languages` entry with a supported base language, then `en`.
+- Locale key in `localStorage`: `goindoor.locale`. Detection order: saved, then first `navigator.languages` entry with a supported base language, then `en`.
 - No new dependencies, no build step. Client tests are plain node (no browser); inject `storage`/`languages` instead of touching globals.
 - Server-provided content (route names, event titles, bot names, server error text) is not translated and is only ever inserted with `textContent`.
 - Data, protocol, FIT files and `<input type="number">` values are never localized. Only displayed text is.
@@ -45,7 +45,7 @@
 
 **Interfaces:**
 - Produces (`i18n.js`):
-  - `SUPPORTED_LOCALES = ["en","de"]`, `DEFAULT_LOCALE = "en"`, `LOCALE_KEY = "gowift.locale"`
+  - `SUPPORTED_LOCALES = ["en","de"]`, `DEFAULT_LOCALE = "en"`, `LOCALE_KEY = "goindoor.locale"`
   - `detectLocale({ saved, languages }): "en"|"de"` (pure)
   - `getLocale(): string`, `setLocale(code): string` (returns the locale actually set; unsupported becomes `en`)
   - `t(key: string, params?: object): string`; `tn(key: string, count: number, params?: object): string` (adds `n: count` to params, picks `key.one`/`key.other` via `Intl.PluralRules(getLocale())`, falls back to `.other`)
@@ -86,7 +86,7 @@
 
 - [ ] **Step 1: Write failing tests**: extract the pure part into `client/public/js/i18n/selector.js` as `languageButtonStates(current): {en: boolean, de: boolean}` (pressed state) and assert it; extend `i18n.test.js` with a round trip `saveLocale("de", storage)` then `initLocale({storage, languages:["en"]})` gives `de`; junk `""` in storage gives detected locale.
 - [ ] **Step 2: Run**, expect FAIL; **Step 3: implement** `selector.js`, the markup, the CSS (match `.unit-switch`), and the `main.js` wiring: call `initLocale({ storage: localStorage, languages: navigator.languages })` and `relocalise()` before anything else that renders. `changeLanguage` saves, sets, then `relocalise()`; if the ride screen is showing (`!$("ride").hidden`) it reloads the page instead. Use the existing `readSetting`/`writeSetting` try/catch style where it fits.
-- [ ] **Step 4: Service worker**: add `/js/i18n/i18n.js`, `/js/i18n/apply.js`, `/js/i18n/en.js`, `/js/i18n/de.js`, `/js/i18n/selector.js` to `SHELL`; bump `CACHE` to `gowift-shell-v2`.
+- [ ] **Step 4: Service worker**: add `/js/i18n/i18n.js`, `/js/i18n/apply.js`, `/js/i18n/en.js`, `/js/i18n/de.js`, `/js/i18n/selector.js` to `SHELL`; bump `CACHE` to `goindoor-shell-v2`.
 - [ ] **Step 5: Run** `make test-client lint-client`; start `make dev`, load with a German-preferring browser context (Playwright `locale: "de-DE"`), confirm `<html lang="de">` and the selector shows `Deutsch` pressed. **Step 6: Commit** `Add language selector with persisted, browser-detected default`.
 
 ### Task 4: Static HTML, part 1 (harness, start menu and Rider panel)
@@ -96,7 +96,7 @@
 - Create: `client/test/i18nHtml.test.js`
 
 **Interfaces:**
-- Produces `i18nHtml.test.js`, which parses `index.html` with a small tag/text tokenizer (no DOM library) and fails when: (a) a text chunk with two or more consecutive letters sits in an element lacking `data-i18n`, unless it is in `ALLOWED_TEXT` (`GO`, `wift`, `English`, `Deutsch`) or inside a `data-unit` element; (b) an element with `title`, `aria-label`, `placeholder` or `alt` attribute text lacks the matching `data-i18n-attr` pair; (c) a `data-i18n` element has child elements; (d) a used key is missing from `en`; (e) the element's English text (whitespace-collapsed) differs from `en[key]` (keeps HTML and dictionary from drifting); (f) an `en` key is unused by HTML, unless it matches `PENDING_KEY_PREFIXES` (dynamic keys added by later tasks). It skips top-level sections listed in `PENDING_SECTIONS`, initially every id in `grep -n '<section' index.html` except the ones this task converts (`setup` and its children, `unfinished`, `events`, `photos`).
+- Produces `i18nHtml.test.js`, which parses `index.html` with a small tag/text tokenizer (no DOM library) and fails when: (a) a text chunk with two or more consecutive letters sits in an element lacking `data-i18n`, unless it is in `ALLOWED_TEXT` (`GO`, `indoor`, `English`, `Deutsch`) or inside a `data-unit` element; (b) an element with `title`, `aria-label`, `placeholder` or `alt` attribute text lacks the matching `data-i18n-attr` pair; (c) a `data-i18n` element has child elements; (d) a used key is missing from `en`; (e) the element's English text (whitespace-collapsed) differs from `en[key]` (keeps HTML and dictionary from drifting); (f) an `en` key is unused by HTML, unless it matches `PENDING_KEY_PREFIXES` (dynamic keys added by later tasks). It skips top-level sections listed in `PENDING_SECTIONS`, initially every id in `grep -n '<section' index.html` except the ones this task converts (`setup` and its children, `unfinished`, `events`, `photos`).
 
 - [ ] **Step 1: Write the test** with the full `PENDING_SECTIONS` list. **Step 2: Run**, expect FAIL listing every unconverted element in `setup`/`unfinished`/`events`/`photos`.
 - [ ] **Step 3: Convert** those sections: add `data-i18n` / `data-i18n-attr`, keep the English text in place as the no-JS fallback, restructure mixed content so text sits in its own element (`<label><span data-i18n="rider.weight">Weight</span> (<span data-unit="weight">kg</span>) <input ...></label>`), and add the matching `menu.*`, `rider.*`, `unfinished.*`, `events.*`, `photos.*` keys to `en.js`. Also `<meta name="description">`: `data-i18n-attr="content:app.description"`. The `<option>` labels get `data-i18n` too (`Every 1 km`-style options are rebuilt in JS and belong to Task 6).

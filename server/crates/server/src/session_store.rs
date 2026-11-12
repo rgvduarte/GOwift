@@ -1,9 +1,9 @@
 //! Strava logins on disk, so they survive a restart or a deploy (ADR 0008).
 //!
-//! SQLite in `GOWIFT_DATA_DIR`. A leaked database must not give out working
+//! SQLite in `GOINDOOR_DATA_DIR`. A leaked database must not give out working
 //! cookies or Strava access: session ids are stored only as SHA-256 hashes and
 //! the refresh tokens are AES-256-GCM encrypted with a key derived from
-//! `GOWIFT_SECRET_KEY`. Access tokens are not stored; a restored session
+//! `GOINDOOR_SECRET_KEY`. Access tokens are not stored; a restored session
 //! fetches a fresh one with its refresh token on first use.
 
 use crate::secure_random::random_bytes;
@@ -57,11 +57,11 @@ pub fn hash_id(session_id: &str) -> String {
 }
 
 impl SessionStore {
-    /// Opens (and creates) `<data_dir>/gowift.db`.
+    /// Opens (and creates) `<data_dir>/goindoor.db`.
     pub fn open(data_dir: &Path, secret_key: &str) -> Result<Self, StoreError> {
         std::fs::create_dir_all(data_dir)
             .map_err(|e| StoreError(format!("cannot create {}: {e}", data_dir.display())))?;
-        Self::with_connection(Connection::open(data_dir.join("gowift.db"))?, secret_key)
+        Self::with_connection(Connection::open(data_dir.join("goindoor.db"))?, secret_key)
     }
 
     fn with_connection(conn: Connection, secret_key: &str) -> Result<Self, StoreError> {
@@ -75,7 +75,7 @@ impl SessionStore {
                 created_s INTEGER NOT NULL
             );",
         )?;
-        let key = Sha256::digest(format!("gowift strava sessions\n{secret_key}"));
+        let key = Sha256::digest(format!("goindoor strava sessions\n{secret_key}"));
         let cipher = Aes256Gcm::new_from_slice(&key).map_err(|e| StoreError(e.to_string()))?;
         Ok(Self {
             conn: Mutex::new(conn),

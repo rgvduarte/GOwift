@@ -1,5 +1,5 @@
 [package]
-name = "gowift-sim"
+name = "goindoor-sim"
 description = "Deterministic, dependency-free riding simulation: route, physics, drafting, bots and races."
 version.workspace = true
 edition.workspace = true

@@ -110,7 +110,7 @@ import { applyTranslations } from "./i18n/apply.js";
 import { getLocale, initLocale, saveLocale, setLocale, t, tn } from "./i18n/i18n.js";
 import { languageOptions } from "./i18n/selector.js";
 
-// Inside the GOwift app: native Bluetooth, wake lock and file saving (docs/app.md).
+// Inside the GOindoor app: native Bluetooth, wake lock and file saving (docs/app.md).
 const nativeApp = installNativeApp();
 const $ = (id) => document.getElementById(id);
 const now = () => performance.now() / 1000;
@@ -125,12 +125,12 @@ const BIOME_KEY = "openride.biome";
 const LAYOUT_KEY = "openride.layout";
 const ROUTE_KEY = "openride.route";
 const RIDE_MODE_KEY = "openride.rideMode";
-const STUDIO_CAMERA_KEY = "gowift.studio-camera";
-const COACH_VOICE_KEY = "gowift.coach-voice";
+const STUDIO_CAMERA_KEY = "goindoor.studio-camera";
+const COACH_VOICE_KEY = "goindoor.coach-voice";
 /** How many golden lemons this browser's rider has collected, all rides together. */
-const LEMONS_KEY = "gowift.lemons";
+const LEMONS_KEY = "goindoor.lemons";
 /** The climbs' tops this browser's rider has been over ("routeId:metres"), for the first-time banner. */
-const SUMMITS_KEY = "gowift.summits";
+const SUMMITS_KEY = "goindoor.summits";
 const INFO_REFRESH_MS = 5000;
 const TICKER_ITEMS = 3;
 const TICKER_SECONDS = 9;
@@ -365,9 +365,9 @@ const app = {
   /** The ride autosaved in this browser (#73), and the one the start menu offers. */
   autosave: new RideAutosave({ store: indexedDbStore() }),
   /** Every finished ride, kept locally (#48, #83). */
-  history: new RideHistory({ store: indexedDbStore("gowift-history") }),
+  history: new RideHistory({ store: indexedDbStore("goindoor-history") }),
   /** My best lap per route, ridden again by a ghost. */
-  ghosts: new GhostStore({ store: indexedDbStore("gowift-ghosts") }),
+  ghosts: new GhostStore({ store: indexedDbStore("goindoor-ghosts") }),
   /** Laps on my route and its best lap: `{run, best}`; null off the routes, on routes that aren't loops, in the studio and workouts. */
   ghostLap: null,
   finishSplits: [],
@@ -2716,7 +2716,7 @@ function initFinish() {
   });
 }
 
-const rideName = () => (app.eventRide ? eventRideName(app.eventRide.kind, app.eventRide.routeName) : `GOwift · ${app.rideRoute.name}`);
+const rideName = () => (app.eventRide ? eventRideName(app.eventRide.kind, app.eventRide.routeName) : `GOindoor · ${app.rideRoute.name}`);
 
 function finishStats() {
   const summary = app.recorder.summary();
@@ -2908,7 +2908,7 @@ function setupRecoveryUpload() {
   app.recoveryUpload = null;
   $("discard-unfinished").textContent = t("unfinished.discard");
   if (!visible) return;
-  app.recoveryUpload = Object.assign(mountUpload("unfinished-strava-panel", RideRecorder.from(snapshot.recorder), `GOwift · ${snapshot.routeName}`, {
+  app.recoveryUpload = Object.assign(mountUpload("unfinished-strava-panel", RideRecorder.from(snapshot.recorder), `GOindoor · ${snapshot.routeName}`, {
     indoor: snapshot.studio,
     onSuccess: () => {
       if (app.unfinished === snapshot) $("discard-unfinished").textContent = t("unfinished.done");

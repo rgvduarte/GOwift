@@ -14,7 +14,7 @@
 
 ```bash
 # Rust tests (whole workspace or a filter)
-RUST='docker run --rm -v /root/projects/Open-Ride:/src -w /src/server -v gowift-cargo-registry:/usr/local/cargo/registry -v gowift-cargo-target:/src/server/target rust:1-bookworm'
+RUST='docker run --rm -v /root/projects/Open-Ride:/src -w /src/server -v goindoor-cargo-registry:/usr/local/cargo/registry -v goindoor-cargo-target:/src/server/target rust:1-bookworm'
 $RUST cargo test --workspace
 $RUST sh -c 'rustup component add clippy rustfmt >/dev/null 2>&1; cargo fmt --all -- --check && cargo clippy --workspace --all-targets -- -D warnings'
 # Client tests and lint (mount the whole repo: tests read routes/)
@@ -31,16 +31,16 @@ docker run --rm -v /root/projects/Open-Ride:/src -w /src/client node:22-alpine n
 - Power sharing: threshold **15 s**, ramp **30 s**, max give share **0.40**, easing time constant **3 s**, receiver cap **+100 %** of own power, gap speed floor **3 m/s**, computed once per second. Watts given = watts received, every computation.
 - Bot mix: **70 %** pack bots at **0.95–1.10 ×** a human's W/kg, **30 %** field bots from `min(2.0, slowest)` to `max(4.5, fastest)`; more than **8** humans → 8 quantile bands. Human level: `level_w`, else `ftp_w`, else **2.8 W/kg** × weight. Intensity: free 0.70, race 0.95, group ride **0.75**.
 - Event bots: `bots_per_entrant` **4**, `max_event_bots` **24**; bots-only event: `max_event_bots / 2`.
-- Lobby default **600 s** (`GOWIFT_EVENT_LOBBY_S`). Built-ins: group ride hourly at :00 (45 min, 18 km); race every 2 h at **:20** (25 min, laps = max(1, round(12 000 m / route length))) on the route of the *next* hour's group ride, so its window (:10–:45) sits between that route's group rides; single-route world: race every 2 h at :00 replacing that hour's group ride.
+- Lobby default **600 s** (`GOINDOOR_EVENT_LOBBY_S`). Built-ins: group ride hourly at :00 (45 min, 18 km); race every 2 h at **:20** (25 min, laps = max(1, round(12 000 m / route length))) on the route of the *next* hour's group ride, so its window (:10–:45) sits between that route's group rides; single-route world: race every 2 h at :00 replacing that hour's group ride.
 - Level estimate: rides ≥ 20 min raise it toward best-20-min × 0.95 by at most 5 %, never lower it; races move it toward the race average by at most 5 % either way; changing FTP resets it.
-- Copy (exact): `Group ride starts in 9:12 · J to join`, `Race starts in 9:12 · J to join`, `−50 W → Anna, Ben`, `+30 W from Chris`, `Lobby opens 13:50`, `in 12:40`, `Riding level 3.1 W/kg (from your rides)`, ride name `GOwift group ride · <route>` / `GOwift race · <route>`. The minus sign is U+2212.
+- Copy (exact): `Group ride starts in 9:12 · J to join`, `Race starts in 9:12 · J to join`, `−50 W → Anna, Ben`, `+30 W from Chris`, `Lobby opens 13:50`, `in 12:40`, `Riding level 3.1 W/kg (from your rides)`, ride name `GOindoor group ride · <route>` / `GOindoor race · <route>`. The minus sign is U+2212.
 - Serde: `GameEvent` is tagged by `kind`, so payload fields of new game events must not be named `kind` (use `event_kind`).
 - Commits end with `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>`. One branch `feat/events`, one PR, assignee `RalfLeonFasler`, never merge.
 
 Decisions made here that refine the spec (implementers follow these):
 - `Schedule` reports `Upcoming | Lobby | Running` only; the end of an event is decided by `Events` (race finished, distance covered, or time up), not by the schedule.
 - The built-in race starts at :20, not :30: on a route that has a group ride the hour after, a race at :30 (until :55) would overlap that ride's lobby (from :50).
-- No `GOWIFT_EVENT_SPEEDUP`: e2e tests use an events file with short times instead.
+- No `GOINDOOR_EVENT_SPEEDUP`: e2e tests use an events file with short times instead.
 - `state.event` carries `starts_in_s` (negative once running) instead of absolute times, so client clock skew doesn't matter; `/api/info` carries `now_s` alongside absolute `starts_at_s` for the menu.
 
 ## Review Focus
@@ -82,10 +82,10 @@ Decisions made here that refine the spec (implementers follow these):
   - `offset_moves_the_start`: offset 1800 → at 0: index 0 `Upcoming` starts 1800; at 1300: `Lobby`.
   - `once_ends`: `Once{starts_at 1000, lobby 100, duration 50}` → at 0 `Upcoming`, at 950 `Lobby`, at 1049 `Running`, at 1050 `None`.
   - `overlap_detection`: hourly :00 lobby 600 duration 2700 vs every 7200 offset 1800 lobby 600 duration 1500 → `true`; vs every 7200 offset 3600 (odd hours) duration 2700 with the hourly every 7200 offset 0 → `false`.
-- [ ] **Step 2: Run** `$RUST cargo test -p gowift-sim schedule` → FAIL (module missing).
+- [ ] **Step 2: Run** `$RUST cargo test -p goindoor-sim schedule` → FAIL (module missing).
 - [ ] **Step 3: Implement `schedule.rs`.**
 - [ ] **Step 4: Rebuild `Timetable` on `Schedule::Every { every_s: SLOT_S, offset_s: LOBBY_S, lobby_s: LOBBY_S, duration_s: CLASS_S }`**: `Timetable::at` maps `Occurrence.index → Clock.slot`, `starts_at_s`, `elapsed_s = now − starts_at_s`; `class_index = index % classes.len()`. Public API of `Timetable`/`Clock` unchanged.
-- [ ] **Step 5: Run** `$RUST cargo test -p gowift-sim` → all pass, studio tests untouched.
+- [ ] **Step 5: Run** `$RUST cargo test -p goindoor-sim` → all pass, studio tests untouched.
 - [ ] **Step 6: Commit** `Extract a shared Schedule; the studio timetable uses it`.
 
 ### Task 2: Matched bots and rider levels on the server
@@ -115,7 +115,7 @@ Decisions made here that refine the spec (implementers follow these):
   - `matched_field_widens_to_the_humans`: levels `[5.5]` → every draw ≤ 6.05 and the max over 2000 draws > 4.5.
   - `group_ride_intensity`: flat, not racing, `group_ride: true` → `target_intensity == 0.75`; racing still 0.95.
 - [ ] **Step 2: Failing test in `world.rs`** `new_bots_match_the_humans`: world with `target_riders: 12`, a human with `set_level(id, 2.0)`, then 60 leave/spawn cycles of a bot (call `leave` on a bot id each time); ≥ 60 % of the bots spawned after `set_level` have `ftp_wkg ∈ [1.9, 2.2]`. And `existing_bots_keep_their_profile`: profiles of bots present before `set_level` are unchanged after it (compare `profile().ftp_wkg`).
-- [ ] **Step 3: Run** `$RUST cargo test -p gowift-sim` → FAIL.
+- [ ] **Step 3: Run** `$RUST cargo test -p goindoor-sim` → FAIL.
 - [ ] **Step 4: Implement** the sim items; `spawn_bot` calls `BotProfile::matched(&pack_levels(&self.human_levels()), rng)`; `tick` sets `group_ride` from `rider.in_group_ride` (field added in Task 5; until then `false`). Expose `Controller::Bot(brain)` profile via `BotBrain::profile()` (exists).
 - [ ] **Step 5: Server:** parse `level_w`, carry it through `Command::Join`/`GameHandle::join`/`Game::join`; `GameCore::join` calls `world.set_level(id, human_level_wkg(level_w, ftp_w, weight_kg))` after `join_human_on`. Test in `protocol.rs`: `{"type":"join","name":"Anna","weight_kg":70,"level_w":245}` parses with `level_w: Some(245.0)`; old JSON without it still parses (`None`).
 - [ ] **Step 6: Run** `$RUST cargo test --workspace` and the fmt/clippy command → PASS.
@@ -178,7 +178,7 @@ Decisions made here that refine the spec (implementers follow these):
   - `easing_takes_seconds`: first update with dt 1 → giver gives < 30 % of the settled value.
   - `leaving_member_is_forgotten`: after a member is removed, the next update returns no flow for it and totals still balance.
   - `no_receivers_no_giving`: one rider +60 s, rest together → 0.
-- [ ] **Step 2: Run** `$RUST cargo test -p gowift-sim sharing` → FAIL.
+- [ ] **Step 2: Run** `$RUST cargo test -p goindoor-sim sharing` → FAIL.
 - [ ] **Step 3: Implement.**
 - [ ] **Step 4: Run** → PASS; fmt/clippy clean.
 - [ ] **Step 5: Commit** `Power sharing for group rides`.
@@ -276,8 +276,8 @@ Decisions made here that refine the spec (implementers follow these):
 - Consumes: Task 6 `EventDef`, Task 1 `Schedule::overlaps`.
 - Produces:
   ```rust
-  pub enum EventsSetting { Default, Off, File(PathBuf) } // GOWIFT_EVENTS, default Default
-  // Config gains: events: EventsSetting, event_lobby_s: f64 (GOWIFT_EVENT_LOBBY_S, default 600)
+  pub enum EventsSetting { Default, Off, File(PathBuf) } // GOINDOOR_EVENTS, default Default
+  // Config gains: events: EventsSetting, event_lobby_s: f64 (GOINDOOR_EVENT_LOBBY_S, default 600)
   pub struct EventEntry { id, name, kind: "race" | "group_ride", route_id, laps: Option<u32>, distance_m: Option<f64>, every_s: f64, offset_s: f64, lobby_s: Option<f64>, duration_s: f64 } // serde, deny_unknown_fields
   pub fn builtin_events(routes: &[(String, String, f64)] /* id, name, length_m */, lobby_s: f64) -> Vec<EventEntry>;
   pub fn resolve(entries: &[EventEntry], world_routes: &[String], lobby_s: f64) -> Result<Vec<EventDef>, ConfigError>; // the entries whose route_id is in this world
@@ -288,9 +288,9 @@ Decisions made here that refine the spec (implementers follow these):
 - [ ] **Step 1: Failing tests:**
   - `builtins_never_overlap`: for N = 1, 2, 3, 4 → `validate` passes and each hour has exactly one group ride or race-in-place-of-it start at :00.
   - `race_avoids_the_group_ride_route`: N = 3, for each even hour `h` in 0..12 the race route ≠ the group ride route of hour `h`.
-  - `file_entries_validate`: unknown route → error naming it; `laps` and `distance_m` both → error; two overlapping on one route → error naming both ids; `GOWIFT_EVENTS=off` → no events; bad path → error.
+  - `file_entries_validate`: unknown route → error naming it; `laps` and `distance_m` both → error; two overlapping on one route → error naming both ids; `GOINDOOR_EVENTS=off` → no events; bad path → error.
   - `lobby_default_applies`: entry without `lobby_s` gets `event_lobby_s`.
-- [ ] **Step 2: Run** `$RUST cargo test -p gowift-server events_file config` → FAIL. **Step 3: Implement.** **Step 4: Run** → PASS.
+- [ ] **Step 2: Run** `$RUST cargo test -p goindoor-server events_file config` → FAIL. **Step 3: Implement.** **Step 4: Run** → PASS.
 - [ ] **Step 5: Commit** `Events config: built-in schedule, events file, validation`.
 
 ### Task 8: Server wiring: game loop, protocol, `/api/info`
@@ -337,7 +337,7 @@ Decisions made here that refine the spec (implementers follow these):
   export function eventRows(info, nowMs = Date.now(), locale) // from /api/info: [{id, icon: "🏁"|"👥", name, routeId, routeName, startLabel: local "HH:MM", countdown: "in 12:40", entrants, joinable, note}] sorted by start; note "Lobby opens 13:50" while upcoming; times shifted by (info.now_s·1000 − nowMs) so server time counts
   export function eventBanner(event) // state.event in lobby, not entered → "Group ride starts in 9:12 · J to join" | "Race starts in 9:12 · J to join"; entered → "Group ride starts in 9:12 · you're in"; otherwise null
   export function sharingLine(sharing) // given ≥ 5 → "−50 W → Anna, Ben"; received ≥ 5 → "+30 W from Chris"; else ""
-  export function eventRideName(kind, routeName) // "GOwift group ride · Riverside Flats" | "GOwift race · Riverside Flats"
+  export function eventRideName(kind, routeName) // "GOindoor group ride · Riverside Flats" | "GOindoor race · Riverside Flats"
   export function eventResultRows(results, kind, myId) // race: "#1 Anna · 23:41 · 3.4 W/kg", DNF "DNF Ben"; group ride: "Anna · 18.0 km · 2.9 W/kg · gave 12 kJ"; "You" for myId; bots get " (bot)"
   ```
   `describeEvent`: `event_lobby` → `"<name> starts in 10:00 · J to join"`, `event_started` → `"Event started — go!"`, `event_finished` → `"Event finished"`, for a group ride with someone who gave ≥ 1 kJ: `"Event finished · thanks Anna for sharing 12 kJ"` (the top giver).
@@ -362,14 +362,14 @@ Decisions made here that refine the spec (implementers follow these):
   - `rideName()` returns `eventRideName(kind, route)` when the ride included an event I entered, else the existing name.
 - [ ] **Step 1:** Implement the wiring (no new unit tests; logic lives in Task 9 helpers).
 - [ ] **Step 2: Run** client tests and lint → PASS.
-- [ ] **Step 3: E2E (scratch, not committed)** in `/tmp/claude-0/-root-projects-Open-Ride/7ec2f3b8-a366-4fd3-a741-22a2c58839fb/scratchpad/e2e/events.mjs` against a server image built from the branch, `GOWIFT_EVENTS=/events.json` with one group ride (every 120 s, lobby 40 s, duration 60 s, `distance_m: 300`) and one race on another route; checks: the Events list shows both with a countdown; Join from the menu → banner `· you're in`; at the start the HUD shows the event running; with the fake trainer at 400 W and a second browser at 100 W, the sharing lines appear with opposite signs; results overlay appears; no page errors.
+- [ ] **Step 3: E2E (scratch, not committed)** in `/tmp/claude-0/-root-projects-Open-Ride/7ec2f3b8-a366-4fd3-a741-22a2c58839fb/scratchpad/e2e/events.mjs` against a server image built from the branch, `GOINDOOR_EVENTS=/events.json` with one group ride (every 120 s, lobby 40 s, duration 60 s, `distance_m: 300`) and one race on another route; checks: the Events list shows both with a countdown; Join from the menu → banner `· you're in`; at the start the HUD shows the event running; with the fake trainer at 400 W and a second browser at 100 W, the sharing lines appear with opposite signs; results overlay appears; no page errors.
 - [ ] **Step 4: Commit** `Client: events list, lobby banner, sharing line, results`.
 
 ### Task 11: Docs and wrap-up
 
 **Files:**
 - Create: `docs/adr/0013-scheduled-events.md` (context, decision: schedule shared with the studio, events on route worlds, opt-in, power sharing instead of speed caps, bots matched once; consequences)
-- Create: `docs/events.md` (for riders and hosts: how events work, lobby, J, power sharing explained, `GOWIFT_EVENTS` file format with an example, `GOWIFT_EVENT_LOBBY_S`)
+- Create: `docs/events.md` (for riders and hosts: how events work, lobby, J, power sharing explained, `GOINDOOR_EVENTS` file format with an example, `GOINDOOR_EVENT_LOBBY_S`)
 - Modify: `docs/protocol.md` (new messages, `state.event`, game events, errors, `/api/info` fields), `CHANGELOG.md` (Added: events, group rides with power sharing, matched bots, riding level), `README.md` (link to `docs/events.md` where features are listed), `.env.example` (the two variables, commented)
 
 - [ ] **Step 1:** Write the docs.

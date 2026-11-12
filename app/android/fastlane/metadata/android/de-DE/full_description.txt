@@ -1,4 +1,4 @@
-GOwift ist Indoor-Radfahren für deine Smart-Rolle: Fahr durch eine Inselwelt, zusammen mit Freunden, Fremden und Bots. Ohne Abo, ohne Konto, ohne Werbung, und der Code ist Open Source.
+GOindoor ist Indoor-Radfahren für deine Smart-Rolle: Fahr durch eine Inselwelt, zusammen mit Freunden, Fremden und Bots. Ohne Abo, ohne Konto, ohne Werbung, und der Code ist Open Source.
 
 VERBINDET SICH PER BLUETOOTH
 • Smart-Rollen mit Bluetooth FTMS oder Cycling Power, etwa ein Wahoo KICKR Core oder eine Van Rysel D500. Ein Leistungsmesser auf einer klassischen Rolle geht auch.
@@ -33,4 +33,4 @@ Lade eine Fahrt als virtuelle Fahrt mit Höhenmetern und Karte zu Strava hoch. O
 DATENSPARSAM
 Dein Profil, deine Fahrten und Einstellungen bleiben auf deinem Handy. Deine Herzfrequenz verlässt es nur in einer Fahrt, die du zu Strava hochlädst. Was eine Fahrt braucht, hält der Server im Speicher und vergisst es, wenn du gehst.
 
-Die App öffnet app.gowift.example und braucht eine Internetverbindung. Eigener Server für deinen Verein oder zu Hause? GOwift läuft in einem einzigen Docker-Container: github.com/rgvduarte/GOwift
+Die App öffnet app.goindoor.example und braucht eine Internetverbindung. Eigener Server für deinen Verein oder zu Hause? GOindoor läuft in einem einzigen Docker-Container: github.com/rgvduarte/GOwift

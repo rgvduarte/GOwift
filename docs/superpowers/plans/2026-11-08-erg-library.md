@@ -283,7 +283,7 @@ Run the client and lint commands. Expected: all pass, no lint errors.
 
 - [ ] **Step 8: Check it in the running app**
 
-Start the server and take a screenshot with the recipe in the "UI verification" section of `AGENTS.md`. Open the workout picker after the page has loaded, so the `ResizeObserver` path runs, select Rønnestad 30/15, and screenshot `#workout-picker`. Expected: a filled zone-coloured profile and the description below it. Save outside the repo, under `~/.cache/gowift/screenshots/`.
+Start the server and take a screenshot with the recipe in the "UI verification" section of `AGENTS.md`. Open the workout picker after the page has loaded, so the `ResizeObserver` path runs, select Rønnestad 30/15, and screenshot `#workout-picker`. Expected: a filled zone-coloured profile and the description below it. Save outside the repo, under `~/.cache/goindoor/screenshots/`.
 
 - [ ] **Step 9: Commit**
 

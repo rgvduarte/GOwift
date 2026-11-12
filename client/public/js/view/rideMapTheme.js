@@ -18,7 +18,7 @@ export const MAP_COLORS = Object.freeze({
   land: "#2d5b3b",
   sand: "#cdb98a",
   road: "rgba(232, 236, 241, 0.5)",
-  accent: "#2ee88a",
+  accent: "#ffffff",
   climb: "#ff5d5d",
   sprint: "#4cc3ff",
   start: "#ffd21f",

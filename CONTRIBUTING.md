@@ -1,6 +1,6 @@
 # Contributing
 
-Thanks for helping build GOwift! This guide covers how we work.
+Thanks for helping build GOindoor! This guide covers how we work.
 
 ## Workflow
 

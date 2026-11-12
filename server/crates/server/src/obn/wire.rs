@@ -133,9 +133,9 @@ mod tests {
     fn hello_matches_the_spec_shape() {
         let msg = AppMessage::Hello {
             app: AppInfo {
-                id: "gowift".into(),
+                id: "goindoor".into(),
                 version: "0.3.1".into(),
-                name: Some("GOwift".into()),
+                name: Some("GOindoor".into()),
                 url: Some("https://rgvduarte.github.io/GOwift".into()),
             },
         };
@@ -144,7 +144,7 @@ mod tests {
             value,
             serde_json::json!({
                 "type": "hello",
-                "app": {"id": "gowift", "version": "0.3.1", "name": "GOwift", "url": "https://rgvduarte.github.io/GOwift"}
+                "app": {"id": "goindoor", "version": "0.3.1", "name": "GOindoor", "url": "https://rgvduarte.github.io/GOwift"}
             })
         );
     }

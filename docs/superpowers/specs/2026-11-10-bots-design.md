@@ -16,7 +16,7 @@ The rethink has four parts:
 - **who the bots are:** names, a riding type, a team kit;
 - **how they ride:** moves, limited by how much energy they have left;
 - **where they appear:** around the riders who are online, in groups;
-- **how many there are:** unchanged, `GOWIFT_TARGET_RIDERS` per route; company comes out of it.
+- **how many there are:** unchanged, `GOINDOOR_TARGET_RIDERS` per route; company comes out of it.
 
 The aim is that every ride has someone to chase, someone to ride with and now and then someone who attacks you.
 
@@ -136,15 +136,15 @@ When the route is already at its target:
 - a bot more than `bot_despawn_distance_m` from every human, and not keeping anyone company, is removed to make room;
 - surplus bots leave as before: the one farthest from humans first, and only out of sight.
 
-## How many: unchanged, `GOWIFT_TARGET_RIDERS`
+## How many: unchanged, `GOINDOOR_TARGET_RIDERS`
 
-A route keeps `target_riders` riders, humans plus bots, as before. That's the existing `GOWIFT_TARGET_RIDERS`: 12 by default, 75 in production. Company doesn't add bots. It moves the route's own bots: far ones make room, and groups take their place around the humans.
+A route keeps `target_riders` riders, humans plus bots, as before. That's the existing `GOINDOOR_TARGET_RIDERS`: 12 by default, 75 in production. Company doesn't add bots. It moves the route's own bots: far ones make room, and groups take their place around the humans.
 
 - With `target_riders = 0`, a route has no bots at all: the OpenBikeNet velodrome and the tests.
 - With no humans online nothing changes but the groups.
 - With many humans and a small target, the company is thinner: each human gets what is left, and the humans are company for each other.
 
-A first draft grew the target with the humans (`humans × 7`, capped at a new, fixed 48). That left two settings for one thing, and with production's 75 the cap did nothing. So `GOWIFT_TARGET_RIDERS` stays the one setting.
+A first draft grew the target with the humans (`humans × 7`, capped at a new, fixed 48). That left two settings for one thing, and with production's 75 the cap did nothing. So `GOINDOOR_TARGET_RIDERS` stays the one setting.
 
 Simulated hours on Col de la Forge (one rider at 75% of a 3.0 W/kg FTP; the other riders started with them):
 

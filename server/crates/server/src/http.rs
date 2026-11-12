@@ -30,7 +30,7 @@ use axum::http::{header, Extensions, HeaderMap, HeaderValue, StatusCode};
 use axum::response::{IntoResponse, Response};
 use axum::routing::{get, post};
 use axum::{Json, Router};
-use gowift_sim::studio::{ClassPlan, Timetable, LOBBY_S, SEATS_PER_ROOM, SLOT_S};
+use goindoor_sim::studio::{ClassPlan, Timetable, LOBBY_S, SEATS_PER_ROOM, SLOT_S};
 use serde::{Deserialize, Serialize};
 use std::net::{IpAddr, SocketAddr};
 use std::path::Path;
@@ -47,9 +47,9 @@ const MAX_UPLOAD_BYTES: usize = 16 * 1024 * 1024;
 
 /// Shared limits that protect the server from floods and scripts.
 pub struct Protection {
-    /// One seat per joined rider, across all worlds (`GOWIFT_MAX_PLAYERS`).
+    /// One seat per joined rider, across all worlds (`GOINDOOR_MAX_PLAYERS`).
     pub seats: Slots<()>,
-    /// The same for riders on phone paddles (`GOWIFT_MAX_PADDLE_PLAYERS`): they never take a trainer rider's seat.
+    /// The same for riders on phone paddles (`GOINDOOR_MAX_PADDLE_PLAYERS`): they never take a trainer rider's seat.
     pub paddle_seats: Slots<()>,
     /// Open WebSocket connections per client IP.
     pub per_ip: Slots<IpAddr>,
@@ -355,13 +355,13 @@ fn metrics_body(
     afk: AfkCounts,
 ) -> String {
     format!(
-        "# HELP gowift_players Current connected riders, including bots.\n# TYPE gowift_players gauge\ngowift_players {}\n\
-         # HELP gowift_phone_players Current riders using phone paddles.\n# TYPE gowift_phone_players gauge\ngowift_phone_players {}\n\
-         # HELP gowift_player_capacity Configured capacity for trainer riders.\n# TYPE gowift_player_capacity gauge\ngowift_player_capacity {}\n\
-         # HELP gowift_phone_player_capacity Configured capacity for phone riders.\n# TYPE gowift_phone_player_capacity gauge\ngowift_phone_player_capacity {}\n\
-         # HELP gowift_distance_metres_total Community distance recorded by device.\n# TYPE gowift_distance_metres_total counter\ngowift_distance_metres_total{{device=\"trainer\"}} {}\ngowift_distance_metres_total{{device=\"paddle\"}} {}\n\
-         # HELP gowift_afk_events_total AFK warnings and their outcomes since the server started.\n# TYPE gowift_afk_events_total counter\n\
-         gowift_afk_events_total{{event=\"warning\"}} {}\ngowift_afk_events_total{{event=\"stayed\"}} {}\ngowift_afk_events_total{{event=\"left\"}} {}\ngowift_afk_events_total{{event=\"timeout\"}} {}\n\
+        "# HELP goindoor_players Current connected riders, including bots.\n# TYPE goindoor_players gauge\ngoindoor_players {}\n\
+         # HELP goindoor_phone_players Current riders using phone paddles.\n# TYPE goindoor_phone_players gauge\ngoindoor_phone_players {}\n\
+         # HELP goindoor_player_capacity Configured capacity for trainer riders.\n# TYPE goindoor_player_capacity gauge\ngoindoor_player_capacity {}\n\
+         # HELP goindoor_phone_player_capacity Configured capacity for phone riders.\n# TYPE goindoor_phone_player_capacity gauge\ngoindoor_phone_player_capacity {}\n\
+         # HELP goindoor_distance_metres_total Community distance recorded by device.\n# TYPE goindoor_distance_metres_total counter\ngoindoor_distance_metres_total{{device=\"trainer\"}} {}\ngoindoor_distance_metres_total{{device=\"paddle\"}} {}\n\
+         # HELP goindoor_afk_events_total AFK warnings and their outcomes since the server started.\n# TYPE goindoor_afk_events_total counter\n\
+         goindoor_afk_events_total{{event=\"warning\"}} {}\ngoindoor_afk_events_total{{event=\"stayed\"}} {}\ngoindoor_afk_events_total{{event=\"left\"}} {}\ngoindoor_afk_events_total{{event=\"timeout\"}} {}\n\
          ",
         players,
         phone_players,
@@ -391,15 +391,15 @@ mod metrics_tests {
         };
         let output = metrics_body(4, 1, 50, 20, 12_500.0, 750.0, afk);
 
-        assert!(output.contains("gowift_players 4\n"));
-        assert!(output.contains("gowift_phone_players 1\n"));
-        assert!(output.contains("gowift_distance_metres_total{device=\"trainer\"} 12500\n"));
-        assert!(output.contains("gowift_distance_metres_total{device=\"paddle\"} 750\n"));
-        assert!(output.contains("# TYPE gowift_afk_events_total counter\n"));
-        assert!(output.contains("gowift_afk_events_total{event=\"warning\"} 3\n"));
-        assert!(output.contains("gowift_afk_events_total{event=\"stayed\"} 2\n"));
-        assert!(output.contains("gowift_afk_events_total{event=\"left\"} 1\n"));
-        assert!(output.contains("gowift_afk_events_total{event=\"timeout\"} 0\n"));
+        assert!(output.contains("goindoor_players 4\n"));
+        assert!(output.contains("goindoor_phone_players 1\n"));
+        assert!(output.contains("goindoor_distance_metres_total{device=\"trainer\"} 12500\n"));
+        assert!(output.contains("goindoor_distance_metres_total{device=\"paddle\"} 750\n"));
+        assert!(output.contains("# TYPE goindoor_afk_events_total counter\n"));
+        assert!(output.contains("goindoor_afk_events_total{event=\"warning\"} 3\n"));
+        assert!(output.contains("goindoor_afk_events_total{event=\"stayed\"} 2\n"));
+        assert!(output.contains("goindoor_afk_events_total{event=\"left\"} 1\n"));
+        assert!(output.contains("goindoor_afk_events_total{event=\"timeout\"} 0\n"));
         assert!(!output.contains("name="));
         assert!(!output.contains("token"));
     }

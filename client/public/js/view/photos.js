@@ -12,15 +12,15 @@ import { getLocale, t } from "../i18n/i18n.js";
 export const MAX_PHOTOS = 30;
 const SANS = 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'; // i18n-ok
 const NUM = '"Barlow Condensed", "Roboto Condensed", "Arial Narrow", system-ui, sans-serif'; // i18n-ok
-const ACCENT = "#2ee88a";
+const ACCENT = "#ffffff";
 
-/** "gowift-2026-10-14-1530-rolling-hills-3.png" */
+/** "goindoor-2026-10-14-1530-rolling-hills-3.png" */
 export function photoFileName(t, routeId = "ride", suffix = "") {
   const d = new Date(t);
   const pad = (n) => String(n).padStart(2, "0");
   const safe = String(routeId).replace(/[^a-z0-9-]+/gi, "-").replace(/^-+|-+$/g, "").toLowerCase() || "ride";
   const tail = suffix === "" ? "" : `-${suffix}`;
-  return `gowift-${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}-${pad(d.getHours())}${pad(d.getMinutes())}-${safe}${tail}.png`;
+  return `goindoor-${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}-${pad(d.getHours())}${pad(d.getMinutes())}-${safe}${tail}.png`;
 }
 
 /**
@@ -160,7 +160,7 @@ export function composePhoto(scene, { routeName, stats, when }, doc = document) 
   ctx.textBaseline = "alphabetic";
   ctx.fillStyle = ACCENT;
   ctx.font = `800 ${14 * u}px ${SANS}`;
-  ctx.fillText("GOWIFT", pad, baseline - 30 * u);
+  ctx.fillText("GOINDOOR", pad, baseline - 30 * u);
   ctx.fillStyle = "#fff";
   ctx.font = `600 ${24 * u}px ${SANS}`;
   ctx.fillText(fit(ctx, routeName, w * 0.3), pad, baseline);

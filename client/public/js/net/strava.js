@@ -22,7 +22,7 @@ export function stravaMessage(param) {
 }
 
 /**
- * The `gowift://strava?result=…&ticket=…` URL an app login ends on (see
+ * The `goindoor://strava?result=…&ticket=…` URL an app login ends on (see
  * the server's AppLogins): what happened, and the ticket to claim the session.
  */
 export function appLoginResult(url) {

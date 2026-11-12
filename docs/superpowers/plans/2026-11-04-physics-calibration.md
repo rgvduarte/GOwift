@@ -57,13 +57,13 @@
   - `coasting_downhill_has_a_steady_speed`: `steady_speed(&p, 75.0, 0.0, -8.0) > 10.0`.
   - `no_power_on_the_flat_has_no_speed`: `steady_speed(&p, 75.0, 0.0, 0.0) < 0.01`.
   - `table_has_a_row_per_rider`: `table(&p, &RIDERS).len() == 5` and the `rider_kg` values are in order.
-- [ ] **Step 2: Run them, expect a compile failure** (module missing): `cargo test -p gowift-sim calibration`.
+- [ ] **Step 2: Run them, expect a compile failure** (module missing): `cargo test -p goindoor-sim calibration`.
 - [ ] **Step 3: Implement.**
   - `steady_speed` bisects on `[0, params.max_speed]` for 60 iterations: `acceleration > 0` means the speed is too low. On the flat at 0 W, `acceleration` is ≤ 0 everywhere, so the result is ~0.
   - Row fields: km/h = m/s × 3.6. `ratio_200w_90rpm = v_flat_200w / (1.5 rev/s × 2.1 m)`. `cda` = the body's CdA from the same body helper `steady_speed` uses (keep that in one private `fn body(params, mass) -> Body`, so Task 2 changes one line).
   - `markdown` renders a header and one line per row, one decimal for speeds, three for CdA, two for the ratio.
   - `examples/calibration.rs` prints `markdown(&table(&PhysicsParams::default(), &RIDERS))`.
-- [ ] **Step 4: Run tests, expect PASS**; run `cargo run -p gowift-sim --example calibration`, expect a 5-row table with 200 W flat ≈ 34 km/h (today's baseline).
+- [ ] **Step 4: Run tests, expect PASS**; run `cargo run -p goindoor-sim --example calibration`, expect a 5-row table with 200 W flat ≈ 34 km/h (today's baseline).
 - [ ] **Step 5: Commit** "Add a calibration table for the road physics (#22)".
 
 ### Task 2: Weight-scaled CdA and retuned constants
@@ -217,7 +217,7 @@
 - [ ] **Step 5: UI check.**
   - `make dev`, then the Playwright screenshot recipe from AGENTS.md.
   - The start menu with the simulated trainer and virtual shifting checked: no Climb feel slider. Unchecked: the slider is back.
-  - Keep the screenshots in `~/.cache/gowift/screenshots/`.
+  - Keep the screenshots in `~/.cache/goindoor/screenshots/`.
 - [ ] **Step 6: Commit** "Leave climb feel to the gears with virtual shifting (#22)".
 
 ### Task 6: Docs, ADR, changelog

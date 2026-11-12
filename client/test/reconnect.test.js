@@ -173,9 +173,9 @@ test("ignores devices without an id or name, and broken storage", () => {
   known.remember("trainer", { label: "Simulated trainer" });
   known.remember("bike", { id: "x", label: "?" });
   assert.deepEqual(known.list(), []);
-  storage.setItem("gowift.devices", "not json");
+  storage.setItem("goindoor.devices", "not json");
   assert.deepEqual(known.list(), []);
-  storage.setItem("gowift.devices", JSON.stringify([{ kind: "trainer", id: 3 }, { kind: "hr", id: "h", name: "TICKR" }]));
+  storage.setItem("goindoor.devices", JSON.stringify([{ kind: "trainer", id: 3 }, { kind: "hr", id: "h", name: "TICKR" }]));
   assert.deepEqual(known.list(), [{ kind: "hr", id: "h", name: "TICKR" }]);
   assert.deepEqual(new KnownDevices(null).list(), []);
   assert.doesNotThrow(() => new KnownDevices({ getItem: () => null, setItem: () => { throw new Error("quota"); } }).remember("hr", { id: "h", label: "TICKR" }));

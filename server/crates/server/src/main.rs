@@ -1,5 +1,5 @@
-use gowift_server::config::Config;
-use gowift_server::{app, healthcheck, players};
+use goindoor_server::config::Config;
+use goindoor_server::{app, healthcheck, players};
 use std::process::ExitCode;
 use tracing_subscriber::EnvFilter;
 

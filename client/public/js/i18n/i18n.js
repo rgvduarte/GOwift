@@ -4,7 +4,7 @@ import de from "./de.js";
 
 export const SUPPORTED_LOCALES = ["en", "de"];
 export const DEFAULT_LOCALE = "en";
-export const LOCALE_KEY = "gowift.locale";
+export const LOCALE_KEY = "goindoor.locale";
 
 const dictionaries = { en, de };
 let locale = DEFAULT_LOCALE;

@@ -1,27 +1,32 @@
 /* Colours and fonts follow the app (client/public/styles.css), so the click
-   from here into the app feels like one product. */
+   from here into the app feels like one product. Both use the GD design
+   system: near black, white and greys, glass cards, Helvetica Bold. */
 
 :root {
   color-scheme: dark;
-  --bg: #0f1216;
-  --surface: #171b21;
-  --surface-2: #1f252d;
-  --border: #2a313b;
-  --text: #e8ecf1;
-  --muted: #8a94a3;
-  --accent: #2ee88a;
-  --accent-text: #04140b;
-  --brand: #2ee88a;
+  --bg: #0b0b0c;
+  --surface: rgba(255, 255, 255, 0.09);
+  --surface-2: rgba(255, 255, 255, 0.09);
+  --border: rgba(255, 255, 255, 0.22);
+  --glass-top: rgba(255, 255, 255, 0.4);
+  --divider: rgba(255, 255, 255, 0.12);
+  --text: #ffffff;
+  --muted: #a3a3a8;
+  --silver: #cfcfd4;
+  --accent: #ffffff;
+  --accent-text: #0b0b0c;
+  --brand: #ffffff;
   --terrain-edge: #5fb47c;
   --climb: #ff5d5d;
   --sprint: #4cc3ff;
-  --radius: 10px;
+  --radius: 14px;
 
-  --display: "Barlow Condensed", "Roboto Condensed", "Arial Narrow", system-ui, sans-serif;
+  --font: "Helvetica Neue", Helvetica, Arial, system-ui, sans-serif;
+  --display: var(--font);
   --max: 68rem;
   --gutter: clamp(1.25rem, 4vw, 2.5rem);
 
-  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  font-family: var(--font);
   font-size: 100%;
   line-height: 1.6;
 }
@@ -32,7 +37,13 @@
 
 body {
   margin: 0;
-  background: var(--bg);
+  /* The GD ground: near black with soft grey glows. */
+  background:
+    radial-gradient(60rem 45rem at 10% 0%, rgb(138 138 142 / 0.16), transparent 70%),
+    radial-gradient(50rem 40rem at 100% 45%, rgb(107 107 112 / 0.12), transparent 70%),
+    radial-gradient(45rem 35rem at 80% 100%, rgb(90 90 95 / 0.12), transparent 70%),
+    var(--bg);
+  background-attachment: fixed;
   color: var(--text);
   font-size: 1.0625rem;
   -webkit-font-smoothing: antialiased;
@@ -63,10 +74,9 @@ h1,
 h2,
 h3 {
   font-family: var(--display);
-  font-style: italic;
-  font-weight: 800;
+  font-weight: 700;
   line-height: 1;
-  letter-spacing: -0.005em;
+  letter-spacing: -0.03em;
   margin: 0;
   text-wrap: balance;
 }
@@ -99,7 +109,7 @@ code {
   color: var(--muted);
 }
 
-/* Buttons look like the app's: orange primary, quiet secondary. */
+/* Buttons look like the app's: white primary, glass secondary. */
 .button {
   display: inline-flex;
   align-items: center;
@@ -107,9 +117,12 @@ code {
   padding: 0.75em 1.4em;
   border-radius: var(--radius);
   border: 1px solid var(--border);
+  border-top-color: var(--glass-top);
   background: var(--surface-2);
+  -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(14px);
   color: var(--text);
-  font-weight: 600;
+  font-weight: 700;
   text-decoration: none;
   white-space: nowrap;
 }
@@ -126,7 +139,7 @@ code {
 }
 
 .button.primary:hover {
-  background: #ff8c3a;
+  background: var(--silver);
   color: var(--accent-text);
 }
 
@@ -176,4 +189,15 @@ code {
 .prose li {
   margin-bottom: 0.5rem;
   max-width: 68ch;
+}
+
+/* A GD glass card: white at 9 %, a 22 % outline that catches the light on
+   top, and a blur of what is behind. */
+.glass {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-top-color: var(--glass-top);
+  border-radius: 18px;
+  -webkit-backdrop-filter: blur(16px) saturate(120%);
+  backdrop-filter: blur(16px) saturate(120%);
 }

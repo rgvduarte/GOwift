@@ -234,5 +234,5 @@
 - [ ] **Step 1: Delete** dead markup, CSS and handlers; `grep` for `drawer-right`, `menu-photo`, `hud-camera`, `hud-layout`, `ride-on` — Expected: no hits except the left drawer.
 - [ ] **Step 2: CHANGELOG** entry under `[Unreleased]` (menu dialog, View popover, live Overview, finishing a ride is final) with the issue number; if none exists, file one with `gh issue create` first.
 - [ ] **Step 3: Run `make check`** — Expected: lint and all tests pass (client node tests and `cargo test --workspace`).
-- [ ] **Step 4: Final Playwright pass** at 1440×900, 1180×820, 390×844, 844×390: road ride and studio; screenshots in `~/.cache/gowift/screenshots/`, not the repo.
+- [ ] **Step 4: Final Playwright pass** at 1440×900, 1180×820, 390×844, 844×390: road ride and studio; screenshots in `~/.cache/goindoor/screenshots/`, not the repo.
 - [ ] **Step 5: Commit** `Remove the old right drawer`, push `feat/ingame-menu`, open one PR (assignee RalfLeonFasler, never merged by us), description explains the why.

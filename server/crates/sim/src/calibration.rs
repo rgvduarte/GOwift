@@ -2,7 +2,7 @@
 //!
 //! Solves steady-state speeds with the real [`physics::acceleration`], so a
 //! retune of [`PhysicsParams`] shows up as a table of speeds per rider weight.
-//! The tests pin the target feel; `cargo run -p gowift-sim --example
+//! The tests pin the target feel; `cargo run -p goindoor-sim --example
 //! calibration` prints the table.
 
 use crate::physics::{self, Body, PhysicsParams, StepInput};

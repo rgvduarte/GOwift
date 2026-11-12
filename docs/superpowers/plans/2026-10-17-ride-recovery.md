@@ -6,7 +6,7 @@
 
 **Architecture:** The server stops removing riders when their socket dies. It detaches them (null sink, 0 W, they coast) and runs the existing `leave` only after `grace_s`. A per-attach `epoch` stops a dead connection from detaching a rider who has already reattached. Riders are found again by a random `resume_token` from `joined`, through a server-wide token → world registry. The client keeps the ride session running on `close`, reconnects with backoff, and autosaves the recorder (now with pauses) and photos to IndexedDB.
 
-**Tech Stack:** Rust (`gowift-server`, tokio/axum), plain ES modules client with `node --test`, IndexedDB.
+**Tech Stack:** Rust (`goindoor-server`, tokio/axum), plain ES modules client with `node --test`, IndexedDB.
 
 **Spec:** `docs/superpowers/specs/2026-10-17-ride-recovery-design.md`
 
@@ -14,10 +14,10 @@
 
 - Branch `feat/ride-recovery`, one PR, one commit per task. Messages end with `(#73)` and the `Co-Authored-By` line.
 - Rust checks only via Docker, repo root at `/w`:
-  `docker run --rm -v "$PWD":/w -w /w/server rust:1 sh -c 'rustup component add rustfmt clippy >/dev/null 2>&1; cargo fmt --check && cargo clippy --all-targets -- -D warnings && cargo test'`. Referred to as **RUST** (narrow with `cargo test -p gowift-server <filter>` while iterating).
+  `docker run --rm -v "$PWD":/w -w /w/server rust:1 sh -c 'rustup component add rustfmt clippy >/dev/null 2>&1; cargo fmt --check && cargo clippy --all-targets -- -D warnings && cargo test'`. Referred to as **RUST** (narrow with `cargo test -p goindoor-server <filter>` while iterating).
 - Client checks only via Docker: `docker run --rm -v "$PWD":/app -w /app/client node:22 sh -c 'node --test "test/**/*.test.js"; npx eslint .'`. Referred to as **NODE**.
 - `PROTOCOL_VERSION` stays 2: every wire change is additive.
-- `grace_s` default **60**, env `GOWIFT_GRACE_S`, finite and ≥ 0. `0` means detach = leave (today's behaviour). It lives in `GameSettings` (the game expires riders) and `ServerInfo` (for `welcome`). This is a small change from the spec, which put it in `ConnectionLimits`; the connection layer doesn't need it.
+- `grace_s` default **60**, env `GOINDOOR_GRACE_S`, finite and ≥ 0. `0` means detach = leave (today's behaviour). It lives in `GameSettings` (the game expires riders) and `ServerInfo` (for `welcome`). This is a small change from the spec, which put it in `ConnectionLimits`; the connection layer doesn't need it.
 - Resume token: `strava::random_token()` (64 hex chars, `/dev/urandom`). Don't add a dependency. The spec said 32 chars; the length isn't part of the contract.
 - Client reconnect: delays 1000, 2000, 4000, 8000 ms, then 15000 ms; give up 180000 ms after the drop; each attempt times out after 10000 ms.
 - Autosave every 10000 ms and on `pagehide` / `visibilitychange` (hidden). Continue only if the autosave is under 12 h old (`AUTOSAVE_MAX_AGE_MS = 43200000`) and has the same server URL.
@@ -41,7 +41,7 @@
 - Modify: `server/crates/server/src/lib.rs` (`ServerInfo.grace_s`)
 - Modify: `server/crates/server/src/game.rs` (`GameSettings.grace_s`, default 60.0; `Joined` constructions)
 - Modify: `server/crates/server/src/studio.rs` (`Joined` construction)
-- Modify: `server/crates/server/src/config.rs` (`Config.grace_s` from `GOWIFT_GRACE_S`), `server/crates/server/src/app.rs` (pass into `GameSettings` for routes and studio, and `ServerInfo`)
+- Modify: `server/crates/server/src/config.rs` (`Config.grace_s` from `GOINDOOR_GRACE_S`), `server/crates/server/src/app.rs` (pass into `GameSettings` for routes and studio, and `ServerInfo`)
 - Modify: `server/crates/server/src/session.rs` (`Action::Join` fields, new `Action::Leave`, `welcome` carries `grace_s`)
 
 **Interfaces:**
@@ -58,7 +58,7 @@
   - protocol.rs `joined_and_welcome_carry_the_new_fields`: serialised `Joined{rider_id:3, resume_token:"t"}` has `"resume_token":"t"`; `Welcome{.., grace_s:60.0}` has `"grace_s":60.0`.
   - session.rs `leave_after_join_is_an_action`: after the handshake and join, `on_text(r#"{"type":"leave"}"#)` returns `Action::Leave`. Before join it is an error reply.
   - session.rs: extend `json_handshake_then_join` so the expected `Action::Join` has `resume_token: None, resume: None`, and the welcome has `grace_s` equal to the `ServerInfo` value.
-  - config.rs `grace_defaults_to_60_and_can_be_changed`: default 60.0; `GOWIFT_GRACE_S=0` gives 0.0; `-1` and `abc` are config errors.
+  - config.rs `grace_defaults_to_60_and_can_be_changed`: default 60.0; `GOINDOOR_GRACE_S=0` gives 0.0; `-1` and `abc` are config errors.
 - [ ] **Step 2:** RUST → compile failures for the missing fields and variants.
 - [ ] **Step 3:** Implement the interfaces. Fix the existing `Joined { rider_id }` patterns and constructions (12 sites, mostly tests) and `connection.rs` (match `Action::Leave` as `break` for now).
 - [ ] **Step 4:** RUST → all green.
@@ -89,7 +89,7 @@
   - `unknown_token_is_none`: `reattach("nope") == None`.
   - `expiry_waits_for_the_grace_period`: grace 60, `detach(7, 10.0)`: `expired(70.0)` is empty, `expired(70.1) == [7]`.
   - `forget_frees_the_token`: after `forget(7)`, `reattach(&token) == None` and `registry.world_of(&token) == None`.
-- [ ] **Step 2:** RUST(`cargo test -p gowift-server resume`) → fail.
+- [ ] **Step 2:** RUST(`cargo test -p goindoor-server resume`) → fail.
 - [ ] **Step 3:** Implement with `HashMap<String, RiderId>` and `HashMap<RiderId, Entry { token, epoch, detached_at: Option<f64> }>`.
 - [ ] **Step 4:** RUST → green.
 - [ ] **Step 5:** Commit `Server: resume tokens and attachments (#73)`.
@@ -124,7 +124,7 @@
   - `stale_epoch_detach_and_leave_are_ignored` (Review Focus 1, through `runtime::apply` or a `Game`-level helper): join (epoch e1), `reattach` (epoch e2). `Detach{epoch:e1}` and `Leave{epoch:e1}` leave the rider attached; `Leave{epoch:e2}` removes them.
   - `grace_zero_leaves_at_once`: grace 0, `detach` → rider gone straight away.
   - `join_at_places_the_rider`: route length L; `start_m = 300.0` → position 300.0. `start_m = L + 50` → clamped to L, which `place_at` wraps to 0. `-5.0` → 0.0. With a `vehicle_code` set, `start_m` is ignored.
-- [ ] **Step 2:** RUST(`cargo test -p gowift-server game`) → fail.
+- [ ] **Step 2:** RUST(`cargo test -p goindoor-server game`) → fail.
 - [ ] **Step 3:** Implement. Update `runtime.rs` tests and fakes for the new trait signature. `StudioCore` gets the new `join` signature in this task (ignore `start_m`, return `JoinedRider { rider_id, epoch: 0 }`); Task 4 gives it real attachments.
 - [ ] **Step 4:** RUST → green.
 - [ ] **Step 5:** Commit `Server: detach riders for a grace period and reattach by token (#73)`.
@@ -225,7 +225,7 @@
 **Interfaces:**
 - Consumes: Task 5 `RideRecorder.toJSON` / `from`.
 - Produces:
-  - Store contract (what tests fake with a `Map`): `{ get(key) -> Promise<any>, put(key, value) -> Promise<void>, delete(key) -> Promise<void>, keys() -> Promise<string[]> }`. `export function indexedDbStore(name = "gowift-autosave") -> store` is a thin IndexedDB adapter (one object store `"kv"`). It isn't unit tested.
+  - Store contract (what tests fake with a `Map`): `{ get(key) -> Promise<any>, put(key, value) -> Promise<void>, delete(key) -> Promise<void>, keys() -> Promise<string[]> }`. `export function indexedDbStore(name = "goindoor-autosave") -> store` is a thin IndexedDB adapter (one object store `"kv"`). It isn't unit tested.
   - `export const AUTOSAVE_MAX_AGE_MS = 43200000`.
   - `export class RideAutosave` with constructor `{ store, log = console.warn }`:
     - `save(snapshot) -> Promise<void>` writes key `"current"`.
@@ -280,7 +280,7 @@
 **Files:**
 - Modify: `docs/protocol.md`: `leave`; `join.resume_token`, `join.resume`; `joined.resume_token`; `welcome.grace_s`; a "Reconnecting" section on the grace period, what the client sees (same `rider_id` = full resume, different = fresh join) and the free-rider rules for `resume`.
 - Modify: `docs/architecture.md`: detach/reattach in the game loop, the `ResumeTokens` registry, the autosave in the client.
-- Modify: `docs/deploy.md`: `GOWIFT_GRACE_S` in the env table.
+- Modify: `docs/deploy.md`: `GOINDOOR_GRACE_S` in the env table.
 - Modify: `CHANGELOG.md`: an Unreleased entry.
 
 - [ ] **Step 1:** Write the docs. Field names must match Task 1 exactly.

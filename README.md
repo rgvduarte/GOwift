@@ -1,9 +1,9 @@
 <p align="center">
-  <img src="docs/assets/gowift-emblem.png" width="220"
-       alt="GOwift logo: a green wheel shaped like a G, with speed lines">
+  <img src="docs/assets/goindoor-emblem.png" width="220"
+       alt="GOindoor logo: a green wheel shaped like a G, with speed lines">
 </p>
 
-<h1 align="center">GOwift</h1>
+<h1 align="center">GOindoor</h1>
 
 <p align="center">
   Open-source indoor cycling in the browser, with friends — and bots, so the road is never empty.<br>
@@ -67,7 +67,7 @@ the green band holds about 75 % of your FTP; tapping faster sprints up to
 150 %, but drains your energy bar, and it refills when you ease off. Tapping
 the same side twice is a stumble. Swipe sideways above the paddles to change
 lanes. Paddle riders race with everyone and get a 📱 by their name. Paddle
-rides stay in GOwift: no Strava upload and no ride files (photos and the
+rides stay in GOindoor: no Strava upload and no ride files (photos and the
 summary card can be saved). Simulated-trainer rides can be downloaded but not
 uploaded to Strava.
 
@@ -134,9 +134,9 @@ and pre-push hooks (see [CONTRIBUTING.md](CONTRIBUTING.md#git-hooks)).
 Full guide, including your own reverse proxy and Strava: [docs/deploy.md](docs/deploy.md).
 
 ```bash
-git clone <your-repo-url> gowift && cd gowift
+git clone <your-repo-url> goindoor && cd goindoor
 make setup            # creates .env (later: adds new settings to it)
-$EDITOR .env          # set GOWIFT_SERVER_NAME etc.
+$EDITOR .env          # set GOINDOOR_SERVER_NAME etc.
 make up
 ```
 
@@ -144,9 +144,9 @@ Later, to deploy new commits: `make update`.
 
 The server exposes aggregate Prometheus metrics at `/internal/metrics` for
 connected riders, configured rider capacity, community distance totals and AFK
-warning outcomes (`gowift_afk_events_total`). The
+warning outcomes (`goindoor_afk_events_total`). The
 endpoint contains no rider names, IDs, credentials or request details. The
-Monitoring stack scrapes it over the private `gowift-metrics` Docker
+Monitoring stack scrapes it over the private `goindoor-metrics` Docker
 network; its Grafana dashboard also probes the public `/healthz` URL.
 
 **HTTPS:** browsers only allow Web Bluetooth on `https://` pages or on
@@ -155,7 +155,7 @@ set in `.env`:
 
 ```bash
 COMPOSE_PROFILES=tls
-GOWIFT_DOMAIN=ride.example.org
+GOINDOOR_DOMAIN=ride.example.org
 ```
 
 `make up` then also starts Caddy, which obtains a Let's Encrypt certificate and
@@ -163,10 +163,10 @@ proxies to the game server. Ports 80 and 443 must be reachable.
 
 **Landing page (optional):** a public server can run a static page on the
 main domain and the app on a subdomain (example.org and app.example.org).
-Add `landing` to `COMPOSE_PROFILES` and set `GOWIFT_LANDING_DOMAIN`; see
+Add `landing` to `COMPOSE_PROFILES` and set `GOINDOOR_LANDING_DOMAIN`; see
 [docs/deploy.md](docs/deploy.md#landing-page). Without it nothing changes.
 
-**LAN parties:** set `GOWIFT_HTTP_BIND=0.0.0.0`. Other machines reach the page
+**LAN parties:** set `GOINDOOR_HTTP_BIND=0.0.0.0`. Other machines reach the page
 via `http://<your-ip>:8080`, but their browsers block Bluetooth on plain HTTP.
 Use the TLS profile with a real domain, or for quick tests enable
 `chrome://flags/#unsafely-treat-insecure-origin-as-secure` for that address.
@@ -177,34 +177,34 @@ All settings live in `.env`; see [`.env.example`](.env.example) for descriptions
 
 | Variable | Default | Meaning |
 | --- | --- | --- |
-| `GOWIFT_SERVER_NAME` | `GOwift` | Name shown to riders |
-| `GOWIFT_ROUTE` | `rolling-hills` | Default route in `routes/` (without `.json`); all routes there can be picked |
-| `GOWIFT_TARGET_RIDERS` | `12` | Humans + bots kept on the road (per route) |
-| `GOWIFT_MAX_PLAYERS` | `50` | Maximum human riders on trainers at the same time, all routes (phone riders not counted) |
-| `GOWIFT_MAX_PADDLE_PLAYERS` | `20` | Maximum riders on phone paddles at the same time, on top of the above |
-| `GOWIFT_MAX_VISIBLE_RIDERS` | `200` | Most riders in one state message; humans first, then the nearest bots |
-| `GOWIFT_PUBLIC_URL` | – | Public address, e.g. `https://ride.example.org` (Strava, allowed origin) |
-| `GOWIFT_TRUST_PROXY` | `false` | Client IPs from `X-Forwarded-For` behind a reverse proxy |
-| `GOWIFT_MAX_CONNECTIONS_PER_IP` | `4` | Game connections per IP |
-| `GOWIFT_MESSAGES_PER_SECOND` | `20` | Message rate limit per connection |
-| `GOWIFT_STRAVA_CLIENT_ID` / `_SECRET` | – | Enable "Connect with Strava" |
-| `GOWIFT_REQUIRE_STRAVA` | `false` | Riders must connect Strava to join |
-| `GOWIFT_ALLOW_SIMULATED_TRAINER` | `true` | Offer the simulated trainer (set `false` in production) |
-| `GOWIFT_ALLOW_PADDLE_MODE` | `true` | Offer phone paddles (tap left/right for power; no Strava, no ride files) |
-| `GOWIFT_OBN_URL` | – | `wss://` URL of an OpenBikeNet server: shares the velodrome with riders of other apps (see [deploy.md](docs/deploy.md#openbikenet-optional)) |
-| `GOWIFT_PRIVACY_URL` | – | Link to your privacy policy in the start menu |
-| `GOWIFT_ANALYTICS_DOMAIN` / `_SCRIPT` | – | Opt-in Plausible analytics for the client: your site name, and the script URL if you self-host Plausible (off when the domain is empty) |
-| `GOWIFT_STUDIO` | `true` | Host the spin studio (group classes) next to the routes |
-| `GOWIFT_EVENTS` | `default` | Scheduled events: `default`, `off` or the path of an events file ([events](docs/events.md)) |
-| `GOWIFT_EVENT_LOBBY_S` | `600` | Seconds an event's lobby opens before the start |
-| `GOWIFT_TICK_HZ` / `GOWIFT_BROADCAST_HZ` | `20` / `4` | Simulation and state rate |
-| `GOWIFT_RACE_COUNTDOWN_S` | `30` | Race countdown (time to join) in seconds |
-| `GOWIFT_MAX_RACE_LAPS` | `20` | Upper limit for race laps |
-| `GOWIFT_BOT_SEED` | random | Fixed seed for reproducible bots |
-| `GOWIFT_AUTH_MODE` | `open` | Only `open` (local profiles) in the POC |
-| `GOWIFT_HTTP_BIND` / `GOWIFT_HTTP_PORT` | `127.0.0.1` / `8080` | Where the web client is published |
-| `COMPOSE_PROFILES`, `GOWIFT_DOMAIN` | – | Enable HTTPS via Caddy (`tls`), the landing page (`landing`) |
-| `GOWIFT_LANDING_DOMAIN` / `_URL` | – | Domain(s) and address of the landing page |
+| `GOINDOOR_SERVER_NAME` | `GOindoor` | Name shown to riders |
+| `GOINDOOR_ROUTE` | `rolling-hills` | Default route in `routes/` (without `.json`); all routes there can be picked |
+| `GOINDOOR_TARGET_RIDERS` | `12` | Humans + bots kept on the road (per route) |
+| `GOINDOOR_MAX_PLAYERS` | `50` | Maximum human riders on trainers at the same time, all routes (phone riders not counted) |
+| `GOINDOOR_MAX_PADDLE_PLAYERS` | `20` | Maximum riders on phone paddles at the same time, on top of the above |
+| `GOINDOOR_MAX_VISIBLE_RIDERS` | `200` | Most riders in one state message; humans first, then the nearest bots |
+| `GOINDOOR_PUBLIC_URL` | – | Public address, e.g. `https://ride.example.org` (Strava, allowed origin) |
+| `GOINDOOR_TRUST_PROXY` | `false` | Client IPs from `X-Forwarded-For` behind a reverse proxy |
+| `GOINDOOR_MAX_CONNECTIONS_PER_IP` | `4` | Game connections per IP |
+| `GOINDOOR_MESSAGES_PER_SECOND` | `20` | Message rate limit per connection |
+| `GOINDOOR_STRAVA_CLIENT_ID` / `_SECRET` | – | Enable "Connect with Strava" |
+| `GOINDOOR_REQUIRE_STRAVA` | `false` | Riders must connect Strava to join |
+| `GOINDOOR_ALLOW_SIMULATED_TRAINER` | `true` | Offer the simulated trainer (set `false` in production) |
+| `GOINDOOR_ALLOW_PADDLE_MODE` | `true` | Offer phone paddles (tap left/right for power; no Strava, no ride files) |
+| `GOINDOOR_OBN_URL` | – | `wss://` URL of an OpenBikeNet server: shares the velodrome with riders of other apps (see [deploy.md](docs/deploy.md#openbikenet-optional)) |
+| `GOINDOOR_PRIVACY_URL` | – | Link to your privacy policy in the start menu |
+| `GOINDOOR_ANALYTICS_DOMAIN` / `_SCRIPT` | – | Opt-in Plausible analytics for the client: your site name, and the script URL if you self-host Plausible (off when the domain is empty) |
+| `GOINDOOR_STUDIO` | `true` | Host the spin studio (group classes) next to the routes |
+| `GOINDOOR_EVENTS` | `default` | Scheduled events: `default`, `off` or the path of an events file ([events](docs/events.md)) |
+| `GOINDOOR_EVENT_LOBBY_S` | `600` | Seconds an event's lobby opens before the start |
+| `GOINDOOR_TICK_HZ` / `GOINDOOR_BROADCAST_HZ` | `20` / `4` | Simulation and state rate |
+| `GOINDOOR_RACE_COUNTDOWN_S` | `30` | Race countdown (time to join) in seconds |
+| `GOINDOOR_MAX_RACE_LAPS` | `20` | Upper limit for race laps |
+| `GOINDOOR_BOT_SEED` | random | Fixed seed for reproducible bots |
+| `GOINDOOR_AUTH_MODE` | `open` | Only `open` (local profiles) in the POC |
+| `GOINDOOR_HTTP_BIND` / `GOINDOOR_HTTP_PORT` | `127.0.0.1` / `8080` | Where the web client is published |
+| `COMPOSE_PROFILES`, `GOINDOOR_DOMAIN` | – | Enable HTTPS via Caddy (`tls`), the landing page (`landing`) |
+| `GOINDOOR_LANDING_DOMAIN` / `_URL` | – | Domain(s) and address of the landing page |
 | `RUST_LOG` | `info` | Log level |
 
 ## Project layout
@@ -243,18 +243,18 @@ All settings live in `.env`; see [`.env.example`](.env.example) for descriptions
 
 ## License
 
-GOwift is created and maintained by [@rgvduarte](https://github.com/rgvduarte).
+GOindoor is created and maintained by [@rgvduarte](https://github.com/rgvduarte).
 It is a fork of [OpenRadlr](https://github.com/Lethonium/OpenRadlr) by the
 OpenRadlr contributors; see [NOTICE.md](NOTICE.md) for what comes from where.
 
 - **Code:** [GNU AGPL v3 or later](LICENSE). You can use, change and host
-  GOwift freely, also commercially. If you run a **modified** server for
+  GOindoor freely, also commercially. If you run a **modified** server for
   other people, you must offer them its source code under the same licence.
 - **Artwork** (logo, icons, screenshots): [CC BY-SA 4.0](ASSETS-LICENSE.md).
 - **Name and logo:** see [TRADEMARKS.md](TRADEMARKS.md). Forks are welcome, but
   under their own name.
 
-GOwift is an independent project. It is not affiliated with, endorsed by or
+GOindoor is an independent project. It is not affiliated with, endorsed by or
 sponsored by Zwift, Wahoo, Strava, Van Rysel or any other company named here;
 their names only say which products it works with, and they belong to their
 owners.

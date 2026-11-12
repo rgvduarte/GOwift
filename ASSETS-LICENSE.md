@@ -1,6 +1,6 @@
 # Artwork licence
 
-The code of GOwift is licensed under the [GNU AGPL v3](LICENSE). The
+The code of GOindoor is licensed under the [GNU AGPL v3](LICENSE). The
 artwork is licensed separately, under the
 [Creative Commons Attribution-ShareAlike 4.0 International licence](https://creativecommons.org/licenses/by-sa/4.0/)
 (CC BY-SA 4.0).
@@ -21,11 +21,11 @@ and fall under the AGPL like the rest of the code.
 
 ## Who made what
 
-- **GOwift logo, icons, favicons, splash screens and brand mark**
-  (`brand/`, `docs/assets/gowift-emblem.png`, `client/public/icons/`,
+- **GOindoor logo, icons, favicons, splash screens and brand mark**
+  (`brand/`, `docs/assets/goindoor-emblem.png`, `client/public/icons/`,
   `landing/public/icons/`, `app/assets/` and the generated app icons):
   © 2026 [rgvduarte](https://github.com/rgvduarte), CC BY-SA 4.0.
-- **Screenshots of GOwift** (`docs/assets/screenshot-*.png`,
+- **Screenshots of GOindoor** (`docs/assets/screenshot-*.png`,
   `landing/src/assets/ride.png`, `landing/src/assets/studio.png`):
   © 2026 rgvduarte, CC BY-SA 4.0. They show the 3D world drawn by the
   OpenRadlr code (AGPL).
@@ -41,13 +41,13 @@ and fall under the AGPL like the rest of the code.
 Use, copy, change and share the artwork, also commercially and in forks, as
 long as you:
 
-- **credit it** as listed above ("Artwork © rgvduarte (GOwift), CC BY-SA 4.0"
+- **credit it** as listed above ("Artwork © rgvduarte (GOindoor), CC BY-SA 4.0"
   or "Artwork © The OpenRadlr contributors, CC BY-SA 4.0"), with a link to the
   source repository, and say if you changed it;
 - **share alike**: publish your changed versions under CC BY-SA 4.0 too.
 
 ## Name and logo
 
-The licence covers the copyright in the files, not the **GOwift name or
+The licence covers the copyright in the files, not the **GOindoor name or
 logo as a brand**. See [TRADEMARKS.md](TRADEMARKS.md): a fork can reuse the
-art, but must not present itself as GOwift.
+art, but must not present itself as GOindoor.

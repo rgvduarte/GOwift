@@ -1,4 +1,4 @@
-package io.github.rgvduarte.gowift;
+package io.github.rgvduarte.goindoor;
 
 import com.getcapacitor.BridgeActivity;
 

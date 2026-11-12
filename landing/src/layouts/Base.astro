@@ -1,8 +1,7 @@
 ---
-import "@fontsource/barlow-condensed/700-italic.css";
-import "@fontsource/barlow-condensed/800-italic.css";
 import "../styles/global.css";
 import { site, appHost, rideUrl, href } from "../site";
+import GoGlyphs from "../components/GoGlyphs.astro";
 
 interface Props {
   title?: string;
@@ -25,7 +24,7 @@ const ogImage = new URL(href("og.png"), site.url).href;
     <title>{fullTitle}</title>
     <meta name="description" content={description} />
     <link rel="canonical" href={canonical} />
-    <meta name="theme-color" content="#0f1216" />
+    <meta name="theme-color" content="#0b0b0c" />
     <link rel="icon" href={href("icons/favicon-32.png")} type="image/png" sizes="32x32" />
     <link rel="icon" href={href("icons/favicon-64.png")} type="image/png" sizes="64x64" />
     <link rel="apple-touch-icon" href={href("icons/apple-touch-icon.png")} />
@@ -47,9 +46,9 @@ const ogImage = new URL(href("og.png"), site.url).href;
     <a class="skip button" href="#content">Skip to content</a>
     <header class:list={["top", { overlay }]}>
       <div class="wrap top-inner">
-        <a class="brand" href={href()} aria-label="GOwift home">
-          <img src={href("icons/brand-mark.png")} alt="" width="46" height="36" />
-          <span><span>GO</span>wift</span>
+        <a class="brand" href={href()} aria-label="GOindoor home">
+          <img src={href("icons/brand-mark.png")} alt="" width="49" height="30" />
+          <span><GoGlyphs />indoor</span>
         </a>
         <nav aria-label="Main">
           <a class="nav-link" href={site.githubUrl}>GitHub</a>
@@ -65,7 +64,7 @@ const ogImage = new URL(href("og.png"), site.url).href;
     <footer class="foot">
       <div class="wrap foot-inner">
         <p>
-          <span class="brand-word"><span>GO</span>wift</span> is open source.
+          <span class="brand-word"><GoGlyphs />indoor</span> is open source.
           <span class="muted">Created and developed by <a href={site.ownerUrl}>{site.owner}</a>. Based on <a href={site.upstreamUrl}>OpenRadlr</a>.</span>
         </p>
         <nav aria-label="Footer">
@@ -101,14 +100,11 @@ const ogImage = new URL(href("og.png"), site.url).href;
     gap: 0.6rem;
     text-decoration: none;
     font-size: 1.6rem;
-    font-weight: 900;
-    font-style: italic;
-    letter-spacing: -0.01em;
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    color: var(--silver);
   }
-  .brand > span > span,
-  .brand-word span {
-    color: var(--brand);
-  }
+
   .brand:hover {
     color: var(--text);
   }
@@ -122,8 +118,8 @@ const ogImage = new URL(href("og.png"), site.url).href;
     font-weight: 600;
   }
   .brand-word {
-    font-weight: 900;
-    font-style: italic;
+    font-weight: 700;
+    color: var(--silver);
   }
   .foot {
     border-top: 1px solid var(--border);

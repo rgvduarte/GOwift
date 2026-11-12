@@ -18,10 +18,10 @@ use crate::vehicle_codes::VehicleCodes;
 use crate::worlds::{StudioEntry, WorldEntry, Worlds};
 use crate::ServerInfo;
 use axum::Router;
-use gowift_sim::events::Events;
-use gowift_sim::rng::SplitMix64;
-use gowift_sim::studio::{builtin_classes, Studio, StudioConfig, Timetable};
-use gowift_sim::{SimConfig, World};
+use goindoor_sim::events::Events;
+use goindoor_sim::rng::SplitMix64;
+use goindoor_sim::studio::{builtin_classes, Studio, StudioConfig, Timetable};
+use goindoor_sim::{SimConfig, World};
 use std::future::Future;
 use std::net::SocketAddr;
 use std::sync::Arc;
@@ -270,15 +270,15 @@ pub fn build_with_stats(config: &Config) -> Result<(Router, DistanceStats), BoxE
             tracing::info!(required = config.require_strava, "strava connection enabled");
             if config.require_strava && config.allowed_origins.is_empty() {
                 tracing::warn!(
-                    "GOWIFT_REQUIRE_STRAVA without GOWIFT_ALLOWED_ORIGINS: other sites could open game \
-                     connections with a rider's session cookie; set GOWIFT_ALLOWED_ORIGINS to your public URL"
+                    "GOINDOOR_REQUIRE_STRAVA without GOINDOOR_ALLOWED_ORIGINS: other sites could open game \
+                     connections with a rider's session cookie; set GOINDOOR_ALLOWED_ORIGINS to your public URL"
                 );
             }
             let store = match (&config.data_dir, &config.secret_key) {
                 (Some(dir), Some(key)) => Some(crate::session_store::SessionStore::open(dir, key)?),
                 _ => {
                     tracing::warn!(
-                        "GOWIFT_DATA_DIR and GOWIFT_SECRET_KEY are not both set: Strava logins are lost when \
+                        "GOINDOOR_DATA_DIR and GOINDOOR_SECRET_KEY are not both set: Strava logins are lost when \
                          the server restarts"
                     );
                     None

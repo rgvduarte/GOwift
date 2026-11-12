@@ -15,7 +15,7 @@ riding where they are.
 
 The start menu lists the coming events with their start time and how many
 have entered. Each event has a **lobby** that opens 10 minutes before the
-start (`GOWIFT_EVENT_LOBBY_S`). Join from the menu, or press <kbd>J</kbd>
+start (`GOINDOOR_EVENT_LOBBY_S`). Join from the menu, or press <kbd>J</kbd>
 while the banner `Group ride starts in 9:12 · J to join` is shown. In the
 lobby you ride around as usual; at the start the entrants are lined up in
 rows behind the line (distances count from the line for every row). A
@@ -23,7 +23,7 @@ group ride can also be joined while it runs (you start behind the last
 rider). A race closes at its start. Turns are locked while you are in an
 event.
 
-Events you finish appear in the ride name (`GOwift group ride · <route>`)
+Events you finish appear in the ride name (`GOindoor group ride · <route>`)
 and the summary shows the results: place and time for a race, distance and
 average W/kg for a group ride, plus the energy you gave and received.
 
@@ -88,8 +88,8 @@ The start screen shows it as `Riding level 3.1 W/kg (from your rides)`.
 
 | Variable | Default | |
 | --- | --- | --- |
-| `GOWIFT_EVENTS` | `default` | `default` (the built-in timetable), `off` (no events) or the path of an events file |
-| `GOWIFT_EVENT_LOBBY_S` | `600` | Seconds the lobby opens before the start (0–3600) |
+| `GOINDOOR_EVENTS` | `default` | `default` (the built-in timetable), `off` (no events) or the path of an events file |
+| `GOINDOOR_EVENT_LOBBY_S` | `600` | Seconds the lobby opens before the start (0–3600) |
 
 With a lobby above about 900 seconds the built-in race and the next group ride
 overlap. The server refuses to start then, naming the two events.
@@ -109,10 +109,10 @@ boundaries are `0`).
 | `laps` or `distance_m` | exactly one | the length |
 | `every_s` | required | repeat interval |
 | `offset_s` | optional, 0 | |
-| `lobby_s` | optional | default `GOWIFT_EVENT_LOBBY_S` |
+| `lobby_s` | optional | default `GOINDOOR_EVENT_LOBBY_S` |
 | `duration_s` | required | time limit, after which the event ends |
 
-A race needs a lobby above zero (`lobby_s`, or `GOWIFT_EVENT_LOBBY_S` when
+A race needs a lobby above zero (`lobby_s`, or `GOINDOOR_EVENT_LOBBY_S` when
 the entry has none), because it cannot be joined once it runs; a group ride may
 have none. Unknown fields are rejected. Events on the same route must not overlap
 (lobby included); unknown routes, duplicate ids and zero lengths stop the

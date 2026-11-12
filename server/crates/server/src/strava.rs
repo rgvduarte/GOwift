@@ -1,7 +1,7 @@
 //! Strava as an optional account: "Connect with Strava" (OAuth), a session
 //! cookie, and uploading finished rides.
 //!
-//! With `GOWIFT_REQUIRE_STRAVA=true` only riders with a connected Strava
+//! With `GOINDOOR_REQUIRE_STRAVA=true` only riders with a connected Strava
 //! account may join — a simple hurdle for scripted clients, since every
 //! rider needs a real account, and one account can ride only once at a time.
 //!
@@ -17,18 +17,18 @@ use std::collections::HashMap;
 use std::fmt::Write as _;
 use std::sync::Mutex;
 
-pub const SESSION_COOKIE: &str = "gowift_session";
-pub const STATE_COOKIE: &str = "gowift_oauth_state";
+pub const SESSION_COOKIE: &str = "goindoor_session";
+pub const STATE_COOKIE: &str = "goindoor_oauth_state";
 /// Sessions last this long without a new login.
 pub const SESSION_SECONDS: i64 = 30 * 24 * 3600;
 /// Time to come back from Strava's consent screen.
 pub const STATE_SECONDS: i64 = 600;
 /// The app's login (see [`AppLogins`]): its secret, in the app's web view.
-pub const APP_LOGIN_COOKIE: &str = "gowift_app_login";
+pub const APP_LOGIN_COOKIE: &str = "goindoor_app_login";
 /// The app's login id, in the system sign-in sheet on its way through Strava.
-pub const APP_ID_COOKIE: &str = "gowift_app_id";
-/// Where the sign-in sheet hands back to the app (`gowift://` opens it).
-pub const APP_CALLBACK_URL: &str = "gowift://strava";
+pub const APP_ID_COOKIE: &str = "goindoor_app_id";
+/// Where the sign-in sheet hands back to the app (`goindoor://` opens it).
+pub const APP_CALLBACK_URL: &str = "goindoor://strava";
 /// Refresh the access token when it expires within this many seconds.
 const REFRESH_MARGIN_S: i64 = 300;
 
@@ -40,7 +40,7 @@ pub struct StravaConfig {
     pub client_secret: String,
     /// `<public url>/auth/strava/callback`, registered in the Strava API settings.
     pub redirect_uri: String,
-    /// The server's own address (`GOWIFT_PUBLIC_URL`, no trailing slash); linked from uploaded rides.
+    /// The server's own address (`GOINDOOR_PUBLIC_URL`, no trailing slash); linked from uploaded rides.
     pub public_url: String,
 }
 
@@ -284,18 +284,18 @@ struct AppLogin {
     done: Option<(String, String)>,
 }
 
-/// Logins from the GOwift app (docs/app.md). Its web view can't sign in
+/// Logins from the GOindoor app (docs/app.md). Its web view can't sign in
 /// with every provider, so the app opens Strava in the system's sign-in
 /// sheet, which has its own cookies:
 ///
 /// 1. The web view starts a login and keeps its secret as a cookie.
 /// 2. The sheet carries only the login's id through Strava.
-/// 3. Strava's answer sends the sheet to `gowift://strava` with a ticket,
+/// 3. Strava's answer sends the sheet to `goindoor://strava` with a ticket,
 ///    which reaches the device that signed in.
 /// 4. The web view claims the session with secret and ticket.
 ///
 /// Someone who sends a victim their own login link holds the secret but never
-/// sees the ticket; an app that grabs the `gowift://` URL holds the ticket
+/// sees the ticket; an app that grabs the `goindoor://` URL holds the ticket
 /// but not the secret.
 #[derive(Default)]
 pub struct AppLogins {
@@ -328,7 +328,7 @@ impl AppLogins {
     }
 
     /// Strava said yes: the session waits for the web view. Returns the ticket
-    /// for the `gowift://` URL, or None for an unknown or used login.
+    /// for the `goindoor://` URL, or None for an unknown or used login.
     pub fn complete(&self, id: &str, session: String, now_s: i64) -> Option<String> {
         let mut logins = self.logins.lock().unwrap_or_else(|e| e.into_inner());
         let login = logins
@@ -424,7 +424,7 @@ mod tests {
 
     #[test]
     fn cookies_are_found_across_headers() {
-        let headers = ["theme=dark; gowift_session=s1", "other=1"];
+        let headers = ["theme=dark; goindoor_session=s1", "other=1"];
         assert_eq!(cookie_value(headers, SESSION_COOKIE), Some("s1"));
         assert_eq!(cookie_value(["x=1"], SESSION_COOKIE), None);
         assert_eq!(
@@ -508,7 +508,7 @@ mod tests {
 
     #[test]
     fn saved_sessions_survive_a_restart() {
-        let dir = std::env::temp_dir().join(format!("gowift-sessions-{}", random_token()));
+        let dir = std::env::temp_dir().join(format!("goindoor-sessions-{}", random_token()));
         let open = || SessionStore::open(&dir, "a-test-secret-key").unwrap();
         let first = Accounts::with_store(open(), 0);
         let kept = first.insert(account(1), 10);
@@ -580,11 +580,11 @@ mod tests {
         assert_eq!(login_result_url(false, "denied", None), "/?strava=denied");
         assert_eq!(
             login_result_url(true, "connected", Some("t1")),
-            "gowift://strava?result=connected&ticket=t1"
+            "goindoor://strava?result=connected&ticket=t1"
         );
         assert_eq!(
             login_result_url(true, "expired", None),
-            "gowift://strava?result=expired"
+            "goindoor://strava?result=expired"
         );
     }
 }

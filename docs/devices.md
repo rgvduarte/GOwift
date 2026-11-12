@@ -53,7 +53,7 @@ via Cycling Power (now handled).
 ## Virtual shifting (Zwift Cog and single-gear setups)
 
 The Zwift Cog has no electronics; it is a sprocket that keeps the chain in one
-gear. Zwift's own virtual shifting relies on proprietary trainer firmware. GOwift
+gear. Zwift's own virtual shifting relies on proprietary trainer firmware. GOindoor
 instead shifts **in the app over standard FTMS**, which works with any FTMS trainer
 in simulation mode, Cog or not:
 
@@ -144,7 +144,7 @@ next to the button and a ride notification show it, and packets appear under
 (`ff 05 00 ea 05 …`, protobuf field 2). About a minute after connecting it
 reports mode 1 and stops plain button messages, unless the Zwift app unlocked
 it within about a day (its `ff 03 …` crypto challenges are only answered by
-Zwift). GOwift then reboots that half with a lone `0x18` (as
+Zwift). GOindoor then reboots that half with a lone `0x18` (as
 [zwiftboard](https://github.com/thomaschampagne/zwiftboard) does) and
 reconnects; meanwhile and with the right half alone (type `0x0A`, never
 locked), B on the right half shifts down, as in BikeControl's right-side mode.
@@ -173,7 +173,7 @@ use the network one).
   notified on `…f681`: `0x01`, then button ID and state pairs for the buttons
   that changed (`0` released, `1` pressed, `2`–`255` analog).
 - After connecting, the client writes *App Information* to `…f683` (optional
-  on the device): app ID `gowift`, the build, and the button IDs below, so a
+  on the device): app ID `goindoor`, the build, and the button IDs below, so a
   controller can leave out the others. Haptics are not used.
 
 **Button IDs → buttons.** They become the same button names as a Zwift
@@ -227,7 +227,7 @@ A trainer that comes back takes control again and gets the last grade or ERG
 target. The HUD feed says when a device drops and when it is back.
 
 **App start.** The app remembers the last trainer, heart rate strap and up to two
-controllers (`gowift.devices` in local storage: kind, Bluetooth id, name). What
+controllers (`goindoor.devices` in local storage: kind, Bluetooth id, name). What
 happens on the next start depends on the browser:
 
 | Browser | On start |
