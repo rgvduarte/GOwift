@@ -1,0 +1,37 @@
+[package]
+name = "goindoor-server"
+description = "GOindoor multiplayer game server: WebSocket protocol, game loop and static client hosting."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+
+[lints]
+workspace = true
+
+[[bin]]
+name = "goindoor-server"
+path = "src/main.rs"
+
+[dependencies]
+goindoor-sim = { path = "../sim" }
+axum = { version = "0.8", features = ["ws"] }
+futures-util = { version = "0.3", default-features = false, features = ["sink", "std"] }
+# Strava: token exchange and uploads over HTTPS (rustls with bundled roots, no system OpenSSL).
+reqwest = { version = "0.12", default-features = false, features = ["json", "multipart", "rustls-tls"] }
+# Strava logins survive restarts: SQLite on a volume, refresh tokens encrypted, session ids hashed.
+rusqlite = { version = "0.40", features = ["bundled"] }
+aes-gcm = "0.11"
+sha2 = "0.11"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tokio = { version = "1", features = ["macros", "rt-multi-thread", "net", "time", "sync", "signal"] }
+# Compression: the client is about 1.3 MB of JS, CSS and JSON; Brotli or gzip sends a quarter of it.
+tower-http = { version = "0.7", features = ["compression-br", "compression-gzip", "fs", "set-header", "trace"] }
+tracing = "0.1"
+# OpenBikeNet link: one outgoing WebSocket (wss with bundled roots, no system OpenSSL).
+tokio-tungstenite = { version = "0.30", default-features = false, features = ["connect", "rustls-tls-webpki-roots"] }
+tracing-subscriber = { version = "0.3", features = ["env-filter", "fmt"] }
+
+[dev-dependencies]
+tokio = { version = "1", features = ["io-util"] }

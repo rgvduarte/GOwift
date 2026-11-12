@@ -1,0 +1,6618 @@
+:root {
+  color-scheme: dark;
+  /* GD design system: near black, white and greys, glass surfaces. */
+  --bg: #0b0b0c;
+  --surface: rgba(24, 24, 26, 0.62);
+  --surface-2: rgba(255, 255, 255, 0.09);
+  --border: rgba(255, 255, 255, 0.22);
+  --glass-top: rgba(255, 255, 255, 0.4);
+  --divider: rgba(255, 255, 255, 0.12);
+  --text: #ffffff;
+  --muted: #a3a3a8;
+  --silver: #cfcfd4;
+  --accent: #ffffff;
+  --accent-text: #0b0b0c;
+  --brand: #ffffff;
+  --warning: #f5b83d;
+  --danger: #ff5d5d;
+  --grid: rgba(255, 255, 255, 0.16);
+  --road: #2b3139;
+  --terrain: #24402f;
+  --terrain-edge: #5fb47c;
+  --me: #ff7a1a;
+  --human: #4cc3ff;
+  --bot: #8f99a8;
+  --remote: #2ec4a6;
+  --climb: rgba(255, 93, 93, 0.12);
+  --sprint: rgba(76, 195, 255, 0.12);
+  --radius: 14px;
+  --font: "Helvetica Neue", Helvetica, Arial, system-ui, sans-serif;
+  font-family: var(--font);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+}
+
+[hidden] {
+  display: none !important;
+}
+
+h1 {
+  margin: 0 0 4px;
+  font-size: 22px;
+}
+
+h2 {
+  margin: 0 0 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  display: flex;
+  justify-content: space-between;
+}
+
+button,
+input,
+select {
+  font: inherit;
+  color: inherit;
+}
+
+button {
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  border-radius: 8px;
+  padding: 8px 14px;
+  cursor: pointer;
+}
+
+button:hover {
+  border-color: var(--muted);
+}
+
+button.primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-text);
+  font-weight: 600;
+  width: 100%;
+  padding: 12px;
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+input,
+select {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px 10px;
+}
+
+input[type="range"] {
+  padding: 0;
+  width: 100%;
+  accent-color: var(--accent);
+}
+
+.biome-preview {
+  display: inline-flex;
+  gap: 2px;
+  margin-left: 6px;
+  vertical-align: middle;
+}
+
+.biome-preview i {
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  box-shadow: inset 0 0 0 1px rgb(0 0 0 / 18%);
+}
+
+kbd {
+  border: 1px solid var(--border);
+  border-bottom-width: 2px;
+  border-radius: 4px;
+  padding: 0 5px;
+  font-size: 12px;
+}
+
+/* Start menu */
+.start {
+  min-height: 100vh;
+  padding: 0 24px 40px;
+  background:
+    radial-gradient(900px 700px at 12% 6%, rgba(138, 138, 142, 0.2), transparent 70%),
+    radial-gradient(700px 600px at 95% 50%, rgba(107, 107, 112, 0.14), transparent 70%),
+    radial-gradient(600px 500px at 85% 100%, rgba(90, 90, 95, 0.14), transparent 70%),
+    var(--bg);
+}
+
+/* Drone view of the island behind the menu: fades in once built. */
+.start {
+  position: relative;
+  isolation: isolate;
+}
+
+/*
+ * Before the island is there (the first visit loads it, then builds it): dusk over
+ * the sea, drifting slowly. Only a transform animates, which the compositor does
+ * without repainting; the island covers it once it fades in.
+ */
+.start::before {
+  content: "";
+  position: fixed;
+  inset: -15%;
+  z-index: -2;
+  pointer-events: none;
+  background:
+    radial-gradient(40% 35% at 25% 20%, rgba(138, 138, 142, 0.16), transparent 70%),
+    radial-gradient(45% 40% at 80% 15%, rgba(107, 107, 112, 0.12), transparent 70%),
+    radial-gradient(60% 50% at 50% 95%, rgba(40, 40, 44, 0.55), transparent 75%);
+  animation: dusk-drift 26s ease-in-out infinite alternate;
+}
+
+@keyframes dusk-drift {
+  from {
+    transform: translate3d(-2%, -1%, 0) scale(1);
+  }
+  to {
+    transform: translate3d(2%, 1.5%, 0) scale(1.06);
+  }
+}
+
+.menu-world {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 1.8s cubic-bezier(0.25, 0.6, 0.3, 1);
+}
+
+.menu-world::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(180deg, rgba(11, 11, 12, 0.6) 0%, rgba(11, 11, 12, 0.05) 28%, rgba(11, 11, 12, 0.15) 55%, rgba(11, 11, 12, 0.88) 100%),
+    linear-gradient(90deg, rgba(11, 11, 12, 0.6) 0%, transparent 50%, transparent 60%, rgba(11, 11, 12, 0.55) 100%);
+}
+
+.start.world-ready .menu-world {
+  opacity: 1;
+}
+
+/*
+ * Over the island: tinted glass without a live blur. A backdrop blur over a canvas
+ * redrawn every frame is recomputed every frame too: it shimmers, flickers at the
+ * edges (worse with a blur inside a blur) and takes GPU time from the drone view.
+ */
+/* Surfaces ease into their glass when the island arrives, instead of switching in one frame. */
+.route-card,
+.event-row,
+.activity-tabs,
+.server-status,
+.menu-profile,
+.start-panel,
+.dock-actions {
+  transition:
+    background-color 0.9s ease,
+    border-color 0.9s ease,
+    box-shadow 0.9s ease;
+}
+
+.start.world-ready .route-card,
+.start.world-ready .event-row,
+.start.world-ready .activity-tabs,
+.start.world-ready .server-status,
+.start.world-ready .menu-profile {
+  background: rgba(20, 24, 30, 0.86);
+  border-color: rgba(255, 255, 255, 0.1);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05), 0 6px 20px rgba(0, 0, 0, 0.22);
+}
+
+/* Solid, not see-through: easier to read over the island, and Chrome can drop a translucent
+   background on a rounded scroll container with a sticky child (seen in production). */
+.start.world-ready .start-panel {
+  background-color: rgb(21, 25, 31);
+  border-color: rgba(255, 255, 255, 0.1);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06), 0 18px 48px rgba(0, 0, 0, 0.4);
+}
+
+.start.world-ready .start-routes h1,
+.start.world-ready .lede {
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.75), 0 0 18px rgba(15, 18, 22, 0.8);
+}
+
+.start.world-ready .lede {
+  color: var(--text);
+}
+
+.start.world-ready .route-card:hover {
+  border-color: rgba(255, 255, 255, 0.28);
+}
+
+.start.world-ready .route-card[aria-pressed="true"] {
+  background: rgba(24, 24, 26, 0.9);
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent) inset, 0 8px 30px rgba(255, 255, 255, 0.16);
+}
+
+/* The window the drone camera looks through: the map until the island is ready. */
+.menu-stage {
+  position: relative;
+  margin: 0 0 10px;
+  height: clamp(200px, 34vh, 380px);
+  border-radius: 14px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  background: #163a4e;
+  transition:
+    background-color 1.2s ease,
+    border-color 1.2s ease;
+}
+
+.menu-map {
+  display: block;
+  width: 100%;
+  height: 100%;
+  transition: opacity 0.9s ease;
+}
+
+.start.world-ready .menu-stage {
+  background-color: transparent;
+  border-color: transparent;
+}
+
+/* The island arrives: the full map fades out with it, ... */
+.start.world-ready:not(.map-docked) .menu-map {
+  opacity: 0;
+}
+
+/* ... and once the camera has come down, it docks in the corner: where the drone is looking. */
+.start.map-docked .menu-map {
+  animation: map-dock 0.6s ease both;
+}
+
+@keyframes map-dock {
+  from {
+    opacity: 0;
+    transform: translateY(-6px) scale(0.96);
+  }
+}
+
+.start.map-docked .menu-map {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: clamp(110px, 28%, 210px);
+  height: auto;
+  aspect-ratio: 4 / 3;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+  opacity: 0.92;
+}
+
+/* On wide screens the drone view is the show: a smaller map, tucked into the corner. */
+@media (min-width: 720px) {
+  .start.map-docked .menu-map {
+    top: 8px;
+    right: 8px;
+    width: 128px;
+    border-radius: 8px;
+    opacity: 0.85;
+  }
+}
+
+/* While the island loads and builds: a quiet chip on the stage. */
+.stage-loading {
+  position: absolute;
+  left: 12px;
+  bottom: 12px;
+  display: none;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  padding: 6px 12px 6px 10px;
+  border-radius: 999px;
+  background: rgba(15, 18, 22, 0.7);
+  color: var(--hud-muted, #c3cad3);
+  font-size: 13px;
+}
+
+.start.world-building .stage-loading {
+  display: inline-flex;
+}
+
+.stage-loading::before {
+  content: "";
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.25);
+  border-top-color: var(--accent);
+  animation: spin 0.9s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Until the server answers: placeholders where tabs and route cards will be, so nothing jumps. */
+.route-skeleton {
+  display: none;
+  list-style: none;
+  margin: 14px 0 0;
+  padding: 0;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 12px;
+}
+
+.start.loading .route-skeleton {
+  display: grid;
+}
+
+.route-skeleton li,
+.start.loading .stage-stats:empty,
+.start.loading .tabs-skeleton {
+  border-radius: 14px;
+  background: linear-gradient(100deg, var(--surface) 30%, var(--surface-2) 50%, var(--surface) 70%) 0 0 / 300% 100%;
+  animation: shimmer 1.6s ease-in-out infinite;
+}
+
+.route-skeleton li {
+  height: 92px;
+  border: 1px solid var(--border);
+}
+
+/* The tabs' place, so the headline doesn't move down when they arrive. */
+.tabs-skeleton {
+  display: none;
+  margin: 0 0 18px;
+}
+
+.start.loading .tabs-skeleton {
+  display: block;
+  width: 360px;
+  max-width: 100%;
+  height: 46px;
+  border-radius: 999px;
+}
+
+.start.loading .stage-stats:empty {
+  display: block;
+  width: 260px;
+  max-width: 70%;
+  height: 1em;
+  border-radius: 6px;
+}
+
+@keyframes shimmer {
+  from {
+    background-position: 100% 0;
+  }
+  to {
+    background-position: 0 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .start::before,
+  .stage-loading::before,
+  .route-skeleton li,
+  .start.loading .stage-stats:empty,
+  .start.loading .tabs-skeleton,
+  .start.map-docked .menu-map {
+    animation: none;
+  }
+
+  .menu-world {
+    transition-duration: 0.4s;
+  }
+}
+
+/* Activity tabs: what you do (ride, studio, workout, events) before where. */
+.activity-tabs {
+  display: flex;
+  gap: 6px;
+  margin: 0 0 18px;
+  padding: 4px;
+  width: max-content;
+  max-width: 100%;
+  overflow-x: auto;
+  scrollbar-width: none;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+}
+
+.activity-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.activity-tab {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border: 0;
+  border-radius: 999px;
+  background: none;
+  color: var(--muted);
+  font: inherit;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.activity-tab:hover {
+  color: var(--text);
+}
+
+.activity-tab[aria-selected="true"] {
+  background: var(--accent);
+  color: var(--accent-text);
+}
+
+.activity-tab:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+}
+
+.tab-count {
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  opacity: 0.75;
+}
+
+.tab-live {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #3ddc97;
+  box-shadow: 0 0 0 3px rgba(61, 220, 151, 0.25);
+}
+
+/* The picked card's name, figures and description: said once, above the stage. */
+.stage-head {
+  margin: 0 0 12px;
+}
+
+.stage-head h1 {
+  margin: 0;
+}
+
+.stage-stats {
+  margin: 4px 0 6px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.stage-stats:empty {
+  display: none;
+}
+
+.stage-head .lede {
+  margin: 0;
+  max-width: 62ch;
+}
+
+.start.world-ready .stage-stats {
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.75), 0 0 18px rgba(15, 18, 22, 0.8);
+}
+
+/* The events tab lists events right under its headline: no profile of the picked route. */
+.activity-panel {
+  display: flex;
+  flex-direction: column;
+}
+
+.start[data-activity="events"] .stage-head {
+  order: -2;
+}
+
+.start[data-activity="events"] .events {
+  order: -1;
+  margin: 0 0 12px;
+}
+
+.start[data-activity="events"] .menu-profile {
+  display: none;
+}
+
+@media (max-width: 520px) {
+  .activity-tabs {
+    margin-bottom: 14px;
+  }
+
+  /* Phones: the tabs share the row (no clipped last tab to scroll to), a touch smaller. */
+  .activity-tabs {
+    width: 100%;
+    gap: 2px;
+  }
+
+  .activity-tab {
+    flex: 1 1 auto;
+    justify-content: center;
+    padding: 8px 8px;
+    font-size: 14px;
+    gap: 4px;
+  }
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.menu-profile {
+  display: block;
+  width: 100%;
+  height: 96px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+}
+
+@media (max-width: 520px) {
+  .start {
+    padding: 0 16px 32px;
+  }
+
+  .menu-stage {
+    height: clamp(180px, 30vh, 260px);
+  }
+}
+
+.start-head {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 18px 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* The GD monogram brightens on hover. */
+.brand-mark {
+  height: 40px;
+  width: auto;
+  opacity: 0.92;
+  transition: opacity 0.2s ease;
+}
+
+.brand:hover .brand-mark {
+  opacity: 1;
+}
+
+.brand-word {
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  color: var(--silver);
+}
+
+/* "GO" drawn in the GD letterforms, as tall as a capital, sitting on the baseline. */
+.go-glyphs {
+  display: inline-block;
+  height: 0.72em;
+  width: auto;
+  margin-right: 0.06em;
+  vertical-align: baseline;
+  fill: var(--brand);
+}
+
+.hud-brand .go-glyphs {
+  margin-right: 0.14em;
+}
+
+.server-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 6px 14px;
+}
+
+.build-line {
+  max-width: 1180px;
+  margin: 32px auto 0;
+  padding: 16px 0;
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  justify-content: flex-start;
+  font-size: 12px;
+}
+
+.build-label {
+  background: none;
+  border: 0;
+  padding: 4px 2px;
+  font: inherit;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.build-label:hover {
+  color: var(--text, inherit);
+}
+
+/* New version: a pill at the bottom, above the phone's Ride bar. */
+.update-banner {
+  position: fixed;
+  left: 50%;
+  bottom: max(88px, calc(env(safe-area-inset-bottom) + 24px));
+  transform: translateX(-50%);
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: max-content;
+  max-width: calc(100vw - 32px);
+  padding: 8px 8px 8px 16px;
+  font-size: 14px;
+  background: var(--surface);
+  border: 1px solid var(--brand);
+  border-radius: 999px;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.4);
+}
+
+.update-banner[hidden] {
+  display: none;
+}
+
+.update-reload {
+  padding: 6px 14px;
+  border-radius: 999px;
+  background: var(--brand);
+  border-color: var(--brand);
+  color: #1a1a1a;
+  font-weight: 700;
+}
+
+.update-later {
+  padding: 6px 10px;
+  border: 0;
+  background: none;
+  color: var(--muted);
+}
+
+.status-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--muted);
+}
+
+.status-dot.online {
+  background: #3ddc97;
+  box-shadow: 0 0 0 3px rgba(61, 220, 151, 0.2);
+}
+
+.status-dot.full {
+  background: var(--danger);
+}
+
+.start-grid {
+  max-width: 1180px;
+  margin: 24px auto 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 420px;
+  gap: 32px;
+  align-items: start;
+}
+
+.start-routes h1 {
+  font-size: 34px;
+  letter-spacing: -0.01em;
+  margin-bottom: 8px;
+}
+
+.route-list {
+  list-style: none;
+  margin: 14px 0 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 12px;
+}
+
+.community-distance {
+  margin: 16px 0 0;
+}
+
+.route-card {
+  width: 100%;
+  min-height: 92px;
+  text-align: left;
+  display: grid;
+  align-content: space-between;
+  gap: 10px;
+  padding: 16px 18px;
+  border-radius: 14px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+}
+
+.route-card:hover {
+  border-color: var(--muted);
+}
+
+.route-card[aria-pressed="true"] {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent) inset, 0 8px 30px rgba(255, 255, 255, 0.12);
+}
+
+.route-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.route-name {
+  font-size: 18px;
+}
+
+.route-tag {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+}
+
+.route-description {
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.route-foot {
+  display: flex;
+  justify-content: space-between;
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+}
+
+.route-riders {
+  color: var(--muted);
+}
+
+.route-riders.active {
+  color: #3ddc97;
+  font-weight: 600;
+}
+
+.start-panel {
+  position: sticky;
+  top: 16px;
+}
+
+.field-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+@media (max-width: 900px) {
+  .start-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .start-panel {
+    position: static;
+  }
+
+  .start-routes h1 {
+    font-size: 26px;
+  }
+}
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 24px;
+}
+
+.lede {
+  color: var(--muted);
+  margin: 0 0 16px;
+}
+
+fieldset {
+  /* Fieldsets don't shrink below their content by default: on narrow phones that widens the page. */
+  min-width: 0;
+  border: none;
+  padding: 0;
+  margin: 0 0 18px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 12px;
+}
+
+legend {
+  font-weight: 600;
+  margin-bottom: 10px;
+}
+
+label {
+  display: grid;
+  gap: 6px;
+  font-size: 14px;
+  color: var(--muted);
+}
+
+/* Label text with units or a value inside stays one line: the label itself is a grid. */
+.label-text {
+  display: block;
+}
+
+label output {
+  color: var(--text);
+  float: right;
+}
+
+.device-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.device-status {
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.device-status.ok {
+  color: var(--terrain-edge);
+}
+
+/* Focus moved by a controller (Zwift Click, Play, Ride) must be easy to see from the saddle. */
+.controller-nav :focus {
+  outline: 3px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.warning {
+  margin: 0;
+  padding: 10px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  font-size: 14px;
+}
+
+.error {
+  color: var(--danger);
+  min-height: 1.2em;
+  font-size: 14px;
+  white-space: pre-line;
+}
+
+.diagnostics {
+  margin-top: 16px;
+  font-size: 14px;
+  color: var(--muted);
+}
+
+.diagnostics summary {
+  cursor: pointer;
+}
+
+.diagnostics-hint {
+  margin: 8px 0;
+}
+
+.diagnostics-log {
+  max-height: 220px;
+  overflow: auto;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px;
+  font-size: 12px;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+.muted-count {
+  text-transform: none;
+  letter-spacing: 0;
+  font-weight: 400;
+}
+
+/* 3D view */
+.view-switch {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+
+.toggle {
+  padding: 4px 12px;
+  font-size: 13px;
+}
+
+.toggle[aria-pressed="true"] {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-text);
+  font-weight: 600;
+}
+
+.view-note {
+  color: var(--muted);
+  font-size: 13px;
+  margin-left: 8px;
+}
+
+.labels3d {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.label3d {
+  --label-bg: rgba(15, 18, 22, 0.72);
+  position: absolute;
+  left: 0;
+  top: 0;
+  /* Room for the tail: its tip is the anchor over the rider's head. */
+  margin-top: -5px;
+  padding: 2px 7px;
+  border-radius: 6px;
+  background: var(--label-bg);
+  color: #fff;
+  font-size: 12px;
+  white-space: nowrap;
+  /* Labels shrink with distance towards the rider they point at. */
+  transform-origin: 50% calc(100% + 5px);
+  will-change: transform;
+}
+
+/* The tail pointing down at the rider. */
+.label3d::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 100%;
+  margin-left: -5px;
+  border: 5px solid transparent;
+  border-bottom-width: 0;
+  border-top-color: var(--label-bg);
+}
+
+.label3d.me {
+  --label-bg: var(--accent);
+  color: var(--accent-text);
+  font-weight: 600;
+}
+
+.label3d .badge {
+  background: transparent;
+  border-color: rgba(255, 255, 255, 0.4);
+  color: #e8ecf1;
+  font-weight: 600;
+}
+
+/* How are you riding? Three cards, one choice; its panel below does one thing at a time. */
+.ride-modes {
+  min-width: 0;
+  display: grid;
+  grid-auto-columns: minmax(0, 1fr);
+  grid-auto-flow: column;
+  gap: 8px;
+}
+
+.mode-card[hidden] {
+  display: none;
+}
+
+.mode-card {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  display: grid;
+  justify-items: center;
+  align-content: start;
+  gap: 2px;
+  padding: 12px 8px 10px;
+  border-radius: 12px;
+  text-align: center;
+  line-height: 1.2;
+}
+
+.mode-card svg {
+  width: 26px;
+  height: 26px;
+  margin-bottom: 4px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  color: var(--muted);
+}
+
+.mode-card strong {
+  font-size: 14px;
+}
+
+.mode-card span {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.mode-card[aria-checked="true"] {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent) inset;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.mode-card[aria-checked="true"] svg {
+  color: var(--accent);
+}
+
+.mode-card[aria-disabled="true"] {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* The narrowest phones: three cards still fit side by side. */
+@media (max-width: 380px) {
+  .ride-modes {
+    gap: 6px;
+  }
+
+  .mode-card {
+    padding: 10px 4px 8px;
+  }
+
+  .mode-card strong {
+    font-size: 13px;
+  }
+
+  .mode-card span {
+    display: none;
+  }
+}
+
+.mode-panel {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 10px;
+}
+
+.mode-panel[hidden] {
+  display: none;
+}
+
+/*
+ * One device per line, the same in every state (deviceLine() in view/deviceSetup.js):
+ * a state dot, the name over what it's doing, the actions on the right. Nothing
+ * wraps, so a line never jumps when its state changes; only an error or a hint
+ * takes a second line of detail.
+ */
+.device-line {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  min-height: 60px;
+  padding: 8px 8px 8px 14px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  transition: border-color 0.2s ease;
+}
+
+.device-text {
+  display: grid;
+  gap: 1px;
+  min-width: 0;
+}
+
+.device-title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* What it's doing: up to two lines rather than cut off. */
+.device-text .device-status {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+}
+
+.device-title {
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.3;
+  color: var(--text);
+}
+
+.device-text .device-status {
+  font-size: 13px;
+  line-height: 1.35;
+  font-variant-numeric: tabular-nums;
+}
+
+.device-actions {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.device-actions button,
+.device-line > button,
+.device-line > a {
+  flex: none;
+  min-height: 36px;
+  padding: 0 12px;
+  border-radius: 9px;
+  font-size: 14px;
+  white-space: nowrap;
+}
+
+/* The trainer's options (virtual shifting, gears, power-only note) sit under its name. */
+#trainer-panel > :not(.device-line, .bluetooth-note) {
+  margin-left: 37px;
+}
+
+.device-dot {
+  flex: none;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: 1.5px solid var(--muted);
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+/* Remembered, not connected: a quiet ring. Looking or reconnecting: amber, breathing. */
+.device-line[data-state="remembered"] .device-dot {
+  border-style: dashed;
+}
+
+.device-line[data-state="pending"] .device-dot,
+.device-line[data-state="reconnecting"] .device-dot {
+  border-color: var(--warning);
+  background: var(--warning);
+  animation: device-breathe 1.4s ease-in-out infinite;
+}
+
+.device-line[data-state="pending"] .device-status,
+.device-line[data-state="reconnecting"] .device-status {
+  color: var(--text);
+}
+
+/* Connected; live: data arrives right now. */
+.device-line:is([data-state="connected"], [data-state="live"]) .device-dot {
+  border-color: #3ddc97;
+  background: #3ddc97;
+}
+
+.device-line[data-state="live"] .device-dot {
+  box-shadow: 0 0 0 3px rgba(61, 220, 151, 0.22);
+}
+
+.device-line[data-state="live"] .device-status {
+  color: #3ddc97;
+}
+
+/* Connected but silent (asleep, taken by another app), or a connect that failed: what to try, in full. */
+.device-line[data-state="silent"] .device-dot {
+  border-color: var(--warning);
+  background: var(--warning);
+}
+
+.device-line[data-state="error"] .device-dot {
+  border-color: var(--danger);
+  background: var(--danger);
+}
+
+/* An error or a silent device says what to try, in full. */
+.device-line:is([data-state="error"], [data-state="silent"]) .device-status {
+  -webkit-line-clamp: unset;
+}
+
+.device-line[data-state="silent"] .device-status {
+  color: var(--warning);
+}
+
+.device-line[data-state="error"] {
+  border-color: rgba(255, 93, 93, 0.45);
+}
+
+.device-line[data-state="error"] .device-status {
+  color: var(--text);
+}
+
+/* Narrow phones: two actions (Reconnect, Other) or an error would squeeze the name to a letter;
+   the actions move under the name instead, the text keeps the full width. */
+@media (max-width: 520px) {
+  .device-line:is([data-state="error"], :has(.device-actions > button:not([hidden]) ~ button:not([hidden]))) {
+    grid-template-columns: auto minmax(0, 1fr);
+    row-gap: 8px;
+  }
+
+  .device-line:is([data-state="error"], :has(.device-actions > button:not([hidden]) ~ button:not([hidden]))) .device-actions {
+    grid-column: 2;
+  }
+}
+
+@keyframes device-breathe {
+  50% {
+    opacity: 0.35;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .device-line .device-dot {
+    animation: none;
+  }
+}
+
+/* The add-on lines keep the same 12 px rhythm as the trainer line above them (the fieldset's gap). */
+.addons {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 12px;
+}
+
+button.small {
+  padding: 5px 12px;
+  font-size: 14px;
+  border-radius: 8px;
+}
+
+/* No Bluetooth in this browser (every iPhone): a friendly note, no dead buttons. */
+.bluetooth-note {
+  margin: 0;
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  background: rgba(255, 255, 255, 0.08);
+  font-size: 14px;
+  line-height: 1.45;
+  color: var(--muted);
+}
+
+.bluetooth-note strong {
+  display: block;
+  color: var(--brand);
+  margin-bottom: 2px;
+}
+
+.no-bluetooth .bluetooth-only {
+  display: none !important;
+}
+
+.workout-only {
+  display: none;
+}
+
+#profile-form.workout .workout-only {
+  display: block;
+}
+
+/* Set-once settings: folded away under the Ride button. */
+.start-settings {
+  margin-top: 18px;
+  border-top: 1px solid var(--border);
+  padding-top: 14px;
+}
+
+.start-settings > summary {
+  cursor: pointer;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.start-settings[open] > summary {
+  margin-bottom: 14px;
+  color: var(--text);
+}
+
+.start-settings fieldset {
+  margin-bottom: 14px;
+}
+
+/* Ride and its error stay in reach: the bottom of the panel on wide screens, of the screen on phones. */
+.dock-actions {
+  position: sticky;
+  bottom: 0;
+  z-index: 2;
+  display: grid;
+  gap: 8px;
+  justify-items: start;
+  margin: 18px -24px 0;
+  padding: 12px 24px;
+  background: inherit;
+}
+
+.dock-actions #join {
+  width: 100%;
+}
+
+.dock-actions .error:empty {
+  display: none;
+}
+
+.start.world-ready .dock-actions {
+  background: rgb(21, 25, 31);
+}
+
+/* One column (tablets, phones): Ride is a bar along the bottom of the screen, whatever is scrolled into view. */
+@media (max-width: 900px) {
+  /* Room for the Ride bar as tall as it is (an error above Ride makes it taller; main.js measures it). */
+  .start {
+    padding-bottom: calc(var(--dock-height, 68px + env(safe-area-inset-bottom)) + 16px);
+  }
+
+  /* Clear of the Ride bar, with room to spare for its error line. */
+  .build-line {
+    margin-top: 16px;
+    padding-bottom: 36px;
+  }
+
+  .dock-actions,
+  .start.world-ready .dock-actions {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 5;
+    margin: 0;
+    padding: 10px max(16px, env(safe-area-inset-right)) max(10px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    background: rgba(15, 18, 22, 0.96);
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  .dock-actions .error {
+    grid-column: 1 / -1;
+    margin: 0;
+  }
+
+  .dock-actions .board-line {
+    width: auto;
+  }
+
+  .dock-actions .board-line label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
+
+  .dock-actions .code-input {
+    width: 96px;
+    padding: 11px 8px;
+  }
+}
+
+/* Two columns: the panel is never taller than the screen; it scrolls inside, Ride stays put. */
+@media (min-width: 901px) {
+  /* It starts below the header (about 140 px) and sticks 16 px from the top once scrolled. */
+  .start-panel {
+    max-height: max(420px, calc(100dvh - 150px));
+    overflow-y: auto;
+    padding-bottom: 0;
+    scrollbar-width: thin;
+  }
+
+  .dock-actions {
+    padding-bottom: 20px;
+  }
+}
+
+/* Virtual shifting */
+.check {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  color: var(--text);
+}
+
+.gear-settings {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+/* Virtual shifting's real gear, on one line: "Chain on 34 × 14 teeth". */
+.gear-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding-left: 30px;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.gear-line[hidden] {
+  display: none;
+}
+
+.gear-line input {
+  width: 64px;
+  padding: 6px 8px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.gear-line .field-hint {
+  flex-basis: 100%;
+}
+
+.check-hint {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+/* Virtual shifting: the hint under its label, not squeezed beside it. */
+#virtual-shifting-row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 0 8px;
+}
+
+#virtual-shifting-row .check-hint {
+  grid-column: 2;
+}
+
+/* The workout card needs no trainer: only the heart-rate row of the devices stays. */
+#profile-form.workout .trainer-only,
+#profile-form.workout .ride-only {
+  display: none;
+}
+
+.field-hint {
+  grid-column: 1 / -1;
+  margin: 0;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+/* Training / ERG */
+.mode-switch {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 10px;
+}
+
+.mode-switch .toggle {
+  flex: 1;
+}
+
+.erg-row {
+  display: grid;
+  grid-template-columns: 44px 1fr 44px;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.erg-row button {
+  font-size: 18px;
+  padding: 4px 0;
+}
+
+.erg-value {
+  text-align: center;
+  font-size: 24px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.ftp-test {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.ftp-test h3 {
+  margin: 0;
+  font-size: 15px;
+}
+
+.workout-picker {
+  display: grid;
+  gap: 8px;
+}
+
+.workout-picker select {
+  width: 100%;
+}
+
+.canvas-workout-preview {
+  /* A fixed height, like .canvas-workout: a percentage would grow with the backing store. */
+  width: 100%;
+  height: 56px;
+}
+
+.workout-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.workout-actions button {
+  flex: 1;
+}
+
+.muted {
+  color: var(--muted);
+}
+
+
+/* ===================================================================== */
+/* Ride screen: the world fills the window, the HUD floats on top.       */
+/* `#ride[data-layout]` picks one of four layouts (see js/view/hud.js).  */
+/* ===================================================================== */
+
+:root {
+  --glass: rgba(20, 20, 22, 0.58);
+  --glass-strong: rgba(14, 14, 16, 0.82);
+  --glass-line: rgba(255, 255, 255, 0.22);
+  --hud-text: #ffffff;
+  --hud-muted: #cfcfd4;
+  --num: "Barlow Condensed", "Roboto Condensed", "Arial Narrow", system-ui, sans-serif;
+  --gap: 20px;
+  --band-height: 250px;
+}
+
+body.riding {
+  overflow: hidden;
+}
+
+.ride {
+  position: fixed;
+  inset: 0;
+  color: var(--hud-text);
+  background: #0b0e11;
+}
+
+.world-wrap,
+.canvas-ride-map {
+  position: absolute;
+  inset: 0;
+}
+
+/* Its own stacking context: name labels never rise above the HUD or dialogs. */
+.world-wrap {
+  z-index: 0;
+}
+
+.canvas-world,
+.canvas-ride-map {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+/* The training layout leaves the view the upper part, as it does for 3D. */
+.ride[data-layout="training"] .world-wrap {
+  bottom: var(--band-height);
+}
+
+.ride[data-layout="training"] .canvas-ride-map {
+  height: calc(100% - var(--band-height));
+}
+
+.hud {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  font-variant-numeric: tabular-nums;
+}
+
+.hud button,
+.hud select,
+.hud output,
+.hud .glass,
+.hud canvas {
+  pointer-events: auto;
+}
+
+.glass {
+  background: var(--glass);
+  border: 1px solid var(--glass-line);
+  border-top-color: var(--glass-top);
+  border-radius: 16px;
+  -webkit-backdrop-filter: blur(14px) saturate(120%);
+  backdrop-filter: blur(14px) saturate(120%);
+}
+
+.caption {
+  display: block;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--hud-muted);
+}
+
+.accent {
+  color: var(--accent);
+}
+
+.num-xl,
+.num-l,
+.num-m,
+.num-s,
+.gauge-power,
+.gear-value {
+  font-family: var(--num);
+  font-stretch: condensed;
+  font-weight: 700;
+  line-height: 1;
+  display: block;
+}
+
+.num-xl {
+  font-size: 68px;
+}
+
+.num-l {
+  font-size: 48px;
+}
+
+.num-m {
+  font-size: 34px;
+  font-weight: 600;
+}
+
+.num-s {
+  font-size: 24px;
+  font-weight: 600;
+}
+
+.grade {
+  color: #ffb27a;
+}
+
+.unit {
+  font-size: 14px;
+  color: var(--hud-muted);
+}
+
+.layout {
+  display: none;
+}
+
+.ride[data-layout="cockpit"] .layout-cockpit,
+.ride[data-layout="broadcast"] .layout-broadcast,
+.ride[data-layout="training"] .layout-training,
+.ride[data-layout="race"] .layout-race {
+  display: block;
+}
+
+/* --- shared pieces --------------------------------------------------- */
+
+.hud-info {
+  position: absolute;
+  top: var(--gap);
+  left: var(--gap);
+  padding: 10px 16px;
+  display: grid;
+  gap: 2px;
+}
+
+.hud-brand {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--hud-text);
+}
+
+.hud-route {
+  font-size: 17px;
+  font-weight: 600;
+}
+
+.hud-numbers {
+  font-family: var(--num);
+  font-size: 22px;
+  font-weight: 600;
+}
+
+.hud-actions {
+  position: absolute;
+  top: var(--gap);
+  right: var(--gap);
+  display: flex;
+  gap: 8px;
+}
+
+.icon-button,
+.text-button {
+  height: 44px;
+  min-width: 44px;
+  border-radius: 12px;
+  color: var(--hud-text);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 0 14px;
+  font-weight: 600;
+}
+
+.icon-button {
+  padding: 0;
+}
+
+.icon-button svg,
+.text-button svg {
+  width: 20px;
+  height: 20px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.hud-gear {
+  position: absolute;
+  right: var(--gap);
+  bottom: var(--gap);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+}
+
+.gear-button {
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  font-size: 22px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.1);
+  border-color: transparent;
+  color: var(--hud-text);
+}
+
+.gear-readout {
+  display: grid;
+  justify-items: center;
+  min-width: 70px;
+}
+
+.gear-value {
+  font-size: 34px;
+  color: var(--human);
+}
+
+.gear-value small {
+  font-size: 16px;
+  color: var(--hud-muted);
+}
+
+.gear-ratio {
+  font-size: 12px;
+  color: var(--hud-muted);
+}
+
+.hud-status {
+  position: absolute;
+  top: 92px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 8px;
+  white-space: nowrap;
+}
+
+.pill {
+  padding: 6px 14px;
+  border-radius: 999px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+/* Drafting: dark glass like the other pills, so it reads in front of a bright sky; blue marks the slipstream. */
+.pill-draft {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  background: var(--glass);
+  border: 1px solid rgba(76, 195, 255, 0.6);
+  color: var(--text);
+}
+
+.pill-draft::before {
+  content: "";
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #4cc3ff;
+  box-shadow: 0 0 6px rgba(76, 195, 255, 0.8);
+}
+
+/* Gap to my best lap's ghost: green ahead, red behind. */
+.pill-ghost {
+  font-variant-numeric: tabular-nums;
+  border: 1px dashed rgba(191, 232, 255, 0.6);
+}
+
+.pill-ghost.ahead {
+  color: #6fe39b;
+}
+
+.pill-ghost.behind {
+  color: #ff8a7a;
+}
+
+/* A personal milestone: a white GD pill across the top for a few seconds. */
+.milestone-banner {
+  position: absolute;
+  top: 18%;
+  left: 50%;
+  transform: translateX(-50%);
+  max-width: min(720px, calc(100vw - 32px));
+  margin: 0;
+  padding: 12px 28px;
+  border-radius: 999px;
+  background: var(--accent);
+  color: var(--accent-text);
+  font-size: clamp(18px, 3vw, 30px);
+  font-weight: 800;
+  text-align: center;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.3);
+  pointer-events: none;
+  z-index: 5;
+}
+
+.milestone-banner.show {
+  animation: milestone-in 5s ease-out both;
+}
+
+@keyframes milestone-in {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -16px) scale(0.92);
+  }
+  8%,
+  85% {
+    opacity: 1;
+    transform: translate(-50%, 0) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, 0) scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .milestone-banner.show {
+    animation: none;
+  }
+}
+
+.hud-ticker {
+  position: absolute;
+  left: var(--gap);
+  top: 130px;
+  width: min(320px, 40vw);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 6px;
+  font-size: 14px;
+}
+
+.hud-ticker li {
+  background: var(--glass);
+  border-radius: 10px;
+  padding: 6px 12px;
+  animation: ticker-fade 9s forwards;
+}
+
+.hud-ticker .feed-error {
+  color: #ffb0b0;
+}
+
+@keyframes ticker-fade {
+  0%,
+  85% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+/* --- A · cockpit ----------------------------------------------------- */
+
+/* The scrim under the cockpit numbers: eased, so it fades out without a visible start, and
+   down past the HUD's safe-area inset to the screen's edge (no band under the gesture bar). */
+.layout-cockpit::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: calc(-1 * env(safe-area-inset-bottom, 0px));
+  height: calc(var(--cockpit-scrim, 300px) + env(safe-area-inset-bottom, 0px));
+  background: linear-gradient(to top, rgba(10, 12, 15, 0.8) 0%, rgba(10, 12, 15, 0.74) 12%, rgba(10, 12, 15, 0.62) 25%, rgba(10, 12, 15, 0.47) 38%, rgba(10, 12, 15, 0.33) 50%, rgba(10, 12, 15, 0.2) 62%, rgba(10, 12, 15, 0.1) 75%, rgba(10, 12, 15, 0.03) 88%, rgba(10, 12, 15, 0) 100%);
+}
+
+.cluster {
+  position: absolute;
+  left: 50%;
+  bottom: 28px;
+  transform: translateX(-50%);
+  /* Equal sides, so the gauge sits exactly in the middle whatever the numbers' widths. */
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: end;
+  gap: 32px;
+  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.5);
+}
+
+.cluster-side {
+  display: grid;
+  justify-items: center;
+  min-width: 110px;
+}
+
+.cluster-side .num-m {
+  margin-top: 12px;
+}
+
+.gauge {
+  position: relative;
+  width: 300px;
+  height: 190px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.gauge svg {
+  position: absolute;
+  inset: 0 0 auto;
+  width: 300px;
+  height: 170px;
+  fill: none;
+}
+
+.gauge-track {
+  stroke: rgba(255, 255, 255, 0.16);
+  stroke-width: 14;
+  stroke-linecap: round;
+}
+
+.gauge-fill {
+  stroke: var(--accent);
+  stroke-width: 14;
+  stroke-linecap: round;
+  stroke-dasharray: 100 100;
+  stroke-dashoffset: 100;
+  transition: stroke-dashoffset 0.25s linear;
+}
+
+.gauge-target {
+  stroke: var(--hud-text);
+  stroke-width: 4;
+}
+
+.gauge-power {
+  font-size: 92px;
+}
+
+.gauge-sub {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--hud-muted);
+}
+
+.gauge-sub strong {
+  color: var(--accent);
+}
+
+.upcoming {
+  position: absolute;
+  left: var(--gap);
+  bottom: 28px;
+  width: 260px;
+  display: grid;
+  gap: 6px;
+}
+
+.upcoming-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--hud-muted);
+}
+
+.canvas-upcoming {
+  width: 100%;
+  height: 52px;
+}
+
+/* --- B · broadcast --------------------------------------------------- */
+
+.bar {
+  position: absolute;
+  top: var(--gap);
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  overflow: hidden;
+}
+
+.bar > div {
+  padding: 10px 22px;
+  display: grid;
+  justify-items: center;
+  align-content: center;
+}
+
+.bar .bar-power {
+  background: var(--accent);
+  color: var(--accent-text);
+}
+
+.bar .bar-power .caption {
+  color: var(--accent-text);
+}
+
+.bar-sub {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.bar-grade {
+  border-left: 1px solid var(--glass-line);
+}
+
+.ride[data-layout="broadcast"] .hud-status,
+.ride[data-layout="race"] .hud-status {
+  top: 140px;
+}
+
+.nearby {
+  position: absolute;
+  left: var(--gap);
+  top: 140px;
+  width: 300px;
+  padding: 12px 0 8px;
+}
+
+.nearby h2,
+.groups h2 {
+  padding: 0 16px;
+  color: var(--hud-muted);
+}
+
+.nearby .rider {
+  padding: 5px 16px;
+}
+
+.nearby .rider.me {
+  background: rgba(255, 255, 255, 0.18);
+}
+
+.canvas-minimap {
+  position: absolute;
+  right: var(--gap);
+  top: 80px;
+  width: 210px;
+  height: 160px;
+}
+
+.ride[data-layout="broadcast"] .hud-gear {
+  bottom: auto;
+  top: 256px;
+}
+
+.ride[data-layout="broadcast"] .hud-ticker,
+.ride[data-layout="race"] .hud-ticker {
+  top: auto;
+  left: auto;
+  right: var(--gap);
+  bottom: 150px;
+  width: 300px;
+}
+
+.strip {
+  position: absolute;
+  left: var(--gap);
+  right: var(--gap);
+  bottom: var(--gap);
+  height: 112px;
+  display: flex;
+  gap: 16px;
+  padding: 8px 16px;
+}
+
+.canvas-profile {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+}
+
+.strip-next {
+  display: grid;
+  align-content: center;
+  gap: 4px;
+  min-width: 150px;
+  font-size: 16px;
+}
+
+/* --- C · training ---------------------------------------------------- */
+
+.ride[data-layout="training"] .hud-info {
+  display: none;
+}
+
+.ride[data-layout="training"] .hud-gear {
+  display: none;
+}
+
+.ride[data-layout="training"] .hud-ticker {
+  top: 100px;
+}
+
+.workout-chip {
+  position: absolute;
+  top: var(--gap);
+  left: var(--gap);
+  padding: 10px 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.workout-chip strong {
+  font-size: 17px;
+}
+
+.erg-badge {
+  background: #2a7a52;
+  border-radius: 999px;
+  padding: 4px 12px;
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+}
+
+.training-actions {
+  position: absolute;
+  top: 76px;
+  right: var(--gap);
+  display: flex;
+  gap: 8px;
+}
+
+.training-actions > button {
+  height: 44px;
+  color: var(--hud-text);
+  font-weight: 600;
+}
+
+.intensity {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0 4px;
+}
+
+.intensity button {
+  width: 40px;
+  height: 38px;
+  padding: 0;
+  background: transparent;
+  border-color: transparent;
+  color: var(--hud-text);
+  font-size: 18px;
+}
+
+.intensity output {
+  min-width: 52px;
+  text-align: center;
+  font-weight: 700;
+}
+
+.targets {
+  position: absolute;
+  left: 50%;
+  bottom: calc(var(--band-height) + 50px);
+  transform: translateX(-50%);
+  display: flex;
+  overflow: hidden;
+  border-radius: 18px;
+}
+
+.targets > div {
+  padding: 12px 28px;
+  display: grid;
+  justify-items: center;
+}
+
+.targets-power {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.targets .on-target {
+  color: #5fe0a0;
+}
+
+.targets .off-target {
+  color: #ffb27a;
+}
+
+.band {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: var(--band-height);
+  background: #12161b;
+  border-top: 1px solid var(--glass-line);
+  display: grid;
+  grid-template-columns: 200px minmax(0, 1fr) 200px;
+  pointer-events: auto;
+}
+
+.band-stats {
+  padding: 18px 22px;
+  display: grid;
+  align-content: start;
+  gap: 14px;
+}
+
+.band-stats:first-child {
+  border-right: 1px solid var(--glass-line);
+}
+
+.band-stats:last-child {
+  border-left: 1px solid var(--glass-line);
+}
+
+.band-chart {
+  padding: 16px 22px;
+  display: grid;
+  align-content: start;
+  gap: 10px;
+  min-width: 0;
+}
+
+.band-labels {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 14px;
+}
+
+.canvas-workout {
+  /* A fixed height: a percentage would grow with the backing store every frame. */
+  width: 100%;
+  height: 140px;
+}
+
+.progress {
+  height: 8px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.1);
+  overflow: hidden;
+}
+
+.progress span {
+  display: block;
+  height: 100%;
+  width: 0;
+  background: var(--accent);
+}
+
+/* --- D · race -------------------------------------------------------- */
+
+.race-top {
+  position: absolute;
+  top: 76px;
+  left: var(--gap);
+  right: var(--gap);
+  display: flex;
+  gap: 12px;
+  align-items: stretch;
+}
+
+.ride[data-layout="race"] .hud-info {
+  display: none;
+}
+
+.race-position {
+  background: var(--accent);
+  color: var(--accent-text);
+  border-radius: 14px;
+  padding: 8px 22px;
+  display: grid;
+  justify-items: center;
+  align-content: center;
+}
+
+.race-position .caption {
+  color: var(--accent-text);
+}
+
+.race-box {
+  padding: 8px 20px;
+  display: grid;
+  justify-items: center;
+  align-content: center;
+}
+
+.race-timeline {
+  flex: 1;
+  min-width: 0;
+  padding: 10px 16px;
+  display: grid;
+  align-content: center;
+  gap: 4px;
+}
+
+.canvas-timeline {
+  width: 100%;
+  height: 30px;
+}
+
+.marker-banner {
+  position: absolute;
+  top: 190px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(46, 160, 103, 0.92);
+  border-radius: 12px;
+  padding: 8px 20px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.marker-banner.climb {
+  background: rgba(200, 60, 80, 0.92);
+}
+
+.marker-banner .caption {
+  color: #fff;
+}
+
+.marker-banner strong {
+  font-family: var(--num);
+  font-size: 28px;
+}
+
+/* Lap and time are already in the race bar. */
+.ride[data-layout="race"] #race-status {
+  display: none;
+}
+
+.ride[data-layout="race"] .hud-status {
+  top: 248px;
+}
+
+.groups {
+  position: absolute;
+  top: 190px;
+  right: var(--gap);
+  width: 300px;
+  padding: 12px 0;
+}
+
+.groups h2 + .group-list {
+  margin-bottom: 10px;
+}
+
+.group-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  font-size: 15px;
+}
+
+.group-list li {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+  padding: 6px 16px;
+}
+
+.group-list.around li {
+  grid-template-columns: 24px minmax(0, 1fr) auto;
+}
+
+.group-list li.mine {
+  background: rgba(255, 255, 255, 0.18);
+  font-weight: 700;
+}
+
+.group-list .gap {
+  font-family: var(--num);
+  font-size: 19px;
+  font-weight: 600;
+}
+
+.group-list .pos {
+  color: var(--hud-muted);
+}
+
+.race-metrics {
+  position: absolute;
+  left: var(--gap);
+  bottom: var(--gap);
+  display: flex;
+  gap: 10px;
+}
+
+.race-power {
+  padding: 10px 22px;
+}
+
+.race-grid {
+  padding: 10px 18px;
+  display: grid;
+  grid-template-columns: auto auto;
+  gap: 2px 22px;
+  align-content: center;
+}
+
+.ride[data-layout="race"] .hud-gear {
+  left: 520px;
+  right: auto;
+}
+
+/* --- drawers --------------------------------------------------------- */
+
+.drawer {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: min(360px, 92vw);
+  overflow-y: auto;
+  background: var(--glass-strong);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+  padding: 16px;
+  display: grid;
+  align-content: start;
+  gap: 12px;
+  z-index: 5;
+  color: var(--text);
+}
+
+.drawer-left {
+  left: 0;
+  border-right: 1px solid var(--border);
+}
+
+.drawer-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.drawer-head h2 {
+  margin: 0;
+  font-size: 15px;
+}
+
+.drawer-head .icon-button {
+  font-size: 24px;
+  background: transparent;
+}
+
+/* --- in-game menu dialog --------------------------------------------- */
+/* A card centred over the dimmed ride (page list left, page right); below
+   1000 px wide or 560 px tall it fills the screen and shows the list first. */
+
+.menu-dialog[hidden] {
+  display: none;
+}
+
+.menu-backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: 7;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: max(24px, env(safe-area-inset-top)) max(24px, env(safe-area-inset-right)) max(24px, env(safe-area-inset-bottom)) max(24px, env(safe-area-inset-left));
+  background: rgba(8, 10, 13, 0.5);
+  -webkit-backdrop-filter: blur(6px) saturate(0.8);
+  backdrop-filter: blur(6px) saturate(0.8);
+  animation: menu-fade 0.16s ease-out;
+}
+
+.menu-card {
+  width: min(860px, 100%);
+  height: min(560px, 100%);
+  display: grid;
+  grid-template-columns: 212px minmax(0, 1fr);
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  grid-template-areas: "head head" "nav page" "foot foot";
+  background: rgba(17, 20, 25, 0.97);
+  border: 1px solid var(--glass-line);
+  border-radius: 14px;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.55);
+  color: var(--text);
+  overflow: hidden;
+  animation: menu-in 0.18s ease-out;
+}
+
+.menu-head {
+  grid-area: head;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 52px;
+  padding: 8px 10px 8px 18px;
+  border-bottom: 1px solid var(--border);
+}
+
+.menu-head h2 {
+  flex: 1;
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.menu-head .icon-button {
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  font-size: 22px;
+  line-height: 1;
+  border-radius: 8px;
+  border-color: transparent;
+  background: transparent;
+  color: var(--muted);
+}
+
+.menu-head .icon-button:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text);
+}
+
+.menu-back {
+  font-size: 28px;
+}
+
+/* Power, speed and grade at the top of a phone's menu: the ride stays in view. */
+.menu-strip {
+  grid-area: strip;
+  display: flex;
+  justify-content: space-around;
+  gap: 8px;
+  padding: 8px 16px;
+  border-bottom: 1px solid var(--border);
+  background: rgba(0, 0, 0, 0.16);
+}
+
+.menu-strip-item {
+  font-family: var(--num);
+  font-size: 17px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* Page list: icon, name and the page's live state as a second line. */
+.menu-nav {
+  grid-area: nav;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px 8px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  border-right: 1px solid var(--border);
+  background: rgba(0, 0, 0, 0.16);
+}
+
+.menu-nav-item {
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr);
+  grid-template-areas: "icon title" ". status";
+  column-gap: 12px;
+  row-gap: 1px;
+  align-items: center;
+  width: 100%;
+  padding: 8px 12px;
+  text-align: left;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 9px;
+  color: var(--text);
+  --menu-icon: none;
+}
+
+.menu-nav-item::before {
+  content: "";
+  grid-area: icon;
+  width: 18px;
+  height: 18px;
+  background: currentColor;
+  opacity: 0.75;
+  -webkit-mask: var(--menu-icon) center / contain no-repeat;
+  mask: var(--menu-icon) center / contain no-repeat;
+}
+
+.menu-nav-item:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: transparent;
+}
+
+.menu-nav-item[aria-current="true"] {
+  background: rgba(255, 255, 255, 0.14);
+  border-color: rgba(255, 255, 255, 0.28);
+  color: var(--accent);
+}
+
+.menu-nav-item[aria-current="true"]::before {
+  opacity: 1;
+}
+
+.menu-nav-title {
+  grid-area: title;
+  font-size: 14px;
+  font-weight: 500;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.menu-nav-status {
+  grid-area: status;
+  color: var(--muted);
+  font-size: 12px;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.menu-nav-status:empty {
+  display: none;
+}
+
+[data-menu-nav="overview"] {
+  --menu-icon: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round'><path d='M3 20h18M6 16v-5M11 16V5M16 16v-8M21 16v-3'/></svg>");
+}
+
+[data-menu-nav="view"] {
+  --menu-icon: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linejoin='round'><path d='M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z'/><circle cx='12' cy='12' r='3'/></svg>");
+}
+
+[data-menu-nav="vehicle"] {
+  --menu-icon: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><circle cx='5.5' cy='16.5' r='3.5'/><circle cx='18.5' cy='16.5' r='3.5'/><path d='M5.5 16.5 9 9h7l2.5 7.5M12 16.5 16 9M7.5 6h3'/></svg>");
+}
+
+[data-menu-nav="race"] {
+  --menu-icon: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M5 21V4h12l-2.5 4.5L17 13H5'/></svg>");
+}
+
+[data-menu-nav="events"] {
+  --menu-icon: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round'><rect x='3' y='5' width='18' height='16' rx='2'/><path d='M3 10h18M8 3v4M16 3v4'/></svg>");
+}
+
+[data-menu-nav="training"] {
+  --menu-icon: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linejoin='round'><path d='M13 2 4 14h7l-1 8 9-12h-7l1-8z'/></svg>");
+}
+
+[data-menu-nav="settings"] {
+  --menu-icon: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round'><path d='M4 6h9M17 6h3M4 12h3M11 12h9M4 18h11M19 18h1'/><circle cx='15' cy='6' r='2'/><circle cx='9' cy='12' r='2'/><circle cx='17' cy='18' r='2'/></svg>");
+}
+
+/* The page: its panels read as sections of one sheet, not cards in a card. */
+.menu-pages {
+  grid-area: page;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 18px 22px;
+}
+
+.menu-page {
+  display: grid;
+  align-content: start;
+  gap: 18px;
+}
+
+.menu-page[hidden] {
+  display: none;
+}
+
+.menu-page > .panel {
+  padding: 0;
+  background: none;
+  border: 0;
+  border-radius: 0;
+}
+
+.menu-page > .panel + .panel {
+  padding-top: 18px;
+  border-top: 1px solid var(--border);
+}
+
+.menu-page h2 {
+  margin-bottom: 10px;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+}
+
+.menu-page h3 {
+  margin: 14px 0 6px;
+  font-size: 13px;
+}
+
+.menu-dialog label {
+  margin-bottom: 4px;
+}
+
+.menu-dialog .view-switch,
+.menu-dialog .scene-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 12px;
+  align-items: center;
+}
+
+.menu-dialog .toggle {
+  padding: 6px 14px;
+}
+
+.menu-dialog .scene-controls select {
+  padding: 6px 10px;
+  font-size: 13px;
+}
+
+/* Footer: Photo and Finish ride, always in view; the confirmation card above them. */
+.menu-foot {
+  grid-area: foot;
+  display: grid;
+  gap: 10px;
+  padding: 12px 16px 12px 18px;
+  border-top: 1px solid var(--border);
+}
+
+.menu-foot .finish-confirm {
+  padding: 12px 14px;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  border-radius: var(--radius);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.menu-foot .finish-confirm[hidden] {
+  display: none;
+}
+
+.menu-foot-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.menu-foot-actions button {
+  width: auto;
+}
+
+.menu-foot-actions #finish-ride {
+  margin-left: auto;
+  min-width: 160px;
+  padding: 10px 18px;
+}
+
+@keyframes menu-fade {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes menu-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
+}
+
+/* Wide screens show list and page side by side: no back arrow, no strip. */
+@media (min-width: 1000px) and (min-height: 560px) {
+  .menu-head .menu-back,
+  .menu-strip {
+    display: none;
+  }
+
+  /* The ride's notifications stay readable beside the card where there is room. */
+  .ride:has(> #menu:not([hidden])) .hud-ticker {
+    z-index: 8;
+    width: min(320px, calc((100vw - 860px) / 2 - 2 * var(--gap)));
+  }
+}
+
+@media (min-width: 1000px) and (max-width: 1299px) and (min-height: 560px) {
+  .ride:has(> #menu:not([hidden])) .hud-ticker {
+    z-index: auto;
+  }
+}
+
+/* Narrow or short: the card fills the screen, the list first, a page with a back arrow. */
+@media (max-width: 999px), (max-height: 559px) {
+  .menu-backdrop {
+    padding: 0;
+  }
+
+  .menu-card {
+    width: 100%;
+    height: 100%;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto auto minmax(0, 1fr) auto;
+    grid-template-areas: "head" "strip" "nav" "foot";
+    padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+  }
+
+  .menu-dialog[data-screen="page"] .menu-card {
+    grid-template-areas: "head" "strip" "page" "foot";
+  }
+
+  .menu-dialog[data-screen="list"] .menu-pages,
+  .menu-dialog[data-screen="page"] .menu-nav,
+  .menu-dialog[data-screen="list"] .menu-head .menu-back {
+    display: none;
+  }
+
+  .menu-head {
+    padding-left: 16px;
+  }
+
+  .menu-dialog[data-screen="page"] .menu-head {
+    padding-left: 6px;
+  }
+
+  .menu-nav {
+    gap: 8px;
+    padding: 14px 16px;
+    border-right: 0;
+    background: none;
+  }
+
+  /* One row per page: icon and name left, state and a chevron right. */
+  .menu-nav-item {
+    grid-template-columns: 18px auto minmax(0, 1fr) 10px;
+    grid-template-areas: "icon title status chev";
+    min-height: 52px;
+    padding: 10px 14px;
+    background: rgba(255, 255, 255, 0.04);
+    border-color: var(--border);
+    border-radius: 12px;
+  }
+
+  .menu-nav-item::after {
+    content: "›";
+    grid-area: chev;
+    justify-self: end;
+    color: var(--muted);
+    font-size: 18px;
+    line-height: 1;
+  }
+
+  .menu-nav-item[aria-current="true"] {
+    background: rgba(255, 255, 255, 0.04);
+    border-color: var(--border);
+    color: var(--text);
+  }
+
+  .menu-nav-item[aria-current="true"]::before {
+    opacity: 0.75;
+  }
+
+  .menu-nav-status {
+    justify-self: end;
+    text-align: right;
+  }
+
+  .menu-nav-status:empty {
+    display: block;
+  }
+
+  .menu-pages {
+    padding: 16px max(16px, env(safe-area-inset-right)) 16px max(16px, env(safe-area-inset-left));
+  }
+
+  .menu-foot {
+    padding: 10px 16px;
+  }
+
+  .menu-foot-actions #finish-ride {
+    flex: 1;
+    min-width: 0;
+  }
+}
+
+/* Phones held sideways: two columns of rows, so the whole list fits. */
+@media (max-height: 559px) and (min-width: 600px) {
+  .menu-nav {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    align-content: start;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .menu-backdrop,
+  .menu-card {
+    animation: none;
+  }
+}
+
+/* --- View popover ---------------------------------------------------- */
+/* Under the top bar's View button; a bottom sheet on narrow or short screens. */
+
+.view-popover {
+  position: absolute;
+  top: calc(var(--gap) + 52px);
+  right: var(--gap);
+  z-index: 6;
+  width: min(360px, calc(100% - 2 * var(--gap)));
+  max-height: calc(100% - var(--gap) * 2 - 52px);
+  overflow-y: auto;
+  padding: 12px 14px 14px;
+  display: grid;
+  gap: 12px;
+  background: var(--glass-strong);
+  color: var(--hud-text);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45);
+}
+
+.view-popover[hidden] {
+  display: none;
+}
+
+.view-row h3 {
+  margin: 0 0 6px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--hud-muted);
+}
+
+.view-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.view-option {
+  min-height: 36px;
+  padding: 6px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--glass-line);
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--hud-text);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.view-option[aria-pressed="true"] {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-text);
+}
+
+.view-option:disabled {
+  opacity: 0.45;
+}
+
+/* Cameras: a small drawing above the name, four (or three) in a row. */
+.view-row-camera .view-options {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(72px, 1fr));
+}
+
+.view-row-camera .view-option {
+  display: grid;
+  justify-items: center;
+  gap: 4px;
+  padding: 8px 6px;
+}
+
+.view-art svg {
+  display: block;
+  width: 48px;
+  height: 32px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.view-art .cam {
+  fill: currentColor;
+}
+
+.view-art .sight {
+  stroke-dasharray: 2 2;
+  opacity: 0.7;
+}
+
+@media (pointer: coarse) {
+  .view-option {
+    min-height: 44px;
+  }
+}
+
+@media (max-width: 999px), (max-height: 559px) {
+  .view-popover[data-sheet="true"] {
+    top: auto;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    width: auto;
+    max-height: 80%;
+    border-radius: 16px 16px 0 0;
+    border-width: 1px 0 0;
+    padding: 14px max(16px, env(safe-area-inset-right)) max(16px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
+  }
+}
+
+/* Short landscape sheets: rows side by side so it stays low. */
+@media (max-height: 559px) and (min-width: 600px) {
+  .view-popover[data-sheet="true"] {
+    grid-template-columns: 1fr 1fr;
+    align-items: start;
+  }
+}
+
+.panel {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 12px;
+}
+
+.hint {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.8;
+}
+
+/* --- lists shared by HUD and drawers -------------------------------- */
+
+.rider-list,
+.results,
+.feed {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  font-size: 14px;
+}
+
+.rider,
+.result {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto 96px;
+  gap: 8px;
+  padding: 3px 0;
+}
+
+.result {
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.rider-subhead {
+  margin: 12px 0 4px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--hud-muted);
+}
+
+.rider-list.bots {
+  opacity: 0.7;
+}
+
+.rider.me,
+.result.me {
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.rider-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rider-name.split {
+  display: flex;
+  align-items: baseline;
+  min-width: 0;
+}
+
+.rider-name-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+.rider-name.split .badge {
+  flex: none;
+}
+
+.rider-gap,
+.rider-power {
+  text-align: right;
+  color: var(--hud-muted);
+}
+
+.rider-gap {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.badge {
+  margin-left: 6px;
+  padding: 0 5px;
+  border-radius: 4px;
+  font-size: 11px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  color: var(--hud-muted);
+  font-weight: 400;
+}
+
+.badge.badge-remote,
+.label3d .badge.badge-remote {
+  color: var(--remote);
+  border-color: var(--remote);
+}
+
+.dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 4px;
+  margin-right: 8px;
+  background: var(--human);
+}
+
+.dot.bot {
+  background: var(--bot);
+}
+
+.dot.remote {
+  background: var(--remote);
+}
+
+.race-controls {
+  display: flex;
+  gap: 8px;
+  align-items: end;
+  margin-bottom: 8px;
+}
+
+.race-controls label {
+  grid-template-columns: auto auto;
+  align-items: center;
+}
+
+.feed {
+  max-height: 260px;
+  overflow-y: auto;
+  color: var(--muted);
+}
+
+.feed li {
+  padding: 2px 0;
+}
+
+.feed .feed-chat {
+  color: var(--text);
+}
+
+.feed .feed-error {
+  color: var(--danger);
+}
+
+.chat {
+  display: flex;
+  gap: 6px;
+}
+
+.chat input {
+  flex: 1;
+  min-width: 0;
+}
+
+.toast-warning {
+  position: absolute;
+  top: 140px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(520px, 90vw);
+  background: rgba(60, 30, 10, 0.92);
+}
+
+.toast-split {
+  position: absolute;
+  top: 140px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: max-content;
+  max-width: 90vw;
+  margin: 0;
+  padding: 10px 18px;
+  font-weight: 600;
+  text-align: center;
+  pointer-events: none;
+}
+
+.banner {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  background: var(--surface-2);
+  border: 1px solid var(--danger);
+  border-radius: var(--radius);
+  padding: 12px 18px;
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  z-index: 6;
+}
+
+/* While the connection is being restored the ride goes on: a small pill, not a wall. */
+.reconnecting {
+  position: absolute;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 6px 14px;
+  border-radius: 999px;
+  background: var(--surface-2);
+  border: 1px solid var(--danger);
+  font-size: 14px;
+  z-index: 6;
+}
+
+.unfinished {
+  margin: 16px 0;
+  display: grid;
+  gap: 10px;
+}
+
+.unfinished-label {
+  margin: 0;
+  font-weight: 600;
+}
+
+.unfinished .muted {
+  margin: 0;
+}
+
+.unfinished .muted:empty {
+  display: none;
+}
+
+.unfinished-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+/* --- smaller screens ------------------------------------------------- */
+
+.num-l,
+.num-m {
+  white-space: nowrap;
+}
+
+@media (max-width: 1100px) {
+  .nearby,
+  .canvas-minimap,
+  .groups,
+  .upcoming {
+    display: none;
+  }
+
+  .ride[data-layout="broadcast"] .hud-gear {
+    top: 80px;
+  }
+
+  .ride[data-layout="race"] .hud-gear {
+    left: auto;
+    right: var(--gap);
+    bottom: var(--gap);
+  }
+}
+
+@media (max-width: 760px) {
+  :root {
+    --gap: 12px;
+  }
+
+  .hud-info,
+  .upcoming,
+  .hud-ticker,
+  .strip-next,
+  .band-stats,
+  .race-grid {
+    display: none;
+  }
+
+  .text-button {
+    padding: 0 10px;
+    font-size: 13px;
+  }
+
+  .cluster {
+    gap: 12px;
+    bottom: 90px;
+  }
+
+  .cluster-side {
+    min-width: 70px;
+  }
+
+  .gauge {
+    width: 220px;
+    height: 150px;
+  }
+
+  .gauge svg {
+    width: 220px;
+    height: 125px;
+  }
+
+  .gauge-power {
+    font-size: 64px;
+  }
+
+  .num-l {
+    font-size: 36px;
+  }
+
+  .bar > div {
+    padding: 8px 10px;
+  }
+
+  .bar > div:nth-child(n + 4) {
+    display: none;
+  }
+
+  .bar {
+    top: 72px;
+  }
+
+  .band {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .targets > div {
+    padding: 8px 14px;
+  }
+
+  .num-xl {
+    font-size: 44px;
+  }
+
+  .race-top {
+    flex-wrap: wrap;
+  }
+
+  .race-timeline {
+    flex-basis: 100%;
+    order: 5;
+  }
+}
+
+/* Strava */
+/* Strava: one line in the Rider section, like the devices. */
+.strava-line {
+  display: grid;
+  gap: 6px;
+}
+
+.strava-mark {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  fill: #fc4c02;
+}
+
+/* The Strava line is a device line without a dot: the mark, who you are, one action. */
+.strava-line .device-line > .device-status {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 14px;
+}
+
+.strava-line .device-status.ok {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.strava-line .device-status strong {
+  color: var(--text);
+}
+
+.strava-line .device-status:not(.ok) {
+  color: var(--text);
+}
+
+/* The server rides with Strava only: a callout; the Ride button connects. */
+.strava-line.required .device-line {
+  border-color: rgba(252, 76, 2, 0.55);
+  background: rgba(252, 76, 2, 0.08);
+}
+
+/* Optional, so quieter than the main action: Strava's orange as an outline. */
+.strava-button.small {
+  min-height: 32px;
+  padding: 0 14px;
+  font-size: 14px;
+  background: transparent;
+  color: #ff6a2b;
+  border: 1px solid rgba(252, 76, 2, 0.65);
+}
+
+.strava-button.small:hover {
+  background: rgba(252, 76, 2, 0.12);
+}
+
+#join[data-action="strava"] {
+  background: #fc4c02;
+  border-color: #fc4c02;
+  color: #fff;
+}
+
+#join[data-action="strava"]:hover {
+  background: #e34402;
+}
+
+/* A friend's vehicle: a quiet line under Ride, a valid code turns Ride into Board. */
+.board-line {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+}
+
+.board-line label {
+  display: block;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.code-input {
+  width: 112px;
+  flex: none;
+  padding: 7px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 15px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  text-align: center;
+}
+
+.code-input::placeholder {
+  font-family: inherit;
+  letter-spacing: normal;
+  text-transform: none;
+  color: var(--muted);
+}
+
+.code-input:focus {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.strava-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+  font-size: 14px;
+}
+
+.strava-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 0 18px;
+  border-radius: 8px;
+  border: 0;
+  background: #fc4c02;
+  color: #fff;
+  font-weight: 700;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.strava-button:hover {
+  background: #e34402;
+}
+
+/* End-of-ride dialog */
+.modal {
+  position: absolute;
+  inset: 0;
+  z-index: 8;
+  display: grid;
+  place-items: center;
+  background: rgba(8, 10, 13, 0.6);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+  padding: 16px;
+}
+
+.modal-card {
+  width: min(560px, 100%);
+  /* Scrolls on short screens so the buttons at the bottom stay reachable. */
+  max-height: calc(100vh - 32px);
+  max-height: calc(100dvh - 32px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 24px;
+  display: grid;
+  gap: 14px;
+  color: var(--text);
+}
+
+.modal-card h2 {
+  font-size: 22px;
+  color: var(--text);
+  text-transform: none;
+  letter-spacing: 0;
+  margin: 0;
+}
+
+/* Focused by script so the summary starts there; not a control, so no ring. */
+.modal-card h2[tabindex="-1"]:focus {
+  outline: none;
+}
+
+.summary {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+  margin: 0;
+}
+
+.summary div {
+  background: var(--bg);
+  border-radius: 10px;
+  padding: 10px 12px;
+}
+
+.summary dt {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+}
+
+.summary dd {
+  margin: 4px 0 0;
+  font-family: var(--num);
+  font-size: 26px;
+  font-weight: 700;
+}
+
+/* Power over time (Overview page and finish summary): zone bands, FTP line, power line. */
+.power-chart {
+  display: block;
+  width: 100%;
+  height: 140px;
+  margin: 4px 0 14px;
+  background: var(--bg);
+  border-radius: 10px;
+}
+
+.power-chart[hidden] {
+  display: none;
+}
+
+#finish-chart {
+  margin-top: 14px;
+}
+
+/* Short landscape phones: the strip and the chart leave room for the figures. */
+@media (max-height: 559px) {
+  .power-chart {
+    height: 96px;
+  }
+
+  .menu-strip {
+    padding: 4px 16px;
+  }
+
+  .menu-strip-item {
+    font-size: 15px;
+  }
+}
+
+/* Overview figures: smaller tiles than the finish summary, they share the page. */
+.overview .summary {
+  grid-template-columns: repeat(auto-fill, minmax(132px, 1fr));
+  gap: 8px;
+}
+
+.overview .summary div {
+  padding: 8px 10px;
+}
+
+.overview .summary dt {
+  font-size: 11px;
+}
+
+.overview .summary dd {
+  font-size: 20px;
+}
+
+/* The workout summary: tiles share the row, so two tiles fill it and a missing heart-rate tile leaves no gap. */
+#workout-summary-list {
+  display: flex;
+  flex-wrap: wrap;
+}
+
+#workout-summary-list > div {
+  flex: 1 1 140px;
+}
+
+#workout-summary-list dd {
+  font-size: 22px;
+  white-space: nowrap;
+}
+
+.modal-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.modal-actions > * {
+  flex: 1;
+}
+
+/* Pinned to the bottom of the card, so leaving never needs scrolling. */
+.modal-nav {
+  position: sticky;
+  bottom: -24px;
+  margin: 0 -24px -24px;
+  padding: 14px 24px 24px;
+  border-top: 1px solid var(--border);
+  background: var(--surface);
+}
+
+/* Ride photos in the finish dialog */
+.photos {
+  display: grid;
+  gap: 10px;
+}
+
+.photos h3 {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.photo-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+  gap: 8px;
+}
+
+.photo-list:empty {
+  display: none;
+}
+
+.photo-list li {
+  position: relative;
+}
+
+.photo-thumb {
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--bg);
+  cursor: pointer;
+}
+
+.photo-thumb img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+}
+
+.photo-thumb:hover,
+.photo-thumb:focus-visible {
+  border-color: var(--accent);
+}
+
+.photo-remove {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(8, 10, 13, 0.75);
+  color: #fff;
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.summary-label {
+  position: absolute;
+  left: 6px;
+  bottom: 6px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: rgba(8, 10, 13, 0.75);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 600;
+  pointer-events: none;
+}
+
+/* Paused (#89): the ride timer is stopped; below the "reconnecting" pill. */
+.pause-pill {
+  position: absolute;
+  top: 56px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 6px 14px;
+  border-radius: 999px;
+  background: var(--surface-2);
+  border: 1px solid var(--accent);
+  font-size: 14px;
+  z-index: 6;
+}
+/* Online riders on the social button, photo counter on the camera button */
+.online-count {
+  font-family: var(--num);
+  font-size: 18px;
+  font-weight: 700;
+  min-width: 1ch;
+}
+
+.photo-button {
+  position: relative;
+}
+
+.photo-badge {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 5px;
+  border-radius: 10px;
+  background: var(--accent);
+  color: var(--accent-text);
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 20px;
+  text-align: center;
+}
+
+.photo-flash {
+  position: absolute;
+  inset: 0;
+  z-index: 9;
+  background: #fff;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.photo-flash.flash {
+  animation: photo-flash 0.45s ease-out;
+}
+
+@keyframes photo-flash {
+  from {
+    opacity: 0.55;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .photo-flash.flash {
+    animation-duration: 0.01s;
+  }
+
+  .menu-world,
+  .menu-map {
+    transition: none;
+  }
+
+  .brand-mark {
+    transition: none;
+  }
+}
+
+@media (max-width: 520px) {
+  .summary {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* A junction ahead (#15): the roads to choose from, the planned one lit */
+.junction {
+  position: absolute;
+  top: 140px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  max-width: calc(100vw - 32px);
+  z-index: 2;
+}
+
+.junction-title {
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.junction-options {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.junction-option {
+  display: grid;
+  grid-template-columns: auto auto;
+  grid-template-rows: auto auto;
+  column-gap: 8px;
+  align-items: center;
+  min-height: 44px;
+  padding: 6px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--hud-text);
+  font: inherit;
+  font-size: 14px;
+  text-align: left;
+}
+
+.junction-option[aria-pressed="true"] {
+  border-color: var(--accent);
+  background: rgba(255, 255, 255, 0.22);
+}
+
+.junction-arrow {
+  grid-row: span 2;
+  font-size: 20px;
+  line-height: 1;
+}
+
+.junction-option small {
+  color: var(--hud-muted);
+  font-size: 12px;
+}
+
+.junction-hint {
+  font-size: 12px;
+  color: var(--hud-muted);
+}
+
+/* Both at once: the race call sits below the junction. */
+.junction:not([hidden]) ~ .race-call {
+  top: 250px;
+}
+
+.ride[data-layout="race"] .junction {
+  top: 250px;
+}
+
+/* Race announcement: join during the countdown */
+.race-call {
+  position: absolute;
+  top: 140px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 8px 8px 8px 16px;
+  font-size: 15px;
+  white-space: nowrap;
+  border-color: rgba(255, 255, 255, 0.6);
+  z-index: 2;
+}
+
+.race-call .muted {
+  color: var(--hud-muted);
+}
+
+.primary-small {
+  min-height: 40px;
+  padding: 0 16px;
+  border-radius: 10px;
+  border: 0;
+  background: var(--accent);
+  color: var(--accent-text);
+  font-weight: 700;
+}
+
+.race-call.entered .primary-small {
+  background: rgba(255, 255, 255, 0.12);
+  color: var(--hud-text);
+}
+
+.ride[data-layout="race"] .race-call {
+  top: 250px;
+}
+
+/* Scheduled events: the lobby call sits below a race call when both show. */
+.race-call:not([hidden]) ~ .event-call {
+  top: 196px;
+}
+
+.junction:not([hidden]) ~ .race-call:not([hidden]) ~ .event-call {
+  top: 306px;
+}
+
+.junction:not([hidden]) ~ .event-call {
+  top: 250px;
+}
+
+.events {
+  margin-top: 8px;
+}
+
+.events h2 {
+  margin: 0;
+}
+
+.event-list {
+  list-style: none;
+  margin: 12px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.event-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 12px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.event-text {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+  font-size: 14px;
+}
+
+/* ===================================================================== */
+/* Spin studio: `#ride[data-mode="studio"]` swaps the road HUD for this.  */
+/* ===================================================================== */
+
+.ride:not([data-mode="studio"]) .studio-only,
+.ride[data-mode="studio"] .route-only,
+.ride[data-mode="studio"] .layout:not(.layout-studio),
+.ride[data-mode="studio"] .canvas-ride-map,
+.ride[data-mode="studio"] #world-wrap {
+  display: none !important;
+}
+
+.ride[data-mode="studio"] .layout-studio {
+  display: block;
+}
+
+.ride[data-mode="studio"] .hud-ticker {
+  left: auto;
+  right: var(--gap);
+  top: 132px;
+}
+
+.ride[data-mode="studio"] .hud-gear {
+  top: auto;
+  bottom: 196px;
+}
+
+.label3d.coach {
+  --label-bg: var(--accent);
+  color: var(--accent-text);
+  font-weight: 700;
+}
+
+.label3d.coach .badge {
+  color: var(--accent-text);
+  border-color: rgba(11, 11, 12, 0.35);
+}
+
+.studio-cue {
+  position: absolute;
+  top: var(--gap);
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(560px, calc(100% - 2 * var(--gap)));
+  padding: 12px 20px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas:
+    "phase countdown"
+    "cue countdown"
+    "next next";
+  column-gap: 16px;
+  row-gap: 2px;
+  align-items: center;
+}
+
+.studio-cue .caption {
+  grid-area: phase;
+}
+
+.studio-cue strong {
+  grid-area: cue;
+  font-size: 20px;
+  line-height: 1.25;
+}
+
+.studio-countdown {
+  grid-area: countdown;
+  font-family: var(--num);
+  font-size: 54px;
+  font-weight: 700;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.studio-countdown.soon {
+  color: var(--warning);
+}
+
+.studio-next {
+  grid-area: next;
+  font-size: 13px;
+  color: var(--hud-muted);
+}
+
+.studio-board {
+  position: absolute;
+  top: 112px;
+  left: var(--gap);
+  width: 240px;
+  max-height: calc(100% - 112px - 220px);
+  overflow: auto;
+  padding: 10px 12px;
+}
+
+.studio-board h2,
+.board-list li {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+}
+
+.studio-board h2 {
+  margin: 0 0 6px;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--hud-muted);
+}
+
+.board-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  font-size: 14px;
+}
+
+.board-list li {
+  padding: 3px 4px;
+  border-radius: 6px;
+}
+
+.board-list li.me {
+  background: var(--accent);
+  color: var(--accent-text);
+  font-weight: 600;
+}
+
+.board-list .board-name {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+}
+
+.board-list .board-text {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.board-list .badge {
+  flex: none;
+  margin-left: 6px;
+}
+
+.studio-controls {
+  position: absolute;
+  top: 76px;
+  right: var(--gap);
+  display: flex;
+  gap: 8px;
+}
+
+.studio-controls > button {
+  height: 44px;
+  padding: 0 14px;
+  color: var(--hud-text);
+  font-weight: 600;
+}
+
+.studio-controls > .toggle[aria-pressed="true"] {
+  color: var(--accent-text);
+}
+
+.studio-targets {
+  bottom: 200px;
+}
+
+.studio-targets .caption span {
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.studio-band {
+  position: absolute;
+  left: var(--gap);
+  right: var(--gap);
+  bottom: var(--gap);
+  padding: 12px 16px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 8px;
+}
+
+.studio-band-labels {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.studio-band .canvas-workout {
+  height: 64px;
+}
+
+.studio-band-stats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+@media (max-width: 760px) {
+  .studio-board {
+    display: none;
+  }
+
+  .studio-cue {
+    top: 76px;
+    padding: 8px 14px;
+  }
+
+  .studio-controls {
+    top: auto;
+    bottom: 278px;
+    right: 50%;
+    transform: translateX(50%);
+  }
+
+  .studio-controls > button {
+    white-space: nowrap;
+  }
+
+  .studio-targets {
+    bottom: 184px;
+  }
+
+  .studio-band {
+    padding: 10px 12px;
+    gap: 6px;
+  }
+
+  .studio-band .canvas-workout {
+    height: 44px;
+  }
+
+  .studio-band-stats .num-m {
+    font-size: 24px;
+  }
+
+  .studio-targets > div {
+    padding: 8px 14px;
+  }
+
+  .studio-targets .num-xl {
+    font-size: 44px;
+  }
+
+  .studio-cue strong {
+    font-size: 16px;
+  }
+
+  .studio-countdown {
+    font-size: 40px;
+  }
+}
+
+/* Short screens: the cue moves into the top bar's row, left of the buttons,
+   so Riders, Photo, View and Menu stay tappable. */
+@media (max-height: 559px) {
+  .studio-cue {
+    top: var(--gap);
+    left: var(--gap);
+    transform: none;
+    width: max(200px, calc(100% - 3 * var(--gap) - 420px));
+    padding: 6px 12px;
+    column-gap: 10px;
+  }
+
+  .studio-cue strong {
+    font-size: 15px;
+  }
+
+  .studio-countdown {
+    font-size: 30px;
+  }
+
+  .studio-cue strong,
+  .studio-next {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}
+
+/* --- phones and touch screens --------------------------------------- */
+
+/* Notches and home indicators: the HUD, drawers and dialogs stay clear of them. */
+body {
+  min-height: 100dvh;
+}
+
+.start {
+  min-height: 100dvh;
+  padding-left: max(24px, env(safe-area-inset-left));
+  padding-right: max(24px, env(safe-area-inset-right));
+}
+
+/* Phones: the usual 16 px margin leaves the device lines room for names and actions. */
+@media (max-width: 600px) {
+  .start {
+    padding-left: max(16px, env(safe-area-inset-left));
+    padding-right: max(16px, env(safe-area-inset-right));
+  }
+}
+
+/* Phones keep the room for the Ride bar along the bottom (the one-column rule above). */
+@media (min-width: 901px) {
+  .start {
+    padding-bottom: max(40px, env(safe-area-inset-bottom));
+  }
+}
+
+.start-head {
+  padding-top: max(18px, env(safe-area-inset-top));
+}
+
+/* Edge to edge (the app on Android 15+, iOS home screen): the status bar lies over the page.
+   Outside a ride a strip in the page's colour keeps scrolled text from running under the clock. */
+body:not(.riding)::after {
+  content: "";
+  position: fixed;
+  inset: 0 0 auto;
+  z-index: 10;
+  height: env(safe-area-inset-top);
+  background: var(--bg);
+  pointer-events: none;
+}
+
+.hud {
+  top: env(safe-area-inset-top);
+  right: env(safe-area-inset-right);
+  bottom: env(safe-area-inset-bottom);
+  left: env(safe-area-inset-left);
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.ride button,
+.start button {
+  /* No double-tap zoom and no grey flash when tapping fast. */
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.drawer {
+  padding-top: max(16px, env(safe-area-inset-top));
+  padding-bottom: max(16px, env(safe-area-inset-bottom));
+}
+
+.modal {
+  padding: max(16px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(16px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
+}
+
+/* Lane buttons and the simulated power stepper: only where fingers are the input. */
+.lane-controls,
+.sim-stepper {
+  display: none;
+}
+
+.drawer-backdrop {
+  display: none;
+}
+
+@media (pointer: coarse) {
+  .lane-controls {
+    display: block;
+  }
+
+  .lane-button {
+    position: absolute;
+    top: 52%;
+    width: 56px;
+    height: 72px;
+    padding: 0;
+    border-radius: 16px;
+    color: var(--hud-text);
+    display: grid;
+    place-items: center;
+  }
+
+  .lane-button:active {
+    background: rgba(255, 255, 255, 0.35);
+    border-color: var(--accent);
+  }
+
+  .lane-button svg {
+    width: 28px;
+    height: 28px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2.5;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  #lane-left {
+    left: var(--gap);
+  }
+
+  #lane-right {
+    right: var(--gap);
+  }
+
+  /* Above the right lane button, under the right thumb. */
+  .sim-stepper {
+    position: absolute;
+    right: var(--gap);
+    bottom: calc(48% + 12px);
+    display: grid;
+    justify-items: center;
+    gap: 4px;
+    padding: 6px 4px;
+    width: 64px;
+  }
+
+  /* Stacked: more power on top. */
+  .sim-stepper #sim-up {
+    order: -1;
+  }
+
+  .sim-stepper #sim-down {
+    order: 1;
+  }
+
+  .sim-stepper button {
+    width: 44px;
+    height: 44px;
+    padding: 0;
+    font-size: 22px;
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.1);
+    border-color: transparent;
+    color: var(--hud-text);
+  }
+
+  .sim-stepper button:active {
+    background: rgba(255, 255, 255, 0.45);
+  }
+
+  .sim-readout {
+    display: grid;
+    justify-items: center;
+  }
+
+  .sim-readout .caption {
+    font-size: 10px;
+  }
+
+  .sim-readout output {
+    font-family: var(--num);
+    font-weight: 700;
+    font-size: 16px;
+    white-space: nowrap;
+  }
+
+  /* Comfortable tap targets in forms, drawers and dialogs. */
+  .start button,
+  .start input:not([type="range"]):not([type="checkbox"]),
+  .start select,
+  .drawer button,
+  .drawer select,
+  .drawer input:not([type="range"]):not([type="checkbox"]),
+  .menu-dialog button,
+  .menu-dialog select,
+  .menu-dialog input:not([type="range"]):not([type="checkbox"]),
+  .modal button:not(.photo-remove) {
+    min-height: 44px;
+  }
+
+  .menu-head .icon-button {
+    width: 44px;
+    height: 44px;
+  }
+
+  .check input[type="checkbox"] {
+    width: 22px;
+    height: 22px;
+  }
+}
+
+/* Phones: the start screen gets shorter, the Ride button is always at hand. */
+@media (max-width: 520px) {
+  .start {
+    padding-left: max(16px, env(safe-area-inset-left));
+    padding-right: max(16px, env(safe-area-inset-right));
+  }
+
+  .start-routes h1 {
+    font-size: 24px;
+  }
+
+  .start-routes .lede {
+    font-size: 15px;
+  }
+
+  /* Routes as a strip of cards to swipe through. */
+  .route-list {
+    display: flex;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+    margin: 14px -16px 0;
+    padding: 0 16px 6px;
+    gap: 10px;
+  }
+
+  .route-list::-webkit-scrollbar {
+    display: none;
+  }
+
+  .route-list > li {
+    flex: 0 0 82%;
+    scroll-snap-align: center;
+  }
+
+  .route-list > li:only-child {
+    flex-basis: 100%;
+  }
+
+  .route-card {
+    height: 100%;
+    min-height: 132px;
+    padding: 14px 16px;
+  }
+
+  .card {
+    padding: 16px;
+  }
+
+  .device-row {
+    flex-wrap: wrap;
+  }
+
+  .device-row .device-status {
+    flex-basis: 100%;
+  }
+
+
+
+  .hud-actions {
+    left: var(--gap);
+    justify-content: flex-end;
+  }
+
+  .hud-status {
+    top: 66px;
+  }
+
+  .pill {
+    padding: 5px 12px;
+    font-size: 13px;
+  }
+
+  .junction {
+    top: 104px;
+  }
+
+  .gear-readout {
+    min-width: 54px;
+  }
+
+  .gear-value {
+    font-size: 28px;
+  }
+
+  /* The finish dialog takes the whole screen. */
+  .modal {
+    padding: 0;
+  }
+
+  .modal-card {
+    width: 100%;
+    height: 100%;
+    max-height: none;
+    border: 0;
+    border-radius: 0;
+    padding: max(20px, env(safe-area-inset-top)) 16px 24px;
+  }
+
+  .modal-actions > * {
+    flex: 1 1 100%;
+  }
+
+  .modal-nav {
+    margin: 0 -16px -24px;
+    padding: 12px 16px max(16px, env(safe-area-inset-bottom));
+  }
+
+  .modal-nav > * {
+    flex: 1 1 0;
+  }
+}
+
+/* Phones: a smaller cockpit that never runs off the screen ("−3.2 %" is wide). */
+@media (max-width: 440px) {
+  .cluster {
+    gap: 6px;
+    max-width: calc(100% - 2 * var(--gap));
+  }
+
+  .cluster-side {
+    min-width: 58px;
+  }
+
+  .gauge,
+  .gauge svg {
+    width: 190px;
+  }
+
+  .gauge svg {
+    height: 108px;
+  }
+
+  .gauge {
+    height: 132px;
+  }
+
+  .gauge-power {
+    font-size: 54px;
+  }
+
+  .num-l {
+    font-size: clamp(22px, 6.5vw, 28px);
+  }
+
+  .num-m {
+    font-size: 24px;
+  }
+}
+
+/* Drawers become bottom sheets: reachable with a thumb, the ride stays visible above. */
+@media (max-width: 760px) {
+  .drawer-backdrop {
+    display: block;
+    position: absolute;
+    inset: 0;
+    z-index: 4;
+    background: rgba(8, 10, 13, 0.45);
+  }
+
+  .drawer {
+    top: auto;
+    left: 0;
+    right: 0;
+    width: 100%;
+    max-height: 85dvh;
+    border: 0;
+    border-top: 1px solid var(--border);
+    border-radius: 18px 18px 0 0;
+    padding-top: 22px;
+    padding-left: max(16px, env(safe-area-inset-left));
+    padding-right: max(16px, env(safe-area-inset-right));
+    overscroll-behavior: contain;
+    animation: sheet-up 0.18s ease-out;
+  }
+
+  /* The grab handle look. */
+  .drawer::before {
+    content: "";
+    position: absolute;
+    top: 8px;
+    left: 50%;
+    width: 40px;
+    height: 4px;
+    margin-left: -20px;
+    border-radius: 2px;
+    background: var(--border);
+  }
+}
+
+@keyframes sheet-up {
+  from {
+    transform: translateY(40px);
+    opacity: 0;
+  }
+}
+
+/* Phones held sideways: little height, so the cockpit shrinks and the clutter goes. */
+@media (max-height: 500px) and (orientation: landscape) {
+  :root {
+    --gap: 10px;
+  }
+
+  .hud-info,
+  .upcoming,
+  .hud-ticker,
+  .nearby,
+  .canvas-minimap,
+  .groups {
+    display: none;
+  }
+
+  .layout-cockpit::before {
+    --cockpit-scrim: 160px;
+  }
+
+  .cluster {
+    bottom: var(--gap);
+    gap: 14px;
+  }
+
+  .cluster-side {
+    min-width: 70px;
+  }
+
+  .gauge,
+  .gauge svg {
+    width: 200px;
+  }
+
+  .gauge {
+    height: 128px;
+  }
+
+  .gauge svg {
+    height: 112px;
+  }
+
+  .gauge-power {
+    font-size: 54px;
+  }
+
+  .num-l {
+    font-size: 32px;
+  }
+
+  .num-m {
+    font-size: 26px;
+  }
+
+  .hud-status {
+    top: var(--gap);
+  }
+
+  .junction {
+    top: 60px;
+  }
+
+  .strip {
+    height: 76px;
+  }
+
+  .drawer {
+    max-height: 92dvh;
+  }
+
+  .lane-button {
+    top: 38%;
+  }
+
+  .sim-stepper {
+    bottom: auto;
+    top: var(--gap);
+    right: auto;
+    left: var(--gap);
+    display: flex;
+    align-items: center;
+    width: auto;
+  }
+
+  .sim-stepper #sim-up,
+  .sim-stepper #sim-down {
+    order: 0;
+  }
+
+  .sim-readout {
+    min-width: 58px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .drawer {
+    animation: none;
+  }
+}
+
+/* --- phone paddles --------------------------------------------------- */
+
+
+/* Under the HUD (later in the page), above the world; taps fall through the HUD.
+   The pads are see-through touch zones: the road stays the show. */
+.paddles {
+  position: absolute;
+  inset: 0;
+  --pad-height: 32%;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+
+.paddle-swipe {
+  position: absolute;
+  inset: 0 0 var(--pad-height) 0;
+  touch-action: none;
+}
+
+.paddle {
+  position: absolute;
+  bottom: 0;
+  width: 50%;
+  height: var(--pad-height);
+  touch-action: none;
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  border-top: 1px solid rgba(255, 255, 255, 0.14);
+  background: linear-gradient(to top, rgba(10, 12, 15, 0.7), rgba(10, 12, 15, 0.25));
+  transition: background 0.15s;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.paddle-left {
+  left: 0;
+  border-right: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.paddle-right {
+  right: 0;
+}
+
+.paddle-label {
+  font-family: var(--num);
+  font-size: 72px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.14);
+  pointer-events: none;
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* The paddle to tap next glows: the rhythm reads at a glance. */
+.paddle.next {
+  background: linear-gradient(to top, rgba(255, 255, 255, 0.38), rgba(255, 255, 255, 0.06));
+}
+
+.paddle.next .paddle-label {
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.paddle.hit .paddle-label {
+  animation: paddle-hit 0.18s ease-out;
+}
+
+.paddle.stumble {
+  animation: paddle-stumble 0.35s ease-out;
+  background: linear-gradient(to top, rgba(255, 93, 93, 0.45), rgba(255, 93, 93, 0.05));
+}
+
+.paddle-ripple {
+  position: absolute;
+  width: 140px;
+  height: 140px;
+  margin: -70px 0 0 -70px;
+  border-radius: 50%;
+  border: 3px solid rgba(255, 255, 255, 0.8);
+  pointer-events: none;
+  animation: paddle-ripple 0.45s ease-out forwards;
+}
+
+@keyframes paddle-hit {
+  from {
+    transform: scale(1.35);
+    color: var(--brand);
+  }
+}
+
+@keyframes paddle-stumble {
+  20%,
+  60% {
+    transform: translateX(-6px);
+  }
+  40%,
+  80% {
+    transform: translateX(6px);
+  }
+}
+
+@keyframes paddle-ripple {
+  from {
+    transform: scale(0.3);
+    opacity: 1;
+  }
+  to {
+    transform: scale(1.4);
+    opacity: 0;
+  }
+}
+
+/* A slim strip: rhythm on top, energy as a line, hint and combo below. */
+.paddle-meter {
+  position: absolute;
+  left: 50%;
+  bottom: calc(var(--pad-height) + 6px);
+  transform: translateX(-50%);
+  width: min(300px, calc(100% - 24px));
+  padding: 7px 10px 6px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas:
+    "rhythm rhythm"
+    "energy energy"
+    "hint head";
+  gap: 5px 8px;
+  align-items: center;
+  pointer-events: none;
+  color: var(--hud-text);
+  background: rgba(15, 18, 22, 0.42);
+  border-color: rgba(255, 255, 255, 0.06);
+  border-radius: 12px;
+}
+
+/* Fixed width: the combo coming and going must not move the hint. */
+.paddle-meter-head {
+  grid-area: head;
+  display: flex;
+  justify-content: flex-end;
+  align-items: baseline;
+  gap: 6px;
+  width: 96px;
+  height: 18px;
+}
+
+.paddle-meter-head .caption {
+  display: none;
+}
+
+.paddle-combo {
+  line-height: 18px;
+  min-width: 34px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  font-family: var(--num);
+  font-weight: 700;
+  font-size: 15px;
+  color: var(--brand);
+}
+
+.paddle-combo.milestone {
+  animation: paddle-hit 0.5s ease-out;
+}
+
+.paddle-spm {
+  min-width: 52px;
+  text-align: right;
+  font-size: 11px;
+  color: var(--hud-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.paddle-energy {
+  grid-area: energy;
+  height: 3px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.12);
+  overflow: hidden;
+}
+
+.paddle-energy-fill {
+  display: block;
+  height: 100%;
+  width: 100%;
+  background: linear-gradient(to right, #3ddc97, var(--brand));
+  transition: width 0.25s linear;
+}
+
+.paddle-energy.low .paddle-energy-fill {
+  background: var(--danger);
+}
+
+.paddle-rhythm {
+  grid-area: rhythm;
+  position: relative;
+  height: 8px;
+  border-radius: 4px;
+  background: linear-gradient(to right, rgba(76, 195, 255, 0.22), rgba(255, 255, 255, 0.08) 45%, rgba(255, 93, 93, 0.28));
+}
+
+.paddle-band {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  border-radius: 4px;
+  background: rgba(61, 220, 151, 0.55);
+  box-shadow: 0 0 0 1px rgba(61, 220, 151, 0.9) inset;
+}
+
+.paddle-marker {
+  position: absolute;
+  top: -3px;
+  width: 4px;
+  height: 14px;
+  margin-left: -2px;
+  border-radius: 2px;
+  background: #fff;
+  box-shadow: 0 0 4px rgba(0, 0, 0, 0.6);
+  transition: left 0.2s linear;
+}
+
+.paddle-hint {
+  grid-area: hint;
+  line-height: 18px;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
+}
+
+.paddles[data-zone="sweet"] .paddle-hint {
+  color: #3ddc97;
+}
+
+.paddles[data-zone="sprint"] .paddle-hint {
+  color: var(--accent);
+}
+
+.paddles[data-zone="tired"] .paddle-hint {
+  color: var(--danger);
+}
+
+/* While paddling the numbers move up into the sky, on a soft dark gradient:
+   speed · power · grade in one row, no arc (cadence and heart rate mean
+   little when tapping). The road and the paddles keep the lower half. */
+body.paddling .layout-cockpit::before {
+  top: calc(-1 * env(safe-area-inset-top));
+  bottom: auto;
+  height: calc(170px + env(safe-area-inset-top));
+  background: linear-gradient(to bottom, rgba(10, 12, 15, 0.72) 0%, rgba(10, 12, 15, 0.67) 12%, rgba(10, 12, 15, 0.56) 25%, rgba(10, 12, 15, 0.42) 38%, rgba(10, 12, 15, 0.3) 50%, rgba(10, 12, 15, 0.18) 62%, rgba(10, 12, 15, 0.09) 75%, rgba(10, 12, 15, 0.03) 88%, rgba(10, 12, 15, 0) 100%);
+}
+
+body.paddling .cluster {
+  top: calc(var(--gap) + 54px);
+  bottom: auto;
+  align-items: center;
+  gap: 18px;
+}
+
+body.paddling .gauge {
+  width: auto;
+  height: auto;
+  min-width: 110px;
+}
+
+body.paddling .gauge svg,
+body.paddling .cluster-side > :nth-child(n + 3) {
+  display: none;
+}
+
+body.paddling .gauge-power {
+  font-size: 46px;
+}
+
+body.paddling .gauge-sub {
+  font-size: 12px;
+}
+
+body.paddling .cluster-side {
+  min-width: 64px;
+}
+
+body.paddling .cluster-side .num-l {
+  font-size: 28px;
+}
+
+body.paddling .cluster-side .caption {
+  font-size: 10px;
+}
+
+/* Status pill and junction choice go below the numbers. */
+body.paddling .hud-status {
+  top: calc(var(--gap) + 136px);
+}
+
+body.paddling .junction {
+  top: calc(var(--gap) + 176px);
+}
+
+/* Race numbers sit above the paddles, not under the thumbs. */
+body.paddling .race-metrics {
+  bottom: calc(var(--pad-height) + 76px);
+}
+
+body.paddling .hud-gear {
+  display: none !important;
+}
+
+/* Lane arrows shrink and step back (swiping works too). */
+body.paddling .lane-button {
+  top: 44%;
+  width: 44px;
+  height: 52px;
+  opacity: 0.6;
+}
+
+/* Phones held sideways: the pads become the outer strips, under the thumbs. */
+@media (max-height: 500px) and (orientation: landscape) {
+  .paddles {
+    --pad-height: 0px;
+  }
+
+  .paddle {
+    top: 92px;
+    height: auto;
+    width: 20%;
+    border-radius: 18px 18px 0 0;
+  }
+
+  .paddle::after {
+    left: 0;
+    right: 0;
+  }
+
+  .paddle-swipe {
+    inset: 0 20%;
+  }
+
+  .paddle-meter {
+    bottom: var(--gap);
+    width: min(280px, 48%);
+  }
+
+  body.paddling .cluster {
+    top: var(--gap);
+    left: var(--gap);
+    transform: none;
+  }
+
+  body.paddling .layout-cockpit::before {
+    height: 110px;
+  }
+
+  body.paddling .lane-controls,
+  body.paddling .hud-status {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .paddle.hit .paddle-label,
+  .paddle.stumble .paddle-label,
+  .paddle-ripple,
+  .paddle-combo.milestone {
+    animation: none;
+  }
+}
+
+/* Units setting (km · kg / mi · lb) */
+.unit-switch {
+  display: flex;
+  gap: 4px;
+  margin-top: 8px;
+}
+
+/* Auto width (Chrome/Safari), so a longer language name still fits. */
+.lang-select {
+  field-sizing: content;
+  width: auto;
+  flex: none;
+  margin-left: auto;
+  appearance: none;
+  padding: 6px 28px 6px 12px;
+  font-size: 13px;
+  color: var(--muted);
+  background-color: var(--surface);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' fill='none' stroke='%239aa3ad' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M1 1l4 4 4-4'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 11px center;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+/* Phones: the logo and language share a row; the server status gets the next one whole. */
+@media (max-width: 600px) {
+  .start-head .server-status {
+    flex-basis: 100%;
+    justify-content: center;
+  }
+}
+
+/* --- shared vehicles (#55) ------------------------------------------ */
+
+.hud-vehicle {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--accent);
+}
+
+.vehicle-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.vehicle-view {
+  margin-top: 10px;
+}
+
+.vehicle-form {
+  display: grid;
+  gap: 8px;
+}
+
+.vehicle-aboard {
+  display: grid;
+  gap: 6px;
+}
+
+.vehicle-captain,
+.vehicle-code-row {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.vehicle-code {
+  color: var(--text);
+  font-family: ui-monospace, monospace;
+  letter-spacing: 0.12em;
+}
+
+.vehicle-seats {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 4px;
+}
+
+.vehicle-seat {
+  display: grid;
+  grid-template-columns: 1.5em 1fr auto auto;
+  grid-template-areas: "no name marks power" ". bar bar share";
+  align-items: center;
+  column-gap: 8px;
+  font-size: 14px;
+}
+
+.vehicle-seat.me .vehicle-seat-name {
+  color: var(--accent);
+  font-weight: 700;
+}
+
+.vehicle-seat.free {
+  color: var(--muted);
+  font-style: italic;
+}
+
+.vehicle-seat-no { grid-area: no; color: var(--muted); }
+.vehicle-seat-name { grid-area: name; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.vehicle-seat-marks { grid-area: marks; color: var(--muted); }
+.vehicle-seat-power { grid-area: power; font-variant-numeric: tabular-nums; }
+.vehicle-seat-share { grid-area: share; color: var(--muted); font-size: 12px; font-variant-numeric: tabular-nums; }
+
+.vehicle-share-bar {
+  grid-area: bar;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--surface-2);
+  overflow: hidden;
+}
+
+.vehicle-share-fill {
+  display: block;
+  height: 100%;
+  background: var(--accent);
+}
+
+/* Aboard: races and events are off (the server refuses them). */
+body.aboard #race-controls,
+body.aboard #events-panel,
+body.aboard #race-call-button,
+body.aboard #event-call-button {
+  display: none;
+}
+
+.ftp-prompt {
+  margin: 12px 0;
+  padding: 12px;
+  display: grid;
+  gap: 6px;
+  border: 1px solid var(--accent, currentColor);
+  border-radius: 8px;
+}
+
+.ftp-prompt-title {
+  margin: 0;
+  font-weight: 700;
+}
+
+.ftp-prompt .muted {
+  margin: 0;
+}
+
+.ftp-prompt-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.splits {
+  width: 100%;
+  margin: 12px 0;
+  border-collapse: collapse;
+  font-variant-numeric: tabular-nums;
+  font-size: 0.9rem;
+}
+
+.splits th,
+.splits td {
+  padding: 4px 8px;
+  text-align: right;
+}
+
+.splits th:first-child,
+.splits td:first-child {
+  text-align: left;
+}
+
+.splits th {
+  color: var(--muted, inherit);
+  font-weight: 500;
+}
+
+.splits tr.best td {
+  font-weight: 700;
+  color: var(--accent, inherit);
+}
+
+/* ===================================================================== */
+/* Café workout (#77): body.working-out swaps the ride HUD for this.      */
+/* ===================================================================== */
+
+body.working-out #hud,
+body.working-out #ride-map,
+body.working-out #paddles {
+  display: none !important;
+}
+
+.workout-hud {
+  --workout-pad: max(var(--gap), env(safe-area-inset-top));
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  font-variant-numeric: tabular-nums;
+}
+
+.workout-hud .glass,
+.workout-hud button {
+  pointer-events: auto;
+}
+
+/* The corners hold the information; the middle stays free for the avatar. */
+.workout-corner {
+  position: absolute;
+  top: var(--workout-pad);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.workout-corner-left {
+  left: max(var(--gap), env(safe-area-inset-left));
+  align-items: flex-start;
+}
+
+.workout-corner-right {
+  right: max(var(--gap), env(safe-area-inset-right));
+  align-items: stretch;
+  width: min(340px, 32vw);
+}
+
+.workout-main {
+  padding: 12px 18px 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  max-width: 240px;
+}
+
+.workout-ring {
+  --progress: 0;
+  width: 170px;
+  height: 170px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  /* The block's time used up so far fills the ring clockwise. */
+  background: conic-gradient(var(--accent) calc(var(--progress) * 360deg), rgba(255, 255, 255, 0.14) 0);
+}
+
+.workout-ring-inner {
+  width: 142px;
+  height: 142px;
+  border-radius: 50%;
+  background: var(--glass-strong);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 0 10px;
+}
+
+.workout-exercise {
+  font-size: 18px;
+  line-height: 1.15;
+}
+
+.workout-paused {
+  margin-top: 2px;
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: var(--accent);
+  color: #111;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.workout-paused:empty {
+  display: none;
+}
+
+.workout-time {
+  font-family: var(--num);
+  font-size: 54px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.workout-next {
+  color: var(--hud-muted);
+  font-weight: 600;
+  text-align: center;
+}
+
+.workout-stats {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 10px 16px;
+}
+
+.workout-stats > div {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.workout-stats strong {
+  font-family: var(--num);
+  font-size: 22px;
+  white-space: nowrap;
+}
+
+/* How to do the pose under way, or the one coming up during a rest. */
+.workout-guide {
+  padding: 12px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  /* Room for the side view below it. */
+  max-height: calc(100vh - 2 * var(--workout-pad) - 120px - var(--workout-inset-h));
+  overflow-y: auto;
+}
+
+.workout-guide-side {
+  color: var(--accent);
+  font-size: 15px;
+}
+
+.workout-guide-side:empty,
+.workout-cue:empty {
+  display: none;
+}
+
+.workout-steps {
+  margin: 0;
+  padding-left: 1.4em;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 15px;
+  line-height: 1.3;
+}
+
+.workout-steps li {
+  color: var(--hud-muted);
+}
+
+/* The movement of the breath in progress (the sun salutation). */
+.workout-steps li.current {
+  color: inherit;
+  font-weight: 700;
+}
+
+.workout-steps li.current::marker {
+  color: var(--accent);
+}
+
+.workout-cue {
+  margin: 2px 0 0;
+  color: var(--hud-muted);
+  font-size: 0.85em;
+  font-style: italic;
+  overflow-wrap: anywhere;
+}
+
+/* The frame of the side view: the 3D view draws into this box, under it. */
+.workout-hud {
+  --workout-inset-w: clamp(200px, 30vw, 440px);
+  --workout-inset-h: calc(var(--workout-inset-w) * 3 / 4);
+}
+
+.workout-side-view {
+  position: absolute;
+  right: max(var(--gap), env(safe-area-inset-right));
+  bottom: max(var(--gap), env(safe-area-inset-bottom));
+  width: var(--workout-inset-w);
+  height: var(--workout-inset-h);
+  border: 2px solid rgba(255, 255, 255, 0.75);
+  border-radius: 3px;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.35);
+}
+
+.workout-side-view .caption {
+  position: absolute;
+  top: 6px;
+  left: 8px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--glass-strong);
+}
+
+/* The buttons take the lower left, the last free corner. */
+.workout-buttons {
+  position: absolute;
+  left: max(var(--gap), env(safe-area-inset-left));
+  bottom: max(var(--gap), env(safe-area-inset-bottom));
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  max-width: calc(100% - var(--workout-inset-w) - 3 * var(--gap));
+}
+
+/* Short screens (a phone on its side): the side view moves to the empty lower left. */
+@media (max-height: 520px) {
+  .workout-hud {
+    --workout-inset-w: clamp(160px, 26vw, 260px);
+  }
+
+  .workout-side-view {
+    right: auto;
+    left: max(var(--gap), env(safe-area-inset-left));
+  }
+
+  .workout-buttons {
+    left: auto;
+    right: max(var(--gap), env(safe-area-inset-right));
+    justify-content: flex-end;
+  }
+
+  /* Clear of the stats above and the buttons below. */
+  .workout-guide {
+    max-height: calc(100vh - 2 * var(--workout-pad) - 140px);
+  }
+}
+
+/* Narrow screens (a phone upright): smaller ring and stats, the side view above the buttons. */
+@media (max-width: 640px) {
+  .workout-hud {
+    --workout-inset-w: 44vw;
+  }
+
+  .workout-corner-right {
+    width: auto;
+    left: calc(max(var(--gap), env(safe-area-inset-left)) + 140px);
+  }
+
+  .workout-side-view {
+    bottom: calc(max(var(--gap), env(safe-area-inset-bottom)) + 56px);
+  }
+
+  .workout-buttons {
+    right: max(var(--gap), env(safe-area-inset-right));
+    max-width: none;
+    justify-content: center;
+  }
+
+  .workout-guide {
+    max-height: calc(100vh - 2 * var(--workout-pad) - 190px - var(--workout-inset-h));
+  }
+}
+
+@media (max-width: 640px), (max-height: 520px) {
+  .workout-main {
+    padding: 8px 10px;
+  }
+
+  .workout-ring {
+    width: 116px;
+    height: 116px;
+  }
+
+  .workout-ring-inner {
+    width: 96px;
+    height: 96px;
+  }
+
+  .workout-exercise {
+    font-size: 13px;
+  }
+
+  .workout-time {
+    font-size: 34px;
+  }
+
+  .workout-next {
+    font-size: 12px;
+  }
+
+  .workout-stats {
+    gap: 10px;
+    padding: 6px 10px;
+  }
+
+  .workout-stats strong {
+    font-size: 16px;
+  }
+
+  .workout-steps {
+    font-size: 13px;
+  }
+}
+
+.workout-note {
+  position: absolute;
+  left: 50%;
+  bottom: 5.5rem;
+  transform: translateX(-50%);
+  margin: 0;
+  padding: 0.5rem 1rem;
+  max-width: min(90vw, 28rem);
+  text-align: center;
+  z-index: 5;
+}
+
+.afk-prompt {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: grid;
+  gap: 0.75rem;
+  padding: 1rem 1.25rem;
+  width: min(90vw, 24rem);
+  text-align: center;
+  background: var(--surface-2);
+  border: 1px solid var(--danger);
+  border-radius: 12px;
+  z-index: 7;
+}
+
+.afk-prompt[hidden] {
+  display: none;
+}
+
+.afk-prompt h2,
+.afk-prompt p {
+  margin: 0;
+}
+
+.finish-confirm {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.finish-confirm p {
+  margin: 0;
+}
+
+/* Workout cards (start menu) */
+.workout-cards {
+  grid-column: 1 / -1;
+  display: grid;
+  gap: 10px;
+}
+
+.workout-card {
+  display: grid;
+  gap: 8px;
+}
+
+.workout-card-body {
+  display: grid;
+  gap: 10px;
+  padding: 14px 16px;
+  border-radius: 14px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  cursor: pointer;
+}
+
+.workout-card-body:hover {
+  border-color: var(--muted);
+}
+
+.workout-card.selected .workout-card-body {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent) inset, 0 8px 30px rgba(255, 255, 255, 0.12);
+}
+
+.block-strip {
+  display: flex;
+  gap: 2px;
+  height: 10px;
+}
+
+.strip-segment {
+  flex-basis: 0;
+  min-width: 2px;
+  border-radius: 2px;
+}
+
+.strip-segment.rest {
+  background: rgba(255, 255, 255, 0.18);
+}
+
+.figure-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.figure-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  font-size: 13px;
+}
+
+.figure-chip[aria-pressed="true"] {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent) inset;
+}
+
+.figure-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+
+/* No options yet (still loading) or only one language: nothing to choose, so nothing shown. */
+.lang-select:empty,
+.lang-select[hidden] {
+  display: none;
+}
+
+/* Phones: one 12px rhythm down the header (logo row, status, tabs) and 16px at the sides. */
+@media (max-width: 520px) {
+  .start-head {
+    padding-top: max(16px, env(safe-area-inset-top));
+    padding-bottom: 0;
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+
+  .start-grid {
+    margin-top: 0;
+  }
+
+  .activity-tabs {
+    margin-bottom: 16px;
+  }
+}
+
+/* Finish/recovery account row uses the same quiet treatment as the start menu. */
+.strava-upload {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+  padding-block: 12px;
+  border-block: 1px solid var(--border);
+}
+
+.strava-upload h3, .strava-upload p { margin: 0; }
+.strava-upload h3 { font-size: 14px; font-weight: 600; }
+.strava-upload .field-hint { line-height: 1.4; overflow-wrap: anywhere; }
+.strava-upload .strava-row { min-width: 0; flex-wrap: nowrap; gap: 8px; }
+.upload-identity { display: flex; align-items: center; flex: 1 1 0; gap: 8px; min-width: 0; }
+.upload-identity h3 { flex: none; }
+.upload-identity .muted { min-width: 0; flex: 1 1 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.upload-actions { display: flex; flex: none; flex-wrap: nowrap; gap: 6px; align-items: center; }
+.strava-upload .upload-action { padding-inline: 10px; font-size: 13px; }
+.upload-action { gap: 7px; white-space: nowrap; transition: background 150ms, border-color 150ms, color 150ms; }
+.strava-upload[data-spinner="true"] .upload-action { cursor: progress; opacity: 1; }
+.strava-upload[data-spinner="true"] .upload-action::before {
+  content: "";
+  width: 12px;
+  height: 12px;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: upload-spin 750ms linear infinite;
+}
+.strava-upload[data-tone="success"] .upload-action {
+  color: var(--terrain-edge);
+  border-color: var(--terrain-edge);
+  background: rgba(95, 180, 124, 0.08);
+}
+.strava-upload[data-tone="success"] .upload-action::before {
+  content: "";
+  width: 5px;
+  height: 9px;
+  margin-right: 2px;
+  border: solid currentColor;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg) translateY(-1px);
+}
+.strava-upload[data-tone="success"] .upload-action::after { content: "↗"; }
+.strava-upload[data-tone="error"] .upload-action { color: var(--danger); border-color: var(--danger); }
+.strava-upload[data-tone="warning"] .upload-action { color: var(--warning); border-color: var(--warning); }
+.strava-upload:is([data-tone="error"], [data-tone="warning"]) .upload-action:first-child::before {
+  content: "!";
+  display: inline-grid;
+  place-items: center;
+  width: 13px;
+  height: 13px;
+  border: 1px solid currentColor;
+  border-radius: 50%;
+  font-size: 10px;
+  line-height: 1;
+}
+.upload-action:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+@keyframes upload-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) {
+  .strava-upload[data-spinner="true"] .upload-action::before { animation: none; }
+  .upload-action { transition: none; }
+}
+.finish-files > summary { cursor: pointer; color: var(--muted); font-size: 13px; padding-block: 4px; }
+.finish-files[open] > summary { margin-bottom: 10px; }
+#finish .modal-card { scroll-padding-bottom: 96px; }
+#finish .modal-nav { position: static; margin: 0; padding: 14px 0 0; }
+#finish-note:empty { display: none; }
+
+@media (max-width: 380px) {
+  /* Two actions are needed for an uncertain submission; the brand mark keeps room for both. */
+  .strava-upload[data-state="uncertain"] .upload-identity h3 {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+}
+
+/* ===================================================================== */
+/* Phone ride screen: nothing covers the top buttons or another panel.    */
+/* One rhythm: --gap at the edges, 8px between rows, rows 44px tall (the  */
+/* top button row), so every panel sits on the same grid.                 */
+/* ===================================================================== */
+
+:root {
+  --hud-row: 44px;
+  --hud-row-gap: 8px;
+}
+
+/* On phones (either way up) the lane buttons are a side channel: see-through,
+   no blur, so they never read as a main control. Larger screens keep theirs. */
+@media (max-width: 760px), (max-height: 500px) and (orientation: landscape) {
+  .lane-button {
+    background: rgba(15, 18, 22, 0.22);
+    border-color: rgba(255, 255, 255, 0.14);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    color: rgba(255, 255, 255, 0.8);
+  }
+}
+
+/* Upright phones. */
+@media (max-width: 760px) {
+  /* Training: the workout chip takes the row under the buttons, its actions the row below. */
+  .ride[data-layout="training"] .workout-chip {
+    top: calc(var(--gap) + var(--hud-row) + var(--hud-row-gap));
+    left: var(--gap);
+    right: var(--gap);
+    min-width: 0;
+    padding: 8px 14px;
+  }
+
+  .ride[data-layout="training"] .workout-chip strong {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .ride[data-layout="training"] .training-actions {
+    top: calc(var(--gap) + 2 * (var(--hud-row) + var(--hud-row-gap)) + 12px);
+    left: var(--gap);
+    right: var(--gap);
+    justify-content: center;
+  }
+
+  /* Race and the bar share the same first row under the buttons. */
+  .race-top {
+    top: calc(var(--gap) + var(--hud-row) + var(--hud-row-gap));
+    left: var(--gap);
+    right: var(--gap);
+  }
+
+  .bar {
+    top: calc(var(--gap) + var(--hud-row) + var(--hud-row-gap));
+  }
+
+  /* Workout: three stats fit the row beside the ring, whatever the language. */
+  .workout-stats {
+    gap: 8px;
+    padding: 8px 10px;
+  }
+
+  .workout-stats > div {
+    min-width: 0;
+  }
+
+  .workout-stats .caption {
+    font-size: 10px;
+    letter-spacing: 0.04em;
+  }
+
+  .workout-stats strong {
+    font-size: 18px;
+  }
+
+  .training-actions > button {
+    padding: 0 12px;
+    white-space: nowrap;
+  }
+
+  /* Training: the targets stay clear of the lane buttons on both sides. */
+  .ride[data-layout="training"] .targets {
+    bottom: 262px;
+  }
+
+  .ride[data-layout="training"] .targets > div {
+    padding: 8px 10px;
+  }
+
+  .ride[data-layout="training"] .targets .num-xl {
+    font-size: 40px;
+  }
+
+  /* Studio: the controls sit one row-gap above the targets. */
+  .studio-controls {
+    bottom: 286px;
+  }
+
+  /* The milestone banner keeps to the free middle: under the top rows, between the side buttons. */
+  .milestone-banner {
+    top: max(18%, 232px, calc(var(--top-stack) + 2 * var(--hud-row-gap) + 32px));
+    max-width: calc(100vw - 2 * (var(--gap) + 68px));
+    padding: 10px 20px;
+  }
+
+  /* Paddles: the hint wraps instead of ending in an ellipsis. */
+  .paddle-hint {
+    white-space: normal;
+    text-align: center;
+    overflow: visible;
+    text-overflow: clip;
+  }
+}
+
+/* Phones on their side (short screens): panels move beside the buttons, not under them. */
+@media (max-height: 500px) and (orientation: landscape) {
+  /* Broadcast: the stats bar drops to the row under the buttons. */
+  .bar {
+    top: calc(var(--gap) + var(--hud-row) + var(--hud-row-gap));
+  }
+
+  .bar > div {
+    padding: 6px 14px;
+  }
+
+  /* Training: chip in the button row, to the left of the buttons; actions under them. */
+  .ride[data-layout="training"] .workout-chip {
+    top: var(--gap);
+    left: var(--gap);
+    right: auto;
+    max-width: calc(100% - 3 * var(--gap) - 400px);
+    padding: 6px 12px;
+  }
+
+  .ride[data-layout="training"] .training-actions {
+    top: calc(var(--gap) + var(--hud-row) + var(--hud-row-gap));
+    left: auto;
+    right: var(--gap);
+    justify-content: flex-end;
+  }
+
+  /* Studio: controls and targets stack down the right edge, the rider keeps the middle. */
+  .studio-board {
+    top: calc(var(--gap) + var(--hud-row) + var(--hud-row-gap));
+    width: 200px;
+    max-height: calc(100% - var(--gap) - var(--hud-row) - var(--hud-row-gap) - 128px);
+  }
+
+  .studio-controls {
+    top: calc(var(--gap) + var(--hud-row) + var(--hud-row-gap));
+    right: var(--gap);
+    bottom: auto;
+    transform: none;
+  }
+
+  .studio-targets {
+    top: calc(var(--gap) + 2 * (var(--hud-row) + var(--hud-row-gap)));
+    bottom: auto;
+    left: auto;
+    right: var(--gap);
+    transform: none;
+  }
+
+  .studio-targets .num-xl {
+    font-size: 36px;
+  }
+
+  .studio-targets > div {
+    padding: 6px 14px;
+  }
+
+  .studio-band {
+    padding: 6px 12px;
+    gap: 4px;
+  }
+
+  .studio-band .canvas-workout {
+    height: 34px;
+  }
+
+  .studio-band-stats .num-m {
+    font-size: 20px;
+  }
+
+  /* Studio: the "next" line would not fit the cue's short row. */
+  .studio-next {
+    display: none;
+  }
+
+  /* Training: a short band, so the world keeps room; the targets move to the free left edge. */
+  .ride[data-layout="training"] .world-wrap,
+  .ride[data-layout="training"] .canvas-peloton {
+    bottom: 124px;
+  }
+
+  /* The band's side stats fit two to a row. */
+  .band {
+    height: 124px;
+    grid-template-columns: 196px minmax(0, 1fr) 196px;
+  }
+
+  .band-stats {
+    padding: 8px 12px;
+    grid-template-columns: 1fr 1fr;
+    align-content: center;
+    gap: 4px 12px;
+  }
+
+  .band-chart {
+    padding: 8px 12px;
+    gap: 6px;
+  }
+
+  .band .canvas-workout {
+    height: 56px;
+  }
+
+  .ride[data-layout="training"] .targets {
+    left: calc(2 * var(--gap) + 56px);
+    bottom: calc(124px + var(--gap));
+    transform: none;
+  }
+
+  .ride[data-layout="training"] .targets .num-xl {
+    font-size: 40px;
+  }
+
+  .ride[data-layout="training"] .targets > div {
+    padding: 6px 12px;
+  }
+
+  /* Paddles: the hint wraps in the narrower meter. */
+  .paddle-hint {
+    white-space: normal;
+    text-align: center;
+    overflow: visible;
+    text-overflow: clip;
+  }
+
+  /* The race row spans the width: the first row under the buttons, or below the simulator
+     stepper, which owns the top-left corner (as for the workout chip). */
+  .race-top {
+    top: calc(var(--gap) + var(--hud-row) + var(--hud-row-gap));
+  }
+
+  .hud:has(#sim-stepper:not([hidden])) .race-top {
+    top: 72px;
+  }
+
+  .hud:has(#sim-stepper:not([hidden])) .workout-chip {
+    top: 72px;
+    max-width: calc(100% - 2 * var(--gap) - 340px);
+  }
+
+  .band-stats .caption {
+    font-size: 12px;
+    letter-spacing: 0.02em;
+    white-space: nowrap;
+  }
+
+  .band-stats .num-s {
+    white-space: nowrap;
+  }
+
+  .band-stats .num-s {
+    font-size: 18px;
+  }
+
+  /* Race: the timeline shares the row, so the row stays one line tall. */
+  .race-timeline {
+    flex: 1 1 0;
+    flex-basis: 0;
+    order: 0;
+  }
+
+  /* The milestone banner sits between the top rows and the lane buttons. */
+  .milestone-banner {
+    top: max(112px, calc(var(--top-stack) + 2 * var(--hud-row-gap) + 32px));
+    max-width: calc(100vw - 2 * (var(--gap) + 56px + var(--gap)));
+    padding: 8px 20px;
+  }
+}
+
+/* Short upright screens (small phones): lane buttons and the stepper sit lower, below the top rows. */
+@media (max-width: 760px) and (max-height: 700px) and (orientation: portrait) {
+  .lane-button {
+    top: 58%;
+  }
+
+  .sim-stepper {
+    bottom: calc(42% + 8px);
+  }
+}
+
+/* Phones: the status pills (drafting, best lap, group gap…) have one home, centred one row
+   under the lowest panel the layout puts at the top (--top-stack, its bottom edge). The
+   milestone banner goes below them. The glass is a little denser than on large screens,
+   so small captions stay readable in front of a bright sky. */
+@media (max-width: 760px) {
+  .ride {
+    --glass: rgba(15, 18, 22, 0.82);
+    --top-stack: calc(var(--gap) + var(--hud-row));
+  }
+
+  .ride[data-layout="broadcast"] {
+    --top-stack: 159px;
+  }
+
+  .ride[data-layout="training"] {
+    --top-stack: 172px;
+  }
+
+  .ride[data-layout="race"] {
+    --top-stack: 213px;
+  }
+}
+
+@media (max-height: 500px) and (orientation: landscape) {
+  .ride {
+    --glass: rgba(15, 18, 22, 0.82);
+    /* The simulator stepper at the top left is 58px tall, the buttons 44px. */
+    --top-stack: calc(var(--gap) + 58px);
+  }
+
+  .ride[data-layout="broadcast"] {
+    --top-stack: 140px;
+  }
+
+  .ride[data-layout="training"] {
+    --top-stack: 106px;
+  }
+
+  .ride[data-layout="race"] {
+    --top-stack: 150px;
+  }
+}
+
+@media (max-width: 760px), (max-height: 500px) and (orientation: landscape) {
+  .ride[data-layout] .hud-status {
+    top: calc(var(--top-stack) + var(--hud-row-gap));
+  }
+}
+
+/* Short upright phones, training: a lower band (it was half empty), the targets just above it,
+   and the simulator stepper beside the status row, so targets, stepper and lane buttons each
+   keep their own room. */
+@media (max-width: 760px) and (max-height: 700px) and (orientation: portrait) {
+  .ride[data-layout="training"] {
+    --band-height: 190px;
+  }
+
+  .ride[data-layout="training"] .targets {
+    bottom: calc(var(--band-height) + 12px);
+  }
+
+  .ride[data-layout="training"] .sim-stepper {
+    top: calc(var(--top-stack) + var(--hud-row-gap));
+    bottom: auto;
+  }
+}
+
+/* Landscape phones, race: the lane buttons start under the race row. */
+@media (max-height: 500px) and (orientation: landscape) {
+  .ride[data-layout="race"] .lane-button {
+    top: max(38%, calc(var(--top-stack) + var(--hud-row-gap)));
+  }
+}
+
+/* Phones: the W/kg under the broadcast power stays one line. */
+@media (max-width: 760px), (max-height: 500px) and (orientation: landscape) {
+  .bar .bar-sub {
+    white-space: nowrap;
+  }
+}
+
+/* Small landscape phones (≤760 wide) also match the narrow rule that hides the band's side
+   stats; landscape has room for them, so they come back and the chart keeps the middle. */
+@media (max-width: 760px) and (max-height: 500px) and (orientation: landscape) {
+  .band-stats {
+    display: grid;
+  }
+}
+
+/* Phones: one type scale for the ride screen. 12 captions · 13 buttons and units · 16 text ·
+   18 emphasis · 24/26 and 28/32 numbers (upright/landscape) · 40 big numbers · 54 the hero
+   number. Sizes that sat between the steps snap to the nearest one. */
+@media (max-width: 760px), (max-height: 500px) and (orientation: landscape) {
+  .sim-readout .caption {
+    font-size: 12px;
+  }
+
+  .unit,
+  .bar-sub,
+  #workout-block {
+    font-size: 13px;
+  }
+
+  #event-call-text,
+  #event-call-button,
+  .workout-chip #workout-name {
+    font-size: 16px;
+  }
+
+  .ride .num-xl {
+    font-size: 40px;
+  }
+
+  .milestone-banner {
+    font-size: 18px;
+  }
+}
+
+@media (max-height: 500px) and (orientation: landscape) {
+  .race-power .num-xl {
+    font-size: 54px;
+  }
+
+  .milestone-banner {
+    font-size: 24px;
+  }
+}
+
+/* Phones: the status row is for live riding feedback (drafting, best lap, group gap). A race
+   you're not in is announced by its join banner and, in landscape, the route profile's line;
+   as a pill it took a whole row and said the same twice. */
+@media (max-width: 760px), (max-height: 500px) and (orientation: landscape) {
+  #race-status {
+    display: none;
+  }
+}
+
+/* Very short landscape screens (a phone browser with its address bar, about 330px tall),
+   training: a lower band, and the status pills move onto the targets' row, to the right. */
+@media (max-height: 360px) and (orientation: landscape) {
+  .ride[data-layout="training"] .band {
+    height: 112px;
+  }
+
+  .ride[data-layout="training"] .world-wrap,
+  .ride[data-layout="training"] .canvas-peloton {
+    bottom: 112px;
+  }
+
+  .ride[data-layout="training"] .targets {
+    bottom: calc(112px + var(--gap));
+  }
+
+}
+
+/* The smallest upright screens (a small phone's browser, about 560px tall). Training: a
+   150px band, the lane buttons on the targets' row and slimmer targets between them. Race:
+   the stepper under the race rows and the lane buttons under the stepper. */
+@media (max-width: 760px) and (max-height: 600px) and (orientation: portrait) {
+  .ride[data-layout="training"] {
+    --band-height: 150px;
+  }
+
+  .ride[data-layout="training"] .lane-button {
+    top: auto;
+    bottom: calc(var(--band-height) + 12px);
+  }
+
+  .ride[data-layout="training"] .targets > div {
+    padding: 6px 8px;
+  }
+
+  .ride[data-layout="race"] .sim-stepper {
+    top: calc(var(--top-stack) + var(--hud-row-gap));
+    bottom: auto;
+  }
+
+  .ride[data-layout="race"] .lane-button {
+    top: calc(var(--top-stack) + 2 * var(--hud-row-gap) + 140px);
+  }
+}
+
+/* The smallest landscape screens (a small phone's browser, about 280px tall), training:
+   targets on one line without captions, and shorter lane buttons under the top rows. */
+@media (max-height: 300px) and (orientation: landscape) {
+  .ride[data-layout="training"] .targets .caption {
+    display: none;
+  }
+
+  .ride[data-layout="training"] .targets .num-xl {
+    font-size: 28px;
+  }
+
+  .ride[data-layout="training"] .lane-button {
+    top: calc(var(--top-stack) + 4px);
+    height: 56px;
+  }
+}
+
+/* Notices (status pills, junction, race and event calls, sprint/KOM countdown, splits,
+   milestones). Large screens: the wrapper makes no box, each keeps its own place. The
+   sprint/KOM countdown belongs to the race layout. */
+.hud-notices {
+  display: contents;
+}
+
+.ride:not([data-layout="race"]) .marker-banner {
+  display: none;
+}
+
+/* Phones: they stack in one centred column under the top panels, between the side rails
+   (stepper, lane buttons), so two at once never cover each other. */
+@media (max-width: 760px), (max-height: 500px) and (orientation: landscape) {
+  .hud-notices {
+    position: absolute;
+    top: calc(var(--top-stack) + var(--hud-row-gap));
+    left: calc(var(--gap) + 64px + var(--hud-row-gap));
+    right: calc(var(--gap) + 64px + var(--hud-row-gap));
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--hud-row-gap);
+    pointer-events: none;
+  }
+
+  .hud-notices > * {
+    position: static;
+    transform: none;
+    max-width: 100%;
+    margin: 0;
+  }
+
+  .hud-notices .race-call {
+    white-space: normal;
+  }
+
+  .hud-notices .milestone-banner.show {
+    animation-name: milestone-in-column;
+  }
+
+  /* The status pills wrap instead of running off a narrow screen. */
+  .hud-notices .hud-status {
+    flex-wrap: wrap;
+    justify-content: center;
+    white-space: nowrap;
+  }
+
+  /* Beside the live pills, one notice at a time, the most urgent: a junction to choose at,
+     a race or event to join, then a split, a milestone, the sprint/KOM countdown. */
+  .hud-notices:has(#junction:not([hidden])) :is(#race-call, #event-call, #split-toast, #milestone-banner, #marker-banner),
+  .hud-notices:has(#race-call:not([hidden])) :is(#event-call, #split-toast, #milestone-banner, #marker-banner),
+  .hud-notices:has(#event-call:not([hidden])) :is(#split-toast, #milestone-banner, #marker-banner),
+  .hud-notices:has(#split-toast:not([hidden])) :is(#milestone-banner, #marker-banner),
+  .hud-notices:has(#milestone-banner:not([hidden])) #marker-banner {
+    display: none;
+  }
+}
+
+@keyframes milestone-in-column {
+  0% {
+    opacity: 0;
+    transform: translateY(-16px) scale(0.92);
+  }
+  8%,
+  85% {
+    opacity: 1;
+    transform: none;
+  }
+  100% {
+    opacity: 0;
+    transform: none;
+  }
+}
+
+/* Landscape phones, training: the targets hold the left; the notices sit at the right above
+   the band, growing upwards. */
+@media (max-height: 500px) and (orientation: landscape) {
+  .ride[data-layout="training"] .hud-notices {
+    top: auto;
+    /* The targets reach about 53 % of the width. */
+    left: 56%;
+    right: calc(2 * var(--gap) + 56px);
+    bottom: calc(124px + var(--gap));
+    align-items: flex-end;
+  }
+}
+
+@media (max-height: 360px) and (orientation: landscape) {
+  .ride[data-layout="training"] .hud-notices {
+    bottom: calc(112px + var(--gap));
+  }
+}
+
+/* Short upright phones, cockpit: the stepper moves up beside the status row and the lane
+   buttons sit just above the cluster (90px from the bottom, 132px tall on these phones), so
+   neither reaches into the numbers. */
+@media (max-width: 760px) and (max-height: 700px) and (orientation: portrait) {
+  .ride[data-layout="cockpit"] .sim-stepper {
+    top: calc(var(--top-stack) + var(--hud-row-gap));
+    bottom: auto;
+  }
+
+  .ride[data-layout="cockpit"] .lane-button {
+    top: auto;
+    bottom: calc(90px + 132px + var(--hud-row-gap));
+  }
+}
+
+/* Small screens, training: no race or event calls; mid-workout they don't matter, and the
+   room belongs to the targets. */
+@media (max-width: 760px) and (max-height: 600px) and (orientation: portrait),
+  (max-height: 400px) and (orientation: landscape) {
+  .ride[data-layout="training"] :is(#race-call, #event-call) {
+    display: none;
+  }
+}
+
+/* Short landscape screens, race: the lane buttons fit between the race rows and the power
+   box. */
+@media (max-height: 360px) and (orientation: landscape) {
+  .ride[data-layout="race"] .lane-button {
+    height: 48px;
+  }
+}
+
+/* The smallest landscape screens (about 280px): the live pills and a junction only, and in a
+   race no lane buttons (passing is automatic). */
+@media (max-height: 300px) and (orientation: landscape) {
+  .hud-notices :is(#race-call, #event-call, #split-toast, #milestone-banner, #marker-banner) {
+    display: none;
+  }
+
+  .ride[data-layout="race"] .lane-controls {
+    display: none;
+  }
+
+  /* In a workout the best-lap ghost says little; the drafting pill keeps the row. */
+  .ride[data-layout="training"] #ghost-gap {
+    display: none;
+  }
+}
+
+/* Landscape phones, race: the power and stats boxes hold the bottom left (about 310px), so
+   the notices centre in the room to their right. */
+@media (max-height: 500px) and (orientation: landscape) {
+  .ride[data-layout="race"] .hud-notices {
+    left: calc(var(--gap) + 320px);
+  }
+}
+
+/* GD glass: panels over the 3D world blur what is behind them and catch the
+   light on their top edge. */
+.activity-tabs,
+.menu-profile,
+.server-status,
+.update-banner,
+.route-card,
+.card,
+.modal-card,
+.modal-nav,
+.lang-select,
+.vehicle-share-bar,
+.afk-prompt,
+.workout-card-body,
+.pause-pill {
+  -webkit-backdrop-filter: blur(16px) saturate(120%);
+  backdrop-filter: blur(16px) saturate(120%);
+  border-top-color: var(--glass-top);
+}

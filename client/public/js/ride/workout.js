@@ -1,0 +1,289 @@
+/**
+ * Structured workouts for ERG mode.
+ *
+ * A workout is a list of segments. Each segment lasts `durationS` and ramps
+ * its target linearly from `from` to `to`, both as a fraction of FTP
+ * (1.0 = 100 % FTP). Steady blocks have from === to. Intervals are expanded
+ * into alternating on/off segments when the workout is created.
+ */
+
+import { t } from "../i18n/i18n.js";
+/**
+ * @typedef {{durationS: number, from: number, to: number, label: string, kind: string}} Segment
+ * @typedef {{name: string, description?: string, segments: Segment[]}} Workout
+ */
+
+const MAX_SEGMENTS = 500;
+
+// The built-in library keeps English names as data; these look up what to show.
+const LIBRARY_KEYS = {
+  "Endurance 45": ["workout.lib.endurance.name", "workout.lib.endurance.description"],
+  "Sweet Spot 3×8": ["workout.lib.sweetSpot.name", "workout.lib.sweetSpot.description"], // i18n-ok
+  "VO2max 5×3": ["workout.lib.vo2.name", "workout.lib.vo2.description"],
+  "Seiler 4×8": ["workout.lib.seiler.name", "workout.lib.seiler.description"], // i18n-ok
+  "Rønnestad 30/15": ["workout.lib.ronnestad.name", "workout.lib.ronnestad.description"], // i18n-ok
+  "40/20 4×8": ["workout.lib.fortyTwenty.name", "workout.lib.fortyTwenty.description"], // i18n-ok
+  "Over-unders 3×9": ["workout.lib.overUnders.name", "workout.lib.overUnders.description"], // i18n-ok
+  "ERG check 10": ["workout.lib.erg.name", "workout.lib.erg.description"], // i18n-ok
+};
+const LABEL_KEYS = {
+  Steady: "workout.label.steady", Ramp: "workout.label.ramp", Block: "workout.label.block", "Warm-up": "workout.label.warmup", "Cool-down": "workout.label.cooldown",
+  Endurance: "workout.label.endurance", Tempo: "workout.label.tempo", Easy: "workout.label.easy", "Max effort": "workout.label.maxEffort", "Free ride": "workout.label.freeRide", // i18n-ok
+  "Series break": "workout.label.seriesBreak", // i18n-ok
+};
+
+/** The name to show for a workout: the library ones are translated, imported ones are the file's own. */
+export const workoutName = (workout) => (LIBRARY_KEYS[workout.name] ? t(LIBRARY_KEYS[workout.name][0]) : workout.name);
+export const workoutDescription = (workout) => (LIBRARY_KEYS[workout.name] ? t(LIBRARY_KEYS[workout.name][1]) : workout.description);
+
+/** The label to show for a block of a library workout ("Step 2", "Interval 1/5", "Warm-up"). */
+export function segmentLabel(label) {
+  if (LABEL_KEYS[label]) return t(LABEL_KEYS[label]);
+  const step = /^Step (\d+)$/.exec(label);
+  if (step) return t("workout.label.step", { n: step[1] });
+  const round = /^(Interval|Recovery) (\d+)\/(\d+)$/.exec(label);
+  if (round) return t(round[1] === "Interval" ? "workout.label.interval" : "workout.label.recovery", { i: round[2], n: round[3] }); // i18n-ok
+  const set = /^Series (\d+)\/(\d+) · (.+)$/.exec(label); // i18n-ok
+  if (set) return t("workout.label.series", { i: set[1], n: set[2], label: segmentLabel(set[3]) }); // i18n-ok
+  const under = /^(Under|Over) (\d+)\/(\d+)$/.exec(label); // i18n-ok
+  if (under) return t(under[1] === "Under" ? "workout.label.under" : "workout.label.over", { i: under[2], n: under[3] }); // i18n-ok
+  return label;
+}
+const MAX_DURATION_S = 6 * 3600;
+
+export const steady = (durationS, power, label = "Steady") => ({ durationS, from: power, to: power, label, kind: "steady" }); // i18n-ok
+export const ramp = (durationS, from, to, label = "Ramp", kind = "ramp") => ({ durationS, from, to, label, kind }); // i18n-ok
+
+/**
+ * `repeat` times (on, off), labelled "Interval 1/5" etc. With `lastRecovery: false`
+ * the final rep has no recovery after it (a series ends on work, the next set's rest follows).
+ */
+export function intervals(repeat, onS, onPower, offS, offPower, { lastRecovery = true } = {}) {
+  const segments = [];
+  for (let i = 1; i <= repeat; i += 1) {
+    segments.push({ durationS: onS, from: onPower, to: onPower, label: `Interval ${i}/${repeat}`, kind: "on" });
+    if (offS > 0 && (lastRecovery || i < repeat)) segments.push({ durationS: offS, from: offPower, to: offPower, label: `Recovery ${i}/${repeat}`, kind: "off" });
+  }
+  return segments;
+}
+
+/** `count` sets from `makeSet()`, each block prefixed "Series 1/3 · ", with `restS` at `restPower` between sets. */
+export function series(count, restS, restPower, makeSet) {
+  const segments = [];
+  for (let s = 1; s <= count; s += 1) {
+    if (s > 1) segments.push({ durationS: restS, from: restPower, to: restPower, label: "Series break", kind: "off" }); // i18n-ok
+    for (const segment of makeSet()) segments.push({ ...segment, label: `Series ${s}/${count} · ${segment.label}` }); // i18n-ok
+  }
+  return segments;
+}
+
+/** `repeat` times an under block then an over block, labelled "Under 1/5", "Over 1/5". */
+export function overUnders(repeat, underS, underPower, overS, overPower) {
+  const segments = [];
+  for (let i = 1; i <= repeat; i += 1) {
+    segments.push({ durationS: underS, from: underPower, to: underPower, label: `Under ${i}/${repeat}`, kind: "on" }); // i18n-ok
+    segments.push({ durationS: overS, from: overPower, to: overPower, label: `Over ${i}/${repeat}`, kind: "on" }); // i18n-ok
+  }
+  return segments;
+}
+
+/** Validates and normalises a workout; throws with a readable message. */
+export function createWorkout({ name, description = "", segments }) {
+  if (!Array.isArray(segments) || segments.length === 0) throw new Error(t("workout.error.noBlocks"));
+  if (segments.length > MAX_SEGMENTS) throw new Error(t("workout.error.manyBlocks", { max: MAX_SEGMENTS }));
+  const clean = segments.map((segment, index) => {
+    const durationS = Math.round(Number(segment.durationS));
+    const from = Number(segment.from);
+    const to = Number(segment.to ?? segment.from);
+    if (!(durationS > 0)) throw new Error(t("workout.error.noDuration", { n: index + 1 }));
+    if (![from, to].every((p) => Number.isFinite(p) && p >= 0 && p <= 3)) throw new Error(t("workout.error.badPower", { n: index + 1 }));
+    return { durationS, from, to, label: String(segment.label ?? "Block"), kind: String(segment.kind ?? "steady") }; // i18n-ok
+  });
+  const total = clean.reduce((sum, s) => sum + s.durationS, 0);
+  if (total > MAX_DURATION_S) throw new Error(t("workout.error.tooLong"));
+  return { name: String(name || "Workout").slice(0, 80), description: String(description).slice(0, 500), segments: clean }; // i18n-ok
+}
+
+export const totalDuration = (workout) => workout.segments.reduce((sum, s) => sum + s.durationS, 0);
+
+/**
+ * Where we are in a workout after `elapsedS` seconds.
+ * @returns {{finished: boolean, index: number, segment: Segment | null, fraction: number,
+ *            segmentRemainingS: number, remainingS: number}}
+ */
+export function positionAt(workout, elapsedS) {
+  let start = 0;
+  const total = totalDuration(workout);
+  for (let index = 0; index < workout.segments.length; index += 1) {
+    const segment = workout.segments[index];
+    if (elapsedS < start + segment.durationS) {
+      const into = Math.max(0, elapsedS - start);
+      const progress = into / segment.durationS;
+      return {
+        finished: false,
+        index,
+        segment,
+        fraction: segment.from + (segment.to - segment.from) * progress,
+        segmentRemainingS: segment.durationS - into,
+        remainingS: total - Math.max(0, elapsedS),
+      };
+    }
+    start += segment.durationS;
+  }
+  return { finished: true, index: workout.segments.length, segment: null, fraction: 0, segmentRemainingS: 0, remainingS: 0 };
+}
+
+/**
+ * Runs a workout against a clock. Pausing (e.g. when the rider stops
+ * pedalling) freezes the workout time.
+ */
+export class WorkoutPlayer {
+  #elapsed = 0;
+  #lastTick = null;
+  paused = false;
+
+  /** @param {Workout} workout @param {number} ftp watts */
+  constructor(workout, ftp) {
+    this.workout = workout;
+    this.ftp = ftp;
+  }
+
+  get elapsedS() {
+    return this.#elapsed;
+  }
+
+  /** Advances the workout clock to `nowS`. */
+  tick(nowS) {
+    if (this.#lastTick !== null && !this.paused) this.#elapsed += Math.max(0, nowS - this.#lastTick);
+    this.#lastTick = nowS;
+    return this.state();
+  }
+
+  skipSegment() {
+    const position = positionAt(this.workout, this.#elapsed);
+    if (!position.finished) this.#elapsed += position.segmentRemainingS;
+  }
+
+  state() {
+    const position = positionAt(this.workout, this.#elapsed);
+    return { ...position, targetWatts: Math.round(position.fraction * this.ftp), elapsedS: this.#elapsed };
+  }
+}
+
+// ------------------------------------------------------------------ .zwo ---
+
+const decodeEntities = (text) =>
+  text.replace(/&(lt|gt|amp|quot|apos);/g, (_, entity) => ({ lt: "<", gt: ">", amp: "&", quot: '"', apos: "'" })[entity]);
+
+function attributes(source) {
+  const result = {};
+  for (const match of source.matchAll(/([A-Za-z_][\w-]*)\s*=\s*"([^"]*)"/g)) result[match[1].toLowerCase()] = decodeEntities(match[2]);
+  return result;
+}
+
+const number = (value, fallback = NaN) => {
+  const n = Number.parseFloat(value);
+  return Number.isFinite(n) ? n : fallback;
+};
+
+/**
+ * Parses the subset of the Zwift workout format (.zwo) that matters for ERG:
+ * Warmup, Cooldown, Ramp, SteadyState, IntervalsT, FreeRide, MaxEffort.
+ * Unknown elements (text events, cadence hints) are ignored.
+ * @param {string} xml
+ * @returns {Workout}
+ */
+export function parseZwo(xml) {
+  if (typeof xml !== "string" || !/<workout_file[\s>]/i.test(xml)) throw new Error(t("workout.error.notZwo"));
+  const name = decodeEntities(/<name>([\s\S]*?)<\/name>/i.exec(xml)?.[1]?.trim() ?? t("workout.imported"));
+  const description = decodeEntities(/<description>([\s\S]*?)<\/description>/i.exec(xml)?.[1]?.trim() ?? "");
+  const body = /<workout>([\s\S]*?)<\/workout>/i.exec(xml)?.[1];
+  if (!body) throw new Error(t("workout.error.noSection"));
+
+  const segments = [];
+  for (const match of body.matchAll(/<(\w+)([^>]*?)\/?>/g)) {
+    const tag = match[1].toLowerCase();
+    const a = attributes(match[2]);
+    const duration = number(a.duration);
+    switch (tag) {
+      case "warmup":
+        segments.push(ramp(duration, number(a.powerlow), number(a.powerhigh), "Warm-up", "warmup"));
+        break;
+      case "cooldown":
+        segments.push(ramp(duration, number(a.powerlow), number(a.powerhigh), "Cool-down", "cooldown"));
+        break;
+      case "ramp":
+        segments.push(ramp(duration, number(a.powerlow), number(a.powerhigh)));
+        break;
+      case "steadystate":
+        segments.push(steady(duration, number(a.power)));
+        break;
+      case "intervalst":
+        segments.push(...intervals(Math.max(1, Math.round(number(a.repeat, 1))), number(a.onduration), number(a.onpower), number(a.offduration, 0), number(a.offpower, 0.5)));
+        break;
+      case "freeride":
+      case "maxeffort":
+        // No fixed target: ride easy in ERG terms; the rider can override manually.
+        segments.push(steady(duration, 0.5, tag === "maxeffort" ? "Max effort" : "Free ride")); // i18n-ok
+        break;
+      default:
+        break;
+    }
+  }
+  return createWorkout({ name, description, segments });
+}
+
+// --------------------------------------------------------------- presets ---
+
+export const PRESET_WORKOUTS = Object.freeze([
+  createWorkout({
+    name: "Endurance 45",
+    description: "Steady aerobic ride with a short build.", // i18n-ok
+    segments: [ramp(600, 0.45, 0.65, "Warm-up", "warmup"), steady(1500, 0.68, "Endurance"), steady(300, 0.75, "Tempo"), ramp(300, 0.6, 0.45, "Cool-down", "cooldown")], // i18n-ok
+  }),
+  createWorkout({
+    name: "Sweet Spot 3×8", // i18n-ok
+    description: "Three 8-minute blocks just below threshold.", // i18n-ok
+    segments: [ramp(600, 0.45, 0.7, "Warm-up", "warmup"), ...intervals(3, 480, 0.9, 240, 0.55), ramp(300, 0.6, 0.45, "Cool-down", "cooldown")],
+  }),
+  createWorkout({
+    name: "VO2max 5×3",
+    description: "Five hard 3-minute efforts with equal recovery.", // i18n-ok
+    segments: [ramp(600, 0.45, 0.75, "Warm-up", "warmup"), ...intervals(5, 180, 1.15, 180, 0.5), ramp(300, 0.6, 0.45, "Cool-down", "cooldown")],
+  }),
+  createWorkout({
+    name: "Seiler 4×8", // i18n-ok
+    description: "Four 8-minute efforts with 2 minutes easy between them. Based on Seiler et al. 2013, where riders held the hardest effort they could sustain. 105 % FTP is our estimate: adjust it to your effort.", // i18n-ok
+    segments: [ramp(600, 0.45, 0.75, "Warm-up", "warmup"), ...intervals(4, 480, 1.05, 120, 0.5, { lastRecovery: false }), ramp(300, 0.6, 0.45, "Cool-down", "cooldown")],
+  }),
+  createWorkout({
+    name: "Rønnestad 30/15", // i18n-ok
+    description: "Three series of 13 × 30 s on, 15 s off, with 3 minutes between series. From Rønnestad et al. 2015, where riders held the hardest effort they could sustain. 120 % FTP is our estimate: adjust it to your effort.", // i18n-ok
+    segments: [ramp(600, 0.45, 0.75, "Warm-up", "warmup"), ...series(3, 180, 0.6, () => intervals(13, 30, 1.2, 15, 0.6, { lastRecovery: false })), ramp(300, 0.6, 0.45, "Cool-down", "cooldown")],
+  }),
+  createWorkout({
+    name: "40/20 4×8", // i18n-ok
+    description: "Four sets of 8 × 40 s on, 20 s off, with 2 minutes between sets. Format from clinical trial NCT04075929. 115 % FTP is our estimate: adjust it to your effort.", // i18n-ok
+    segments: [ramp(600, 0.45, 0.75, "Warm-up", "warmup"), ...series(4, 120, 0.58, () => intervals(8, 40, 1.15, 20, 0.58, { lastRecovery: false })), ramp(300, 0.6, 0.45, "Cool-down", "cooldown")],
+  }),
+  createWorkout({
+    name: "Over-unders 3×9", // i18n-ok
+    description: "Three sets of 2 minutes just under and 1 minute just over threshold, with 5 minutes between sets. Common coaching practice, not from a published study.", // i18n-ok
+    segments: [ramp(600, 0.45, 0.75, "Warm-up", "warmup"), ...series(3, 300, 0.5, () => overUnders(3, 120, 0.95, 60, 1.05)), ramp(300, 0.6, 0.45, "Cool-down", "cooldown")],
+  }),
+  createWorkout({
+    name: "ERG check 10", // i18n-ok
+    description: "Short steps to see how your trainer holds power.", // i18n-ok
+    segments: [steady(120, 0.5, "Easy"), steady(120, 0.7, "Step 1"), steady(120, 0.85, "Step 2"), steady(120, 1.0, "Step 3"), steady(120, 0.5, "Easy")], // i18n-ok
+  }),
+]);
+
+/** Training zone (1–6, Coggan-style) for a fraction of FTP, used for colours. */
+export function zoneFor(fraction) {
+  if (fraction < 0.56) return 1;
+  if (fraction < 0.76) return 2;
+  if (fraction < 0.91) return 3;
+  if (fraction < 1.06) return 4;
+  if (fraction < 1.21) return 5;
+  return 6;
+}
