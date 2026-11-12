@@ -41,8 +41,11 @@ is not possible today and would mislead if it were:
   cookies and no referrer, is skipped when the visitor's browser asks to save
   data, happens at most once per page view, and every failure is ignored: the
   page never waits for it or breaks because of it.
-- The Pages workflow turns both on for the public Render server; repository
-  variables turn them off. Self-hosted builds (Docker Compose) leave them off.
+- The Pages workflow turns the note on for the public Render server; a
+  repository variable turns it off. Pre-warming stays off there until the
+  operator turns it on with a repository variable, once the privacy policy
+  the footer links (another repository variable) says so. Self-hosted builds
+  (Docker Compose) leave both off.
 
 ## Consequences
 

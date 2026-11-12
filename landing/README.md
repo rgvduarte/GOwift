@@ -67,7 +67,10 @@ on once under *Settings → Pages → Source: GitHub Actions*. The workflow take
 `PUBLIC_SITE_URL` from Pages itself and `PUBLIC_APP_URL` from the repository
 variable `GOINDOOR_PUBLIC_URL`, or the public server on Render
 (`https://goindoor.onrender.com`) when it is unset. That server is on the free
-plan, so the workflow also sets `PUBLIC_APP_COLD_START` and
-`PUBLIC_APP_PREWARM`; the repository variables `GOINDOOR_LANDING_COLD_START`
-and `GOINDOOR_LANDING_PREWARM` set to `false` turn them off, e.g. for a server
-that is always on.
+plan, so the workflow also sets `PUBLIC_APP_COLD_START`; the repository
+variable `GOINDOOR_LANDING_COLD_START` set to `false` turns it off, e.g. for a
+server that is always on. Pre-warming stays off until the repository variable
+`GOINDOOR_LANDING_PREWARM` is `true`: it shows every visitor's IP address to
+the server's host, so first link a privacy policy that says so. The footer's
+links come from the repository variables `GOINDOOR_PRIVACY_URL` and
+`GOINDOOR_LANDING_IMPRINT_URL`, as in Docker Compose.
