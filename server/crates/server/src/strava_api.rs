@@ -3,6 +3,12 @@
 
 use crate::strava::{StravaConfig, TokenResponse, UploadStatus};
 
+// Strava moves its API base from https://www.strava.com/api/v3 to
+// https://api-v3.strava.com, available from 2027-01-04 (API changelog,
+// 2026-06-01; its developer email lists the move as due 2027-06-01). Switch
+// UPLOADS_URL and ACTIVITIES_URL once the new host answers. The OAuth URLs
+// (TOKEN_URL, `strava::AUTHORIZE_URL`) stay on www.strava.com, where Strava
+// documents them.
 const TOKEN_URL: &str = "https://www.strava.com/oauth/token";
 const UPLOADS_URL: &str = "https://www.strava.com/api/v3/uploads";
 const ACTIVITIES_URL: &str = "https://www.strava.com/api/v3/activities";
