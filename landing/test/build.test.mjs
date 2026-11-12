@@ -51,6 +51,9 @@ function motionRules(css) {
 
 const allowsMotion = (context) => context.some((p) => /prefers-reduced-motion\s*:\s*no-preference/.test(p));
 
+/** Whether a rule only applies on screens, e.g. "@media screen and (...)", so never on paper. */
+const onScreenOnly = (context) => context.some((p) => /^@media\s+(only\s+)?screen\b/.test(p));
+
 /** The base path every link is built on, from the home page's canonical link. */
 function basePath() {
   const canonical = read("index.html").match(/<link rel="canonical" href="([^"]+)"/)[1];
@@ -119,6 +122,17 @@ test("nothing moves for visitors who asked their system to reduce motion", { ski
   assert.deepEqual(
     motionRules(allCss())
       .filter(({ context }) => !allowsMotion(context))
+      .map(({ rule }) => rule),
+    [],
+  );
+});
+
+// A printed page has no scrolling, so a section that rises in as it scrolls
+// into view would print blank; a drawing in progress would print half drawn.
+test("the page prints in full: nothing moves on paper", { skip }, () => {
+  assert.deepEqual(
+    motionRules(allCss())
+      .filter(({ context }) => !onScreenOnly(context))
       .map(({ rule }) => rule),
     [],
   );

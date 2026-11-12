@@ -164,8 +164,9 @@ code {
 }
 
 /* Motion is a nicety: only for visitors who haven't asked their system to
-   reduce it, and the page reads the same without it. */
-@media (prefers-reduced-motion: no-preference) {
+   reduce it, and the page reads the same without it. Only on screens: paper
+   doesn't scroll, so a section waiting to rise in would print blank. */
+@media screen and (prefers-reduced-motion: no-preference) {
   .button {
     transition:
       background-color 0.15s,
