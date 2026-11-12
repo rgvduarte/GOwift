@@ -3,6 +3,11 @@
  * run in the world worker and under `node --test`: no canvas, no I/O.
  */
 
+import { verticalShade } from "../meshBuilder.js";
+
+/** Baked ambient occlusion for a trunk standing on `ground`: darker at its foot, as in the grass around it. */
+export const trunkShade = (ground) => verticalShade(ground, ground + 1.5, 0.7);
+
 /** Linear blend of two RGB(A) colours; `t = 0` is `a`, `t = 1` is `b`. */
 export function mix(a, b, t) {
   return a.map((c, i) => c + (b[i] - c) * t);

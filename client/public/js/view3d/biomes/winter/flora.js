@@ -4,6 +4,8 @@
  * shapes change.
  */
 import { PINE, ROCK, SNOW, SNOW_SHADE, TIMBER_DARK } from "./palette.js";
+import { verticalShade } from "../../meshBuilder.js";
+import { trunkShade } from "../helpers.js";
 
 const BARK = [0.55, 0.54, 0.5];
 const GRASS = Object.freeze([
@@ -16,17 +18,20 @@ const GRASS = Object.freeze([
 function plantSpruce({ mesh, x, y, z, random }) {
   const height = 6 + random() * 7;
   const color = PINE;
-  mesh.box([x, y + height * 0.12, z], [0.4, height * 0.24, 0.4], TIMBER_DARK);
+  mesh.shaded(trunkShade(y), () => mesh.box([x, y + height * 0.12, z], [0.4, height * 0.24, 0.4], TIMBER_DARK));
   const tiers = random() < 0.5 ? 2 : 3;
   let lastBase = y;
   let lastRadius = 0;
-  for (let t = 0; t < tiers; t += 1) {
-    const base = y + height * (0.16 + t * 0.22);
-    const radius = height * (0.3 - t * 0.07);
-    mesh.cone([x, base, z], radius, height * (0.5 - t * 0.08), color, 7, random() * Math.PI);
-    lastBase = base;
-    lastRadius = radius;
-  }
+  // Baked ambient occlusion: the lower tiers sit in the shade of the upper ones.
+  mesh.shaded(verticalShade(y + height * 0.16, y + height * 0.9, 0.66), () => {
+    for (let t = 0; t < tiers; t += 1) {
+      const base = y + height * (0.16 + t * 0.22);
+      const radius = height * (0.3 - t * 0.07);
+      mesh.cone([x, base, z], radius, height * (0.5 - t * 0.08), color, 7, random() * Math.PI);
+      lastBase = base;
+      lastRadius = radius;
+    }
+  });
   // Snow sits on the upper half of the top tier.
   mesh.cone([x, lastBase + height * 0.14, z], lastRadius * 0.7, height * 0.3, SNOW, 7, random() * Math.PI);
   mesh.disc([x, y + 0.05, z], [height * 0.15, height * 0.15], SNOW_SHADE, 6, random() * Math.PI);
@@ -36,7 +41,7 @@ function plantSpruce({ mesh, x, y, z, random }) {
 function plantBirch({ mesh, x, y, z, random }) {
   const height = 5 + random() * 4.5;
   const trunk = height * 0.7;
-  mesh.box([x, y + trunk / 2, z], [0.24, trunk, 0.24], BARK);
+  mesh.shaded(trunkShade(y), () => mesh.box([x, y + trunk / 2, z], [0.24, trunk, 0.24], BARK));
   // Two limbs reach up into the snow crown, so the tree reads as one shape.
   for (let b = 0; b < 2; b += 1) {
     const angle = random() * Math.PI * 2;

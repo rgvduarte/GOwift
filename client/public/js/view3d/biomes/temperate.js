@@ -28,6 +28,8 @@ import {
   buildWarningSign,
 } from "../structures.js";
 import { fbm, valueNoise } from "../noise.js";
+import { verticalShade } from "../meshBuilder.js";
+import { trunkShade } from "./helpers.js";
 
 export const COLORS = Object.freeze({
   road: [0.25, 0.26, 0.28],
@@ -125,35 +127,41 @@ function terrainColor({ x, z, height, steep, seed, water, riverDistance = Infini
 
 /** One tree, bush or rock at `[x, y, z]`; `kind` is the placement's random draw. */
 function plantTree({ mesh, x, y, z, kind, random }) {
+  // Baked ambient occlusion: darker at the foot and under the crowns, where the sky reaches least.
   if (kind < 0.1) {
     const size = 0.8 + random() * 2;
-    mesh.cone([x, y, z], size, size * 0.8, COLORS.rock, 5, random() * Math.PI);
+    mesh.shaded(verticalShade(y, y + size * 0.8, 0.8), () => mesh.cone([x, y, z], size, size * 0.8, COLORS.rock, 5, random() * Math.PI));
   } else if (kind < 0.28) {
     const size = 0.9 + random() * 1.2;
-    mesh.ellipsoid([x, y + size * 0.55, z], [size, size * 0.75, size], COLORS.bush, 4, 8, random() * Math.PI);
+    mesh.shaded(verticalShade(y, y + size * 1.3, 0.72), () => mesh.ellipsoid([x, y + size * 0.55, z], [size, size * 0.75, size], COLORS.bush, 4, 8, random() * Math.PI));
   } else if (kind < 0.62) {
     // Fir: two or three stacked cones.
     const height = 6 + random() * 7;
     const color = COLORS.firs[Math.floor(random() * COLORS.firs.length)];
-    mesh.box([x, y + height * 0.12, z], [0.4, height * 0.24, 0.4], COLORS.trunk);
+    mesh.shaded(trunkShade(y), () => mesh.box([x, y + height * 0.12, z], [0.4, height * 0.24, 0.4], COLORS.trunk));
     const tiers = random() < 0.5 ? 2 : 3;
-    for (let t = 0; t < tiers; t += 1) {
-      const base = y + height * (0.18 + t * 0.22);
-      const radius = height * (0.3 - t * 0.07);
-      mesh.cone([x, base, z], radius, height * (0.5 - t * 0.08), color, 7, random() * Math.PI);
-    }
+    mesh.shaded(verticalShade(y + height * 0.18, y + height * 0.9, 0.66), () => {
+      for (let t = 0; t < tiers; t += 1) {
+        const base = y + height * (0.18 + t * 0.22);
+        const radius = height * (0.3 - t * 0.07);
+        mesh.cone([x, base, z], radius, height * (0.5 - t * 0.08), color, 7, random() * Math.PI);
+      }
+    });
   } else {
     // Leafy tree: trunk and one or two round crowns.
     const height = 5 + random() * 5;
     const color = COLORS.leaves[Math.floor(random() * COLORS.leaves.length)];
     const crown = height * (0.3 + random() * 0.1);
-    mesh.box([x, y + height * 0.3, z], [0.45, height * 0.6, 0.45], COLORS.trunk);
-    mesh.ellipsoid([x, y + height * 0.68, z], [crown, crown * 0.85, crown], color, 4, 7, random() * Math.PI);
-    if (random() < 0.5) {
-      const dx = (random() - 0.5) * crown;
-      const dz = (random() - 0.5) * crown;
-      mesh.ellipsoid([x + dx, y + height * 0.85, z + dz], [crown * 0.7, crown * 0.6, crown * 0.7], color, 3, 6, random() * Math.PI);
-    }
+    mesh.shaded(trunkShade(y), () => mesh.box([x, y + height * 0.3, z], [0.45, height * 0.6, 0.45], COLORS.trunk));
+    const middle = y + height * 0.68;
+    mesh.shaded(verticalShade(middle - crown * 0.85, middle + crown * 0.5, 0.62), () => {
+      mesh.ellipsoid([x, middle, z], [crown, crown * 0.85, crown], color, 4, 7, random() * Math.PI);
+      if (random() < 0.5) {
+        const dx = (random() - 0.5) * crown;
+        const dz = (random() - 0.5) * crown;
+        mesh.ellipsoid([x + dx, y + height * 0.85, z + dz], [crown * 0.7, crown * 0.6, crown * 0.7], color, 3, 6, random() * Math.PI);
+      }
+    });
   }
 }
 

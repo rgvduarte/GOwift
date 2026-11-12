@@ -27,7 +27,10 @@ export class ChunkedMesh extends MeshBuilder {
   }
 
   triangle(a, b, c, color) {
-    this.#builder((a[0] + b[0] + c[0]) / 3, (a[2] + b[2] + c[2]) / 3).triangle(a, b, c, color);
+    const builder = this.#builder((a[0] + b[0] + c[0]) / 3, (a[2] + b[2] + c[2]) / 3);
+    // The chunk's builder bakes the shade in effect here.
+    if (this.shade) builder.shaded(this.shade, () => builder.triangle(a, b, c, color));
+    else builder.triangle(a, b, c, color);
   }
 
   append(mesh, matrix) {

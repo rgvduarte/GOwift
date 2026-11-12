@@ -32,6 +32,7 @@ GPU (animated wave normals).
   | Open water mirrors the sky (Fresnel) and glints in the sun | on | on |
   | Moving waves on open water (swell and chop) | off | on |
   | Riders out of the saddle, rocking bikes, own cadences (CPU only, no extra draws) | on | on |
+  | Ambient occlusion baked into trees, rocks and clouds at world build (no GPU cost) | on | on |
 
   New effects that cost little run on both tiers; the rest are high only.
   They are switched by uniforms inside the one mesh program, not by `#define`
