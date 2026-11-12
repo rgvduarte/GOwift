@@ -20,6 +20,37 @@ function allCss() {
   return [...files.map((name) => read(`_astro/${name}`)), ...inline].join("\n");
 }
 
+/**
+ * Every animation and transition declaration in `css`, with the selectors and
+ * at-rules around it, e.g. "@media (...) > .button { transition: ... }".
+ * Keyframes are left out: they only describe a motion that a rule starts.
+ */
+function motionRules(css) {
+  const stack = [];
+  const found = [];
+  let text = "";
+  const declaration = () => {
+    const property = text.trim().match(/^([a-z-]+)\s*:/)?.[1];
+    if (property && /^(animation|transition)(-|$)/.test(property) && !stack.some((p) => p.startsWith("@keyframes"))) {
+      found.push({ context: [...stack], rule: `${stack.join(" > ")} { ${text.trim()} }` });
+    }
+    text = "";
+  };
+  for (const ch of css.replace(/\/\*[\s\S]*?\*\//g, "")) {
+    if (ch === "{") {
+      stack.push(text.trim());
+      text = "";
+    } else if (ch === "}") {
+      declaration();
+      stack.pop();
+    } else if (ch === ";") declaration();
+    else text += ch;
+  }
+  return found;
+}
+
+const allowsMotion = (context) => context.some((p) => /prefers-reduced-motion\s*:\s*no-preference/.test(p));
+
 /** The base path every link is built on, from the home page's canonical link. */
 function basePath() {
   const canonical = read("index.html").match(/<link rel="canonical" href="([^"]+)"/)[1];
@@ -82,6 +113,22 @@ test("the hero offers no image wider than its source file", { skip }, () => {
 
 test("no background is fixed to the viewport (iOS ignores it, low-end Android repaints it on scroll)", { skip }, () => {
   assert.doesNotMatch(allCss(), /background-attachment\s*:\s*fixed/);
+});
+
+test("nothing moves for visitors who asked their system to reduce motion", { skip }, () => {
+  assert.deepEqual(
+    motionRules(allCss())
+      .filter(({ context }) => !allowsMotion(context))
+      .map(({ rule }) => rule),
+    [],
+  );
+});
+
+test("the route profile draws itself for visitors who allow motion", { skip }, () => {
+  const drawing = motionRules(allCss()).filter(
+    ({ context, rule }) => allowsMotion(context) && /\.trace/.test(context.at(-1)) && /animation/.test(rule),
+  );
+  assert.equal(drawing.length > 0, true);
 });
 
 test("a wake-up request only ever goes to the server's health check", { skip }, () => {

@@ -155,6 +155,43 @@ code {
   border-color: var(--muted);
 }
 
+/* Motion is a nicety: only for visitors who haven't asked their system to
+   reduce it, and the page reads the same without it. */
+@media (prefers-reduced-motion: no-preference) {
+  .button {
+    transition:
+      background-color 0.15s,
+      border-color 0.15s,
+      transform 0.15s;
+  }
+
+  .button:active {
+    transform: translateY(1px);
+  }
+
+  /* Sections rise in as they scroll into view, where the browser can tie an
+     animation to scrolling (Chrome and Edge, the browsers the app needs).
+     Elsewhere they are simply there: nothing is hidden outside @supports. */
+  @supports (animation-timeline: view()) {
+    /* Longhands on purpose: a shorthand with view() in it is dropped by
+       browsers that only know animation-timeline as a longhand. */
+    .reveal {
+      animation-name: rise;
+      animation-timing-function: linear;
+      animation-fill-mode: both;
+      animation-timeline: view();
+      animation-range: entry 0% cover 22%;
+    }
+  }
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    translate: 0 1.5rem;
+  }
+}
+
 .button.primary {
   background: var(--accent);
   border-color: var(--accent);

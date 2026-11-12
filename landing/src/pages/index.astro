@@ -139,7 +139,7 @@ const faq = [
 
   <section class="section how" id="how" aria-labelledby="how-title">
     <div class="wrap how-grid">
-      <header class="section-head">
+      <header class="section-head reveal">
         <p class="eyebrow">How it works</p>
         <h2 id="how-title">From this page to your first pedal stroke in about two minutes.</h2>
       </header>
@@ -161,7 +161,7 @@ const faq = [
           ))
         }
       </ol>
-      <figure class="how-shot">
+      <figure class="how-shot reveal">
         <Picture
           src={menuShot}
           formats={["avif", "webp"]}
@@ -179,12 +179,12 @@ const faq = [
 
   <section class="section ride glow" aria-labelledby="ride-title">
     <div class="wrap">
-      <header class="section-head">
+      <header class="section-head reveal">
         <p class="eyebrow">The ride</p>
         <h2 id="ride-title">Everything you need for a winter on the trainer.</h2>
       </header>
       <div class="bento">
-        <article class="tile tile-xl glass">
+        <article class="tile tile-xl glass reveal">
           <div class="tile-text">
             <h3>One island, everyone on it</h3>
             <p>
@@ -203,7 +203,7 @@ const faq = [
             loading="lazy"
           />
         </article>
-        <article class="tile tile-l glass">
+        <article class="tile tile-l glass reveal">
           <div class="tile-text">
             <h3>A spin class every 30 minutes</h3>
             <p>Coach Lemon calls the blocks, targets follow your FTP, and the room board ranks time on target.</p>
@@ -219,20 +219,20 @@ const faq = [
             loading="lazy"
           />
         </article>
-        <article class="tile tile-m glass">
+        <article class="tile tile-m glass reveal">
           <h3>Never an empty road</h3>
           <p>
             Bots ride along when it’s quiet, each with its own fitness and style. They’re always marked, and make room
             as people join.
           </p>
         </article>
-        <article class="tile tile-m glass">
+        <article class="tile tile-m glass reveal">
           <h3>Draft, race, sprint</h3>
           <p>
             Sit on a wheel to save watts. Join a race during its countdown, then go for the climbs and the sprints.
           </p>
         </article>
-        <ul class="extras glass">
+        <ul class="extras glass reveal">
           {
             extras.map((extra) => (
               <li>
@@ -249,7 +249,7 @@ const faq = [
   <section class="section facts" aria-labelledby="facts-title">
     <div class="wrap">
       <h2 id="facts-title" class="eyebrow">By the numbers</h2>
-      <ul class="fact-band glass">
+      <ul class="fact-band glass reveal">
         {
           facts.map((fact) => (
             <li>
@@ -265,11 +265,11 @@ const faq = [
 
   <section class="section faq glow" aria-labelledby="faq-title">
     <div class="wrap faq-grid">
-      <header class="section-head">
+      <header class="section-head reveal">
         <p class="eyebrow">Questions</p>
         <h2 id="faq-title">Before your first ride.</h2>
       </header>
-      <div class="faq-list glass">
+      <div class="faq-list glass reveal">
         {
           faq.map((item) => (
             <details>
@@ -284,7 +284,7 @@ const faq = [
 
   <section class="section host" id="host" aria-labelledby="host-title">
     <div class="wrap host-grid">
-      <header class="section-head">
+      <header class="section-head reveal">
         <p class="eyebrow">For clubs and tinkerers</p>
         <h2 id="host-title">Open source. Host your own.</h2>
         <p>
@@ -293,7 +293,7 @@ const faq = [
           }. The game server is written in Rust, the client is plain JavaScript.
         </p>
       </header>
-      <div class="host-body">
+      <div class="host-body reveal">
         <pre><code><span class="muted"># needs Docker with Compose and make</span>
 git clone {site.githubUrl}.git
 cd GOwift
@@ -309,7 +309,7 @@ make up</code></pre>
 
   <section class="section last-call glow" aria-label="Start riding">
     <div class="wrap">
-      <div class="last-call-panel glass">
+      <div class="last-call-panel glass reveal">
         <p class="last-call-line">The road is open.</p>
         <div class="last-call-action">
           <a class="button primary large" href={startUrl} data-wake={wakeUrl}>{start}</a>

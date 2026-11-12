@@ -27,8 +27,10 @@ const km = (m: number) => (m / 1000).toFixed(1);
 <figure class="profile">
   <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" aria-hidden="true">
     <path class="ground" d={area} />
-    <path class="road" d={line()} />
-    {profile.segments.map((s) => <path class={s.type} d={line(s.from, s.to)} />)}
+    <g class="trace">
+      <path class="road" d={line()} />
+      {profile.segments.map((s) => <path class={s.type} d={line(s.from, s.to)} />)}
+    </g>
   </svg>
   <figcaption>
     {profile.name}: {km(profile.lengthM)} km, {Math.round(profile.climbM)} m of climbing.
@@ -66,6 +68,22 @@ const km = (m: number) => (m / 1000).toFixed(1);
   .sprint {
     stroke: var(--sprint);
     stroke-width: 4;
+  }
+  /* The route draws itself from start to finish, once. Only the line moves:
+     the ground stays, so the hero never jumps. A clip-path follows the
+     stretched viewBox, where a dash offset would be distorted. */
+  @media (prefers-reduced-motion: no-preference) {
+    .trace {
+      animation: draw 2.4s cubic-bezier(0.2, 0.7, 0.2, 1) 0.3s backwards;
+    }
+  }
+  @keyframes draw {
+    from {
+      clip-path: inset(-50% 100% -50% 0);
+    }
+    to {
+      clip-path: inset(-50% 0 -50% 0);
+    }
   }
   figcaption {
     /* Full width (it covers whatever is behind), text aligned with .wrap. */
