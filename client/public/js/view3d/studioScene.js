@@ -160,9 +160,10 @@ export class StudioView3D {
   /**
    * @param {HTMLCanvasElement} canvas
    * @param {HTMLElement} labelLayer absolutely positioned element over the canvas
+   * @param {{antialias?: boolean}} [options] `antialias` multisamples the canvas (the quality tier it starts on)
    */
-  constructor(canvas, labelLayer) {
-    const gl = createContext(canvas);
+  constructor(canvas, labelLayer, { antialias = true } = {}) {
+    const gl = createContext(canvas, { antialias });
     if (!gl) throw new Error("WebGL 2 is not available");
     this.canvas = canvas;
     this.labelLayer = labelLayer;

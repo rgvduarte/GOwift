@@ -146,6 +146,38 @@ const sampleTree = (biome, kind) => {
   return mesh.build();
 };
 
+/** The brightness of the lowest and the highest vertex of the tree's biggest part (vertices of one hue). */
+function shadeOfBiggestPart(mesh) {
+  const parts = new Map();
+  for (let v = 0; v < mesh.vertexCount; v += 1) {
+    const [r, g, b] = mesh.colors.slice(v * 4, v * 4 + 3);
+    const sum = r + g + b;
+    const hue = [r / sum, g / sum].map((c) => c.toFixed(3)).join();
+    if (!parts.has(hue)) parts.set(hue, []);
+    parts.get(hue).push({ y: mesh.positions[v * 3 + 1], brightness: sum });
+  }
+  const biggest = [...parts.values()].sort((a, b) => b.length - a.length)[0].sort((a, b) => a.y - b.y);
+  return { bottom: biggest[0].brightness, top: biggest.at(-1).brightness };
+}
+
+test("trees are darker under their crowns than on top, so they read as volumes without shadows", () => {
+  for (const [biome, kinds] of [
+    ["temperate", [0.2, 0.5, 0.8]],
+    ["winter", [0.5]],
+  ]) {
+    for (const kind of kinds) {
+      const { bottom, top } = shadeOfBiggestPart(sampleTree(resolveBiome(biome), kind));
+      assert.ok(bottom < top * 0.85, `${biome} ${kind}: ${bottom} vs ${top}`);
+    }
+  }
+});
+
+test("clouds are greyer underneath", () => {
+  const terrain = terrainModel(new RouteGeometry(route));
+  const { bottom, top } = shadeOfBiggestPart(buildClouds(new RouteGeometry(route), terrain, { count: 1 }));
+  assert.ok(bottom < top * 0.9);
+});
+
 test("a biome grows its own trees and crowd", () => {
   const temperate = resolveBiome("temperate");
   const winter = resolveBiome("winter");

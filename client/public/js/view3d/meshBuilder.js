@@ -43,21 +43,57 @@ export class FloatBuffer {
   }
 }
 
+/**
+ * A shade for `MeshBuilder.shaded`: `low` at height `bottom` and below,
+ * rising smoothly to full brightness at `top`. Darker undersides make tree
+ * crowns, bushes and clouds read as volumes even where no shadow map reaches.
+ */
+export function verticalShade(bottom, top, low) {
+  return (p) => {
+    const t = Math.min(1, Math.max(0, (p[1] - bottom) / (top - bottom)));
+    return low + (1 - low) * t * t * (3 - 2 * t);
+  };
+}
+
 export class MeshBuilder {
   positions = new FloatBuffer();
   normals = new FloatBuffer();
   colors = new FloatBuffer();
+  /** Brightness by vertex position, baked into the colours (see `shaded`), or null. */
+  #shade = null;
 
   get vertexCount() {
     return this.positions.length / 3;
   }
 
+  /** The shade in effect (`shaded`), or null. */
+  get shade() {
+    return this.#shade;
+  }
+
+  /**
+   * Bakes `shade(position)` (0–1) into the colour of every vertex `draw`
+   * adds: ambient occlusion at build time, free on the GPU and on every
+   * tier. The alpha (the jersey tint mask) is left alone.
+   */
+  shaded(shade, draw) {
+    const previous = this.#shade;
+    this.#shade = shade;
+    try {
+      draw();
+    } finally {
+      this.#shade = previous;
+    }
+  }
+
   triangle(a, b, c, color) {
     const n = normalize(cross(sub(b, a), sub(c, a)));
+    const shade = this.#shade;
     for (const p of [a, b, c]) {
       this.positions.push(p[0], p[1], p[2]);
       this.normals.push(n[0], n[1], n[2]);
-      this.colors.push(color[0], color[1], color[2], color[3] ?? 0);
+      const s = shade ? shade(p) : 1;
+      this.colors.push(color[0] * s, color[1] * s, color[2] * s, color[3] ?? 0);
     }
   }
 
