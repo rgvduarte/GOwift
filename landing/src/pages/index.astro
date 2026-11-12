@@ -127,7 +127,7 @@ const faq = [
     </div>
   </section>
 
-  <section class="section features" aria-labelledby="features-title">
+  <section class="section features glow" aria-labelledby="features-title">
     <div class="wrap split">
       <div class="split-head">
         <h2 id="features-title">Everything you need for a winter on the trainer</h2>
@@ -225,7 +225,7 @@ make up</code></pre>
     </div>
   </section>
 
-  <section class="section faq" aria-labelledby="faq-title">
+  <section class="section faq glow" aria-labelledby="faq-title">
     <div class="wrap split">
       <div class="split-head">
         <h2 id="faq-title">Questions</h2>
@@ -243,7 +243,7 @@ make up</code></pre>
     </div>
   </section>
 
-  <section class="section last-call" aria-label="Start riding">
+  <section class="section last-call glow" aria-label="Start riding">
     <div class="wrap last-call-inner">
       <p class="last-call-line">The road is open.</p>
       <a class="button primary large" href={startUrl} data-wake={wakeUrl}>{start}</a>
@@ -300,15 +300,17 @@ make up</code></pre>
     padding-bottom: clamp(1.5rem, 4vw, 3rem);
   }
   h1 {
-    font-size: clamp(3.5rem, 11vw, 8.5rem);
-    line-height: 0.88;
+    font-size: var(--fs-h1);
+    line-height: 0.9;
+    letter-spacing: -0.045em;
     max-width: 11ch;
     text-shadow: 0 2px 24px rgb(11 11 12 / 0.5);
   }
   .lede {
-    margin-top: 1.5rem;
+    margin-top: var(--s-3);
     font-size: clamp(1.125rem, 2vw, 1.3rem);
-    max-width: 40ch;
+    color: var(--lede);
+    max-width: 34ch;
     text-shadow: 0 1px 12px rgb(11 11 12 / 0.8);
   }
   .actions {
@@ -345,10 +347,7 @@ make up</code></pre>
 
   /* Sections */
   .section {
-    padding-block: clamp(4rem, 10vw, 7.5rem);
-  }
-  .section + .section {
-    border-top: 1px solid var(--border);
+    padding-block: var(--section);
   }
   .split {
     display: grid;
@@ -389,6 +388,8 @@ make up</code></pre>
   }
   .feature-list p {
     color: var(--muted);
+    font-size: var(--fs-card);
+    line-height: 1.5;
   }
 
   .shots {

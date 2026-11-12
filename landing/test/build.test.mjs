@@ -4,7 +4,7 @@
 
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 
 const dist = fileURLToPath(new URL("../dist/", import.meta.url));
@@ -12,6 +12,13 @@ const skip = existsSync(`${dist}index.html`) ? false : "no build in landing/dist
 
 const read = (path) => readFileSync(dist + path, "utf8");
 const pages = ["index.html", "404.html", "changelog/index.html"];
+
+/** All CSS of the site: the bundled files and what Astro inlined into pages. */
+function allCss() {
+  const files = readdirSync(`${dist}_astro`).filter((name) => name.endsWith(".css"));
+  const inline = pages.flatMap((page) => [...read(page).matchAll(/<style[^>]*>([\s\S]*?)<\/style>/g)].map((m) => m[1]));
+  return [...files.map((name) => read(`_astro/${name}`)), ...inline].join("\n");
+}
 
 /** The base path every link is built on, from the home page's canonical link. */
 function basePath() {
@@ -34,6 +41,10 @@ test("every link and image stays under the base path", { skip }, () => {
     const outside = sameSiteUrls(read(page)).filter((url) => !url.startsWith(base));
     assert.deepEqual(outside, [], `${page} links outside ${base}`);
   }
+});
+
+test("no background is fixed to the viewport (iOS ignores it, low-end Android repaints it on scroll)", { skip }, () => {
+  assert.doesNotMatch(allCss(), /background-attachment\s*:\s*fixed/);
 });
 
 test("a wake-up request only ever goes to the server's health check", { skip }, () => {
