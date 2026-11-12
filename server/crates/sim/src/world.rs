@@ -2296,20 +2296,31 @@ mod tests {
         assert!(gap < 3.0, "gap should shrink in the draft, was {gap}");
     }
 
-    #[test]
-    fn drag_factor_matches_the_draft_curve_behind_a_wheel() {
+    /// A follower 3.5 m behind a leader in lane 1, after one tick.
+    fn a_follower_3_5_m_behind() -> (World, RiderId) {
         let mut world = empty_world(flat_loop(10_000.0));
         let leader = world.join_human("Leader", 75.0);
         let follower = world.join_human("Follower", 75.0);
         put(&mut world, leader, 103.5, 1, 8.0);
         put(&mut world, follower, 100.0, 1, 8.0);
-
         ride(&mut world, DT, &[(leader, 200.0), (follower, 200.0)]);
+        (world, follower)
+    }
 
-        let rider = world.rider(follower).unwrap();
+    #[test]
+    fn the_draft_matches_the_draft_curve_behind_a_wheel() {
+        let (world, follower) = a_follower_3_5_m_behind();
         let expected = DraftParams::default().cda_factor(3.5);
-        assert!((rider.draft - expected).abs() < 1e-12, "{} vs {expected}", rider.draft);
-        assert!((rider.drag_factor - expected).abs() < 1e-12, "{}", rider.drag_factor);
+        let draft = world.rider(follower).unwrap().draft;
+        assert!((draft - expected).abs() < 1e-12, "{draft} vs {expected}");
+    }
+
+    #[test]
+    fn the_drag_factor_matches_the_draft_curve_behind_a_wheel() {
+        let (world, follower) = a_follower_3_5_m_behind();
+        let expected = DraftParams::default().cda_factor(3.5);
+        let factor = world.rider(follower).unwrap().drag_factor;
+        assert!((factor - expected).abs() < 1e-12, "{factor} vs {expected}");
     }
 
     /// Riders at `positions` in `lanes` of `route`, all at 8 m/s and 200 W, after one tick.

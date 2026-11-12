@@ -33,17 +33,17 @@
 
 ### Task 1: The server's own drag factor
 
-- [x] Sim tests: `drag_factor_matches_the_draft_curve_behind_a_wheel`, `a_rider_in_clear_air_has_no_draft`, `a_parked_rider_has_no_draft`, `every_seat_carries_its_vehicles_draft_factor`.
+- [x] Sim tests: `the_draft_matches_the_draft_curve_behind_a_wheel`, `the_drag_factor_matches_the_draft_curve_behind_a_wheel`, `a_rider_in_clear_air_has_no_draft`, `a_parked_rider_has_no_draft`, `every_seat_carries_its_vehicles_draft`, `every_seat_carries_its_vehicles_drag_factor`.
 - [x] `Rider::draft`, `Rider::drag_factor`, set in `World::tick` and `step_vehicles`.
-- [x] Protocol tests: `state_carries_the_viewers_draft_while_drafting`, `state_always_carries_the_viewers_drag_factor`, `state_leaves_the_draft_out_in_clear_air`; `ServerMessage::State` gains the two fields.
+- [x] Protocol tests: `state_carries_the_viewers_draft_while_drafting`, `state_always_carries_the_viewers_drag_factor`, `state_leaves_the_draft_out_in_clear_air`, `state_carries_a_drag_factor_of_one_in_clear_air_at_sea_level`; `ServerMessage::State` gains the two fields.
 - [x] Client tests in `ride.test.js` for `rideDraft`; `main.js` uses it for shifting and the HUD.
 - [x] `docs/protocol.md`, `docs/devices.md`.
 
 ### Task 2: Group-aware drafting
 
-- [x] `drafting.rs` tests: `depth_one_keeps_the_single_wheel_curve`, `second_wheel_in_a_line_saves_more_than_the_first`, `riders_alongside_add_shelter_up_to_the_bunch_cap`, `the_leader_gains_a_little_from_a_wheel_right_behind`, `a_beer_bike_keeps_its_draft_deeper_in_the_line`.
+- [x] `drafting.rs` tests: `depth_one_keeps_the_single_wheel_curve`, `second_wheel_in_a_line_saves_more_than_the_first`, `each_rider_alongside_adds_its_share`, `riders_alongside_add_no_more_than_the_bunch_cap`, `the_leader_gains_a_little_from_a_wheel_right_behind`, `a_beer_bike_keeps_its_draft_deeper_in_the_line`.
 - [x] `DraftParams` gains `deeper_wheels`, `side_per_rider`, `side_gap`, `side_lanes`, `max_bunch`, `leader`, `leader_gap`; `GroupPlace` and `group_factor`.
-- [x] World tests: `the_third_rider_in_a_line_rides_with_less_drag_than_the_second`, `the_second_wheel_gets_the_second_wheels_draft`, `the_leader_rides_with_less_drag_with_a_wheel_right_behind`, `a_rider_alongside_adds_shelter`, `a_ring_of_riders_on_a_short_loop_terminates`; `drag_factor_matches_the_draft_curve_behind_a_wheel` (task 1) pins a pair to the old curve.
+- [x] World tests: `the_third_rider_in_a_line_rides_with_less_drag_than_the_second`, `the_second_wheel_gets_the_second_wheels_draft`, `the_leader_rides_with_less_drag_with_a_wheel_right_behind`, `a_rider_alongside_adds_shelter`, `a_ring_of_riders_on_a_short_loop_terminates`; `the_draft_matches_the_draft_curve_behind_a_wheel` (task 1) pins a pair to the old curve.
 - [x] `Field::shelter` once per tick; the rider step and the vehicles use it.
 - [x] ADR 0025, `docs/architecture.md`, `docs/vehicles.md`.
 
@@ -55,6 +55,6 @@
 
 ### Task 4: Air density by altitude
 
-- [x] `physics.rs` tests: `air_density_at_sea_level_is_rho0`, `air_density_at_1000_m_is_isa`; `air_density_stops_thinning_at_the_tropopause`; `network.rs` `elevations_follow_the_riding_direction`; world tests `the_same_power_is_faster_high_up`, `the_drag_factor_carries_the_thin_air`, `thin_air_is_no_draft`, `every_seat_carries_the_thin_air`; protocol `the_drag_factor_carries_thin_air_but_the_draft_does_not`; client `thin air lightens the drag the pedals feel without showing as drafting`.
+- [x] `physics.rs` tests: `air_density_at_sea_level_is_rho0`, `air_density_at_1000_m_is_isa`; `air_density_stops_thinning_at_the_tropopause`; `network.rs` `elevations_follow_the_riding_direction`; world tests `the_same_power_is_faster_high_up`, `the_drag_factor_carries_the_thin_air`, `thin_air_is_no_draft`, `every_seat_carries_the_thin_air`; protocol `the_drag_factor_carries_thin_air`, `the_draft_leaves_thin_air_out`; client `thin air lightens the drag the pedals feel without showing as drafting`.
 - [x] `air_density_at`, `Network::elevation`, `Roads::elevation`; the world folds ρ(h)/ρ₀ into `drag_factor` and the clear-air pass comparison.
 - [x] Re-record `SOLO_ODOMETER`; ADR 0026 gains the air; `docs/protocol.md` (`physics.air_density` is sea level), `docs/routes.md`, `docs/devices.md`, `docs/architecture.md`.

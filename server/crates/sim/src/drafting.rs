@@ -193,17 +193,23 @@ mod tests {
         assert_eq!(p.group_factor(&in_line(6.6, 3)), 1.0);
     }
 
+    /// The draft 2 m behind the fourth wheel of a line with `alongside`
+    /// riders in the lanes next to it.
+    fn flanked(alongside: usize) -> f64 {
+        DraftParams::default().group_factor(&GroupPlace {
+            alongside,
+            ..in_line(2.0, 4)
+        })
+    }
+
     #[test]
-    fn riders_alongside_add_shelter_up_to_the_bunch_cap() {
-        let p = DraftParams::default();
-        let flanked = |alongside| {
-            p.group_factor(&GroupPlace {
-                alongside,
-                ..in_line(2.0, 4)
-            })
-        };
+    fn each_rider_alongside_adds_its_share() {
         assert!((flanked(1) - (1.0 - 0.48 - 0.04)).abs() < 1e-12);
-        assert!((flanked(10) - (1.0 - p.max_bunch)).abs() < 1e-12);
+    }
+
+    #[test]
+    fn riders_alongside_add_no_more_than_the_bunch_cap() {
+        assert!((flanked(10) - (1.0 - DraftParams::default().max_bunch)).abs() < 1e-12);
     }
 
     #[test]

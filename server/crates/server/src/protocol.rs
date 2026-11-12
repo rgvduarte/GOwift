@@ -1654,23 +1654,43 @@ mod tests {
         assert!(json.contains(&format!("\"drag_factor\":{}", round3(factor))), "{json}");
     }
 
-    #[test]
-    fn state_leaves_the_draft_out_in_clear_air() {
+    /// The state of a rider riding alone again after its follower left.
+    fn alone_again() -> String {
         let (mut world, leader, follower) = two_in_a_line();
         world.leave(follower);
         world.tick(0.05);
-        let json = state_json(&world, leader);
-        assert!(!json.contains("\"draft\""), "{json}");
-        assert!(json.contains("\"drag_factor\":1.0"), "{json}");
+        state_json(&world, leader)
     }
 
     #[test]
-    fn the_drag_factor_carries_thin_air_but_the_draft_does_not() {
+    fn state_leaves_the_draft_out_in_clear_air() {
+        let json = alone_again();
+        assert!(!json.contains("\"draft\""), "{json}");
+    }
+
+    #[test]
+    fn state_carries_a_drag_factor_of_one_in_clear_air_at_sea_level() {
+        let json = alone_again();
+        assert!(json.contains("\"drag_factor\":1.0"), "{json}");
+    }
+
+    /// The state of a rider alone on a flat road 2000 m up.
+    fn alone_high_up() -> String {
         let mut world = flat_world(2000.0);
         let solo = world.join_human("Solo", 75.0);
         world.tick(0.05);
-        let json = state_json(&world, solo);
+        state_json(&world, solo)
+    }
+
+    #[test]
+    fn the_drag_factor_carries_thin_air() {
+        let json = alone_high_up();
         assert!(json.contains("\"drag_factor\":0.822"), "{json}");
+    }
+
+    #[test]
+    fn the_draft_leaves_thin_air_out() {
+        let json = alone_high_up();
         assert!(!json.contains("\"draft\""), "{json}");
     }
 }

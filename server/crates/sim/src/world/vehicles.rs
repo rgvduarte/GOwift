@@ -936,9 +936,9 @@ mod tests {
         assert!((follower_speed(0.0, Some(2.0)) - alone).abs() < 1e-12);
     }
 
-    #[test]
-    fn every_seat_carries_its_vehicles_draft_factor() {
-        let config = SimConfig::default();
+    /// A tandem 3.5 m behind a solo rider in lane 1, after one tick: the
+    /// world and both seats.
+    fn a_tandem_3_5_m_behind() -> (World, Vec<RiderId>) {
         let mut world = empty_world(flat_loop(10_000.0));
         let leader = human(&mut world, "Leader", 3.0);
         let captain = human(&mut world, "Captain", 3.0);
@@ -953,10 +953,14 @@ mod tests {
             r.lane = 1.0;
             r.target_lane = 1;
         }
-
         ride(&mut world, DT, &powers(&both, 150.0));
+        (world, both)
+    }
 
-        let expected = config.draft.cda_factor(3.5);
+    #[test]
+    fn every_seat_carries_its_vehicles_draft() {
+        let (world, both) = a_tandem_3_5_m_behind();
+        let expected = SimConfig::default().draft.cda_factor(3.5);
         for seat in both {
             let r = world.rider(seat).unwrap();
             assert!(
@@ -965,7 +969,21 @@ mod tests {
                 r.name,
                 r.draft
             );
-            assert!((r.drag_factor - expected).abs() < 1e-12, "{}", r.drag_factor);
+        }
+    }
+
+    #[test]
+    fn every_seat_carries_its_vehicles_drag_factor() {
+        let (world, both) = a_tandem_3_5_m_behind();
+        let expected = SimConfig::default().draft.cda_factor(3.5);
+        for seat in both {
+            let r = world.rider(seat).unwrap();
+            assert!(
+                (r.drag_factor - expected).abs() < 1e-12,
+                "{}: {} vs {expected}",
+                r.name,
+                r.drag_factor
+            );
         }
     }
 
