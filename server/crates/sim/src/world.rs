@@ -2363,6 +2363,18 @@ mod tests {
     }
 
     #[test]
+    fn a_standing_start_pushes_at_most_half_a_g_even_at_one_tick_a_second() {
+        let mut world = empty_world(flat_loop(10_000.0));
+        let sprinter = world.join_human("Sprinter", 75.0);
+        world.set_telemetry(sprinter, 2500.0, Some(120.0)).unwrap();
+
+        world.tick(1.0);
+
+        let accel = world.rider(sprinter).unwrap().accel;
+        assert!(accel <= 0.5 * physics::GRAVITY + 1e-9, "{accel} m/s²");
+    }
+
+    #[test]
     fn a_rider_in_clear_air_has_no_draft() {
         let mut world = empty_world(flat_loop(10_000.0));
         let solo = world.join_human("Solo", 75.0);

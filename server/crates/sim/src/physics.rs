@@ -1,8 +1,14 @@
 //! Longitudinal cycling physics.
 //!
 //! ```text
-//! m * dv/dt = P / v - m * g * (sin(theta) + Crr * cos(theta)) - 0.5 * rho * CdA * v^2
+//! (m + I / r^2) * dv/dt = min(P / v, mu * m * g) - m * g * (sin(theta) + Crr * cos(theta)) - 0.5 * rho * CdA * v^2
 //! ```
+//!
+//! The wheels' rotational inertia `I / r^2` (Martin et al. 1998, J. Appl.
+//! Biomech. 14:276–291) makes speed changes a little slower, and the rear
+//! tyre's grip `mu` caps the push from rest; neither changes a steady speed.
+//! There is no drivetrain loss: trainers measure power at the hub, after the
+//! chain.
 //!
 //! All values are SI units. The grade is given in percent.
 
@@ -27,6 +33,14 @@ pub struct PhysicsParams {
     pub min_speed_for_power: f64,
     /// Hard upper speed limit in m/s.
     pub max_speed: f64,
+    /// Moment of inertia of both wheels together in kg·m².
+    pub wheel_inertia_kg_m2: f64,
+    /// Wheel radius in m (a 700c road wheel with its tyre).
+    pub wheel_radius_m: f64,
+    /// Most the pedals can push, in g of the whole mass: the rear tyre's grip
+    /// (μ ≈ 0.8 on dry asphalt with about 60 % of the weight on it). Without it
+    /// `P / v` from rest would push at well over 1 g.
+    pub max_drive_g: f64,
 }
 
 impl Default for PhysicsParams {
@@ -39,6 +53,9 @@ impl Default for PhysicsParams {
             bike_mass_kg: 10.0,
             min_speed_for_power: 1.0,
             max_speed: 30.0,
+            wheel_inertia_kg_m2: 0.14,
+            wheel_radius_m: 0.311,
+            max_drive_g: 0.5,
         }
     }
 }
@@ -113,10 +130,15 @@ pub struct StepInput {
 /// Net acceleration in m/s².
 pub fn acceleration(params: &PhysicsParams, input: &StepInput) -> f64 {
     let mass = input.rider_mass_kg + input.body.frame_mass_kg;
+    // The wheels spin up with the bike: their inertia counts as extra mass
+    // to accelerate, but not to lift or roll. Every body counts one pair,
+    // which a vehicle's own mass dwarfs anyway.
+    let inertial = mass + params.wheel_inertia_kg_m2 / params.wheel_radius_m.powi(2);
     let theta = (input.grade_percent / 100.0).atan();
     let speed = input.speed.max(0.0);
 
-    let propulsion = input.power_watts.max(0.0) / speed.max(params.min_speed_for_power);
+    let propulsion =
+        (input.power_watts.max(0.0) / speed.max(params.min_speed_for_power)).min(params.max_drive_g * mass * GRAVITY);
     let gravity = mass * GRAVITY * theta.sin();
     let rolling = if speed > 0.0 || propulsion > 0.0 {
         mass * GRAVITY * input.body.crr * theta.cos()
@@ -125,7 +147,7 @@ pub fn acceleration(params: &PhysicsParams, input: &StepInput) -> f64 {
     };
     let drag = 0.5 * params.air_density * input.body.cda * input.cda_factor * speed * speed;
 
-    (propulsion - gravity - rolling - drag) / mass
+    (propulsion - gravity - rolling - drag) / inertial
 }
 
 /// Advances the speed by `dt` seconds using explicit Euler integration.
@@ -237,6 +259,60 @@ mod tests {
     #[test]
     fn speed_is_capped() {
         assert!(ride(5000.0, -20.0, 1.0, 120.0) <= PhysicsParams::default().max_speed);
+    }
+
+    fn solo(params: &PhysicsParams, speed: f64, power_watts: f64) -> StepInput {
+        StepInput {
+            rider_mass_kg: 75.0,
+            body: Body::bike(params, 75.0),
+            speed,
+            power_watts,
+            grade_percent: 0.0,
+            cda_factor: 1.0,
+        }
+    }
+
+    #[test]
+    fn wheels_add_inertia() {
+        let p = PhysicsParams::default();
+        let without = PhysicsParams {
+            wheel_inertia_kg_m2: 0.0,
+            ..p
+        };
+        let mass = 85.0;
+        let wheels = p.wheel_inertia_kg_m2 / p.wheel_radius_m.powi(2);
+        let input = solo(&p, 10.0, 400.0);
+        let expected = acceleration(&without, &input) * mass / (mass + wheels);
+        assert!((acceleration(&p, &input) - expected).abs() < 1e-12);
+    }
+
+    #[test]
+    fn wheel_inertia_leaves_the_steady_speed() {
+        use crate::calibration::steady_speed;
+        let p = PhysicsParams::default();
+        let without = PhysicsParams {
+            wheel_inertia_kg_m2: 0.0,
+            ..p
+        };
+        assert!((steady_speed(&p, 75.0, 200.0, 0.0) - steady_speed(&without, 75.0, 200.0, 0.0)).abs() < 1e-9);
+    }
+
+    #[test]
+    fn a_standing_start_is_traction_limited() {
+        let p = PhysicsParams::default();
+        let a = acceleration(&p, &solo(&p, 0.0, 1500.0));
+        assert!(a <= p.max_drive_g * GRAVITY + 1e-9, "{a} m/s²");
+    }
+
+    #[test]
+    fn the_traction_cap_does_not_bind_at_cruising_speed() {
+        let p = PhysicsParams::default();
+        let ungripped = PhysicsParams {
+            max_drive_g: f64::INFINITY,
+            ..p
+        };
+        let input = solo(&p, 8.0, 400.0);
+        assert_eq!(acceleration(&p, &input), acceleration(&ungripped, &input));
     }
 
     #[test]

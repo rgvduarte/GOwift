@@ -1042,8 +1042,9 @@ mod tests {
     }
 
     /// Recorded on c10a43d, before vehicles had their own physics step;
-    /// re-recorded for the calibrated physics, #22.
-    const SOLO_ODOMETER: f64 = 400.957_290_244_504_46;
+    /// re-recorded for the calibrated physics, #22, and for wheel inertia
+    /// (0.32 m less from a standing start over the minute).
+    const SOLO_ODOMETER: f64 = 400.635_321_287_640_86;
 
     #[test]
     fn huge_power_is_capped() {

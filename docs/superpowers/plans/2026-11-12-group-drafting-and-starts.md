@@ -49,12 +49,12 @@
 
 ### Task 3: Wheel inertia and a grip-limited push
 
-- [ ] `physics.rs` tests: `wheels_add_inertia_but_not_steady_speed`, `a_standing_start_is_traction_limited`, `the_traction_cap_does_not_bind_at_cruising_speed`.
-- [ ] `PhysicsParams` gains `wheel_inertia_kg_m2`, `wheel_radius_m`, `max_drive_g`.
-- [ ] Re-record `SOLO_ODOMETER`.
+- [x] `physics.rs` tests: `wheels_add_inertia`, `wheel_inertia_leaves_the_steady_speed`, `a_standing_start_is_traction_limited`, `the_traction_cap_does_not_bind_at_cruising_speed`; world test `a_standing_start_pushes_at_most_half_a_g_even_at_one_tick_a_second`.
+- [x] `PhysicsParams` gains `wheel_inertia_kg_m2`, `wheel_radius_m`, `max_drive_g`.
+- [x] Re-record `SOLO_ODOMETER`; ADR 0026, `docs/architecture.md`.
 
 ### Task 4: Air density by altitude
 
 - [ ] `physics.rs` tests: `air_density_at_sea_level_is_rho0`, `air_density_at_1000_m_is_isa`; world test `the_same_power_is_faster_high_up`; protocol: the drag factor carries the altitude.
 - [ ] `air_density_at`, `Network::elevation`, `Roads::elevation`; the world folds ρ(h)/ρ₀ into `drag_factor` and the clear-air pass comparison.
-- [ ] Re-record `SOLO_ODOMETER`; ADR 0026; `docs/protocol.md` (`physics.air_density` is sea level).
+- [ ] Re-record `SOLO_ODOMETER`; ADR 0026 gains the air; `docs/protocol.md` (`physics.air_density` is sea level).
