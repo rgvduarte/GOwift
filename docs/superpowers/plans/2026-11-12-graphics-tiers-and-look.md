@@ -29,6 +29,9 @@ and `npm run preload` green, then one Conventional Commit.
    `packCadence`); `View3D` keeps a saddle state per rider and gets `myFtp`.
 6. **Baked shading**: `verticalShade`, `MeshBuilder.shaded`, chunk routing;
    trees, bushes, rocks (both biomes) and clouds.
-7. Docs: `architecture.md` rows, ADR rows per effect; screenshots before and
+7. **Shader cost** (`perf:`): whole powers multiplied out (`glslPower`), the
+   sky gradient skipped on the horizon, the sun's disk and glint gated near
+   the sun; measured in headless Chromium (software GL).
+8. Docs: `architecture.md` rows, ADR rows per effect; screenshots before and
    after (menu, Rolling Hills, Cape Loop with the sea, drone camera) in headless
    Chromium against the release server.
