@@ -25,3 +25,34 @@ Branch: `impl/landing`.
    profile downsampling.
 9. Build, serve under `/GOwift/`, screenshot 1440×900 and 390×844, check
    horizontal scroll at 320–414 px, iterate; `make test-landing`.
+
+## Result
+
+Implemented on `impl/landing`, one commit for each of steps 1–8. `landing/test`
+has 54 tests (unit tests for `src/lib/` and checks on `dist/`); `make
+test-landing` builds the page and runs them, and `make test`, the CI landing
+job and the Pages workflow include it. `make check` passes: lint, 585 Rust
+tests, 1,313 client tests and the 54 landing tests (on the default build,
+without a public server; the Pages build passes them too).
+
+Browser checks against the Pages build (`PUBLIC_APP_URL` on Render, cold
+start and pre-warm on), served under `/GOwift/` with headless Chromium:
+
+- `scrollWidth == innerWidth` at 320, 360, 390, 414 and 1440 px, and no
+  element wider than its box or the screen (the code block scrolls inside
+  its column).
+- Hero: phones get the 1,200 or 1,600 px file instead of 800 px; the
+  headline and the at-a-glance glass measure 4.2:1 or better on desktop and
+  about 19:1 on phones.
+- Exactly one request to `https://goindoor.onrender.com/healthz` per page
+  view; with no network the page still renders and logs nothing but the
+  browser's failed-resource line.
+- With `reducedMotion: "reduce"` the profile and the sections do not
+  animate; with motion, sections reveal on scroll (the animation longhands
+  matter: Chromium drops a shorthand that contains `view()`).
+- The Copy button copies with clipboard permission and selects the commands
+  without it; the changelog and 404 pages share the new tokens and glows.
+
+Not done: new captures of the game (the hero is still the 1,600 px OpenRadlr
+image, and the studio screenshot still shows miles, hidden by its crop), and
+the live spin-class countdown, which was not part of this change.
