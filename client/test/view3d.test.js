@@ -889,6 +889,34 @@ test("my best lap's ghost is drawn see-through, casting no shadow, never solid",
   assert.equal(solidAtGhost(renderer.casters).length, 0, "no shadow");
 });
 
+// --- water ----------------------------------------------------------------------
+
+/** The water shading the sea and the rivers were drawn with, at `quality` in `biome`. */
+function waterDrawn(biome, quality) {
+  const { view, renderer } = gymView([], biome, null, new TransparentRecorder());
+  view.setQuality(quality);
+  view.camera.update(100, 1, 0);
+  view.render({ riders: [], myId: null, timeS: 3, colors });
+  const of = (handle) => renderer.transparent.find((d) => d.handle === handle).options.water;
+  return { sea: of(view.water), river: of(view.rivers) };
+}
+
+test("the sea moves with waves on high and still mirrors the sky on low", () => {
+  assert.deepEqual([waterDrawn("temperate", "high").sea, waterDrawn("temperate", "low").sea], [2, 1]);
+});
+
+test("a flowing river is water, a frozen one is not", () => {
+  assert.ok(waterDrawn("temperate", "high").river > 0);
+  assert.equal(waterDrawn("winter", "high").river, 0);
+});
+
+test("the waves follow the clock", () => {
+  const { view, renderer } = gymView([]);
+  view.camera.update(100, 1, 0);
+  view.render({ riders: [], myId: null, timeS: 42, colors });
+  assert.equal(renderer.frame.timeS, 42);
+});
+
 test("past the ends of a route that isn't a loop the road keeps its direction", () => {
   const route = new RouteGeometry({ id: "line", name: "Line", lanes: 2, seed: 1, loop: false, points: [[0, 0, 0], [100, 0, 0]] });
   for (const distance of [-24, -1, 0, 100, 124]) {

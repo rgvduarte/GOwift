@@ -27,6 +27,24 @@ test("the world after the sky is depth tested again", () => {
   assert.deepEqual([world.program === renderer.program, world.enabled.has("DEPTH_TEST"), world.depthMask], [true, true, true]);
 });
 
+test("water is shaded as water only while it is drawn", () => {
+  const gl = fakeGl();
+  const renderer = new Renderer(gl);
+  renderer.begin(FRAME);
+  const sea = renderer.upload(mesh);
+  renderer.drawTransparent(sea, identity(), { alpha: 0.8, water: 2 });
+  assert.equal(gl.draws.at(-1).uniforms.get("u_water"), 2);
+  renderer.draw(sea, identity());
+  assert.equal(gl.draws.at(-1).uniforms.get("u_water"), 0, "the next mesh is not water");
+});
+
+test("the waves' clock wraps every hour, so their phases stay precise", () => {
+  const gl = fakeGl();
+  const renderer = new Renderer(gl);
+  renderer.begin({ ...FRAME, timeS: 3600 * 50 + 12.5 });
+  assert.equal(gl.uniform(renderer.program, "u_time"), 12.5);
+});
+
 test("the sky and the world share the frame's scatter", () => {
   const gl = fakeGl();
   const renderer = new Renderer(gl);

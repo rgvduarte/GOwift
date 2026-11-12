@@ -29,6 +29,8 @@ GPU (animated wave normals).
   | Grass and flowers (`detail` chunks) | off | on |
   | Multisampling | off when the session *starts* low | on |
   | Fog towards the sky along the view ray, glow around the sun | on | on |
+  | Open water mirrors the sky (Fresnel) and glints in the sun | on | on |
+  | Moving waves on open water (swell and chop) | off | on |
 
   New effects that cost little run on both tiers; the rest are high only.
   They are switched by uniforms inside the one mesh program, not by `#define`

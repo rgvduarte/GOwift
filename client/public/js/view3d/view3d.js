@@ -41,6 +41,7 @@ import { buildBeerBike, buildSeatedBody, buildTandemFrame } from "./vehicleModel
 import { buildWorld, riderPosition } from "./world.js";
 import { sceneOf } from "./worldScene.js";
 import { resolveBiome } from "./biomes/index.js";
+import { waterMode } from "./water.js";
 import { LabelVisibility, labelLook } from "./labels.js";
 import { isRemote } from "../view/remoteRiders.js";
 
@@ -812,7 +813,7 @@ export class View3D {
     }
 
     // Passes 1 to 3: sky, the lit world, then the sea and soft contact shadows.
-    const scene = { light, lens, high, visible, vehicles, crowd, lemons, rotorMatrices };
+    const scene = { light, lens, high, visible, vehicles, crowd, lemons, rotorMatrices, timeS };
     this.#drawWorld(scene, { viewProjection, inverseViewProjection, eye, forward });
 
     // Which riders that could get a label are in sight, for the next frames' labels.
@@ -862,9 +863,9 @@ export class View3D {
    * Sky, the lit world and the blended pass, as seen through `view`: drawn
    * once for the screen and, in a workout, once more for the side view.
    */
-  #drawWorld({ light, lens, high, visible, vehicles, crowd, lemons, rotorMatrices }, { viewProjection, inverseViewProjection, eye, forward }) {
+  #drawWorld({ light, lens, high, visible, vehicles, crowd, lemons, rotorMatrices, timeS }, { viewProjection, inverseViewProjection, eye, forward }) {
     // Outdoors the fog takes the sky's colour along each view ray, so far land meets the sky without a seam.
-    this.renderer.begin({ viewProjection, inverseViewProjection, camera: eye, ...light, shadowStrength: high ? light.shadowStrength : 0, scatter: 1 });
+    this.renderer.begin({ viewProjection, inverseViewProjection, camera: eye, ...light, shadowStrength: high ? light.shadowStrength : 0, scatter: 1, timeS });
     this.renderer.draw(this.meshes.horizon, this.identity);
     this.renderer.draw(this.meshes.islands, this.identity);
     for (const [group, chunks] of Object.entries(this.chunks)) {
@@ -906,9 +907,9 @@ export class View3D {
       if (glow) this.renderer.drawBright(glow, model, 0.9);
     }
 
-    // Pass 3: blended — sea and soft contact shadows under the bikes.
-    this.renderer.drawTransparent(this.water, this.identity, { alpha: this.biome.water?.alpha ?? 0.82 });
-    this.renderer.drawTransparent(this.rivers, this.identity, { alpha: this.biome.river?.alpha ?? 0.85 });
+    // Pass 3: blended — sea and soft contact shadows under the bikes. Open water mirrors the sky; ice is just ice.
+    this.renderer.drawTransparent(this.water, this.identity, { alpha: this.biome.water?.alpha ?? 0.82, water: waterMode({ high }) });
+    this.renderer.drawTransparent(this.rivers, this.identity, { alpha: this.biome.river?.alpha ?? 0.85, water: waterMode({ high, ice: Boolean(this.biome.river?.ice) }) });
     for (const part of visible) {
       if (part.ghost || part.fromCamera > 150) continue;
       this.renderer.drawTransparent(this.riderShadow, placement(part.position, yawFor(part.forward), 0), { alpha: 0.22, unlit: 1 });
