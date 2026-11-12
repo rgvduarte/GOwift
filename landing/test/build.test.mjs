@@ -43,6 +43,26 @@ test("every link and image stays under the base path", { skip }, () => {
   }
 });
 
+test("the page states the facts of the routes the server loads", { skip }, async () => {
+  const { routeStats } = await import("../src/lib/route.ts");
+  const { routeFacts } = await import("../src/lib/facts.ts");
+  const html = read("index.html");
+  const facts = routeFacts(routeStats(fileURLToPath(new URL("../../routes/", import.meta.url))));
+  assert.deepEqual(
+    facts.filter((fact) => !html.includes(`>${fact.value}<`)),
+    [],
+  );
+});
+
+test("the hero leads to how it works, and hosting keeps its own section", { skip }, () => {
+  const html = read("index.html");
+  const hero = html.match(/<section[^>]*class="hero[\s\S]*?<\/section>/)[0];
+  assert.deepEqual(
+    [hero.includes('href="#how"'), html.includes('id="how"'), html.includes('id="host"')],
+    [true, true, true],
+  );
+});
+
 test("no background is fixed to the viewport (iOS ignores it, low-end Android repaints it on scroll)", { skip }, () => {
   assert.doesNotMatch(allCss(), /background-attachment\s*:\s*fixed/);
 });

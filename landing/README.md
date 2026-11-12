@@ -10,8 +10,11 @@ separate from `client/`, which stays dependency-free.
 - The hero's elevation profile is drawn at build time from
   `routes/col-de-la-forge.json`, so it always matches the game.
 - Colours and fonts follow the app (`client/public/styles.css`).
-- Screenshots in `src/assets/` come from the real game; Astro turns them into
-  AVIF/WebP in several sizes.
+- Screenshots in `src/assets/` and the repository's `docs/assets/` come from
+  the real game; Astro turns them into AVIF/WebP in several sizes.
+- The numbers on the page (routes, kilometres, climbing, the longest ride)
+  are counted from `routes/*.json` at build time (`src/lib/route.ts`), with the
+  game's definition of a lap, so they always match the server.
 
 ## Build and run
 

@@ -2,6 +2,7 @@
 *
 !landing
 !routes
+!docs/assets
 !CHANGELOG.md
 landing/node_modules
 landing/dist

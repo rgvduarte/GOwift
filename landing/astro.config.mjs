@@ -1,3 +1,4 @@
+import { fileURLToPath } from "node:url";
 import { defineConfig } from "astro/config";
 import sitemap from "@astrojs/sitemap";
 
@@ -12,4 +13,7 @@ export default defineConfig({
   output: "static",
   trailingSlash: "ignore",
   integrations: [sitemap({ filter: (page) => !page.endsWith("/404/") })],
+  // The page shows the repository's screenshots (docs/assets), so the dev
+  // server may read files above landing/.
+  vite: { server: { fs: { allow: [fileURLToPath(new URL("..", import.meta.url))] } } },
 });

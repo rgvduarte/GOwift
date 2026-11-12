@@ -34,7 +34,7 @@
   --s-6: 3rem;
   --s-8: 4rem;
   --s-12: 6rem;
-  --section: clamp(4.5rem, 9vw, 8rem);
+  --section: clamp(4rem, 8vw, 6.5rem);
 
   /* Type: large, tight headings over calm body text. */
   --fs-eyebrow: 0.8125rem;
