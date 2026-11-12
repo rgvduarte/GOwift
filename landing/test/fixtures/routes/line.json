@@ -1,0 +1,10 @@
+{
+  "id": "line",
+  "name": "Line",
+  "loop": true,
+  "points": [
+    [0, 0, 20],
+    [600, 800, 50]
+  ],
+  "markers": []
+}

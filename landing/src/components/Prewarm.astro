@@ -1,0 +1,30 @@
+---
+// Wakes a sleeping game server while the visitor reads (ADR 0025): on every
+// page view, once the page has loaded and the browser is idle, or sooner when
+// someone points at, focuses or touches a *Ride* link (`data-wake`). There is
+// no wait for a Ride link to come into view: the header's is on every page,
+// on screen at load. The logic lives in lib/prewarm.ts; this only wires it to
+// the page.
+---
+
+<script>
+  import { createWake } from "../lib/prewarm";
+
+  const links = [...document.querySelectorAll<HTMLElement>("[data-wake]")];
+  const wake = createWake(links[0]?.dataset.wake ?? null, {
+    fetch: (url, init) => fetch(url, init),
+    connection: (navigator as Navigator & { connection?: { saveData?: boolean } }).connection,
+  });
+
+  for (const link of links) {
+    for (const type of ["pointerenter", "focus", "touchstart"]) {
+      link.addEventListener(type, wake, { once: true, passive: true });
+    }
+  }
+
+  // The page itself comes first: wait for load and an idle moment.
+  const whenIdle = (run: () => void) =>
+    "requestIdleCallback" in window ? requestIdleCallback(() => run()) : setTimeout(run, 200);
+  if (document.readyState === "complete") whenIdle(wake);
+  else addEventListener("load", () => whenIdle(wake), { once: true });
+</script>

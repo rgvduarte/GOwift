@@ -81,6 +81,7 @@ everything can be tested without network, Bluetooth, timers or randomness:
 | Connection protocol | `server/crates/server/src/connection.rs` | `Session` state machine fed with JSON strings |
 | End to end | `server/crates/server/tests/` | Real server on a random port, real WebSocket client |
 | Client logic | `client/public/js/**` | `node:test` with fakes for sockets, timers, storage and devices |
+| Landing page | `landing/src/lib/**`, `landing/dist/` | `node:test` for the build-time helpers (routes directory, `fetch` injected), plus checks on the built site |
 
 Rules of thumb:
 

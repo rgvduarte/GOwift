@@ -2,49 +2,80 @@
 import { Picture } from "astro:assets";
 import Base from "../layouts/Base.astro";
 import Profile from "../components/Profile.astro";
-import { site, appHost, hasApp } from "../site";
+import { site, appHost, hasApp, coldStart, wakeUrl } from "../site";
+import { startLabel } from "../lib/app";
+import { routeStats } from "../lib/route";
+import { routeFacts } from "../lib/facts";
+import CopyButton from "../components/CopyButton.astro";
 import hero from "../assets/hero.png";
-import ride from "../assets/ride.png";
 import studio from "../assets/studio.png";
+// The repository's screenshots (also shown in the README), so one set stays current.
+import rideShot from "../../../docs/assets/screenshot-ride.png";
+import menuShot from "../../../docs/assets/screenshot-menu.png";
 
 const devicesUrl = `${site.githubUrl}/blob/main/docs/devices.md`;
 
 // Without a public server yet, the main buttons lead to "Host your own".
 const startUrl = hasApp ? site.appUrl : "#host";
-const startLabel = hasApp ? `Ride now on ${appHost}` : "Get started";
+const start = startLabel(hasApp);
 
-const features = [
+// Counted from routes/*.json when the page is built (ADR 0025).
+const facts = routeFacts(routeStats());
+const [routesFact, lengthFact] = facts;
+
+// What search engines read about the app. Only facts: free, in the browser,
+// open source; no ratings, as there are no reviews to back them.
+const structuredData = {
+  "@context": "https://schema.org",
+  "@type": "WebApplication",
+  name: site.name,
+  url: hasApp ? site.appUrl : site.url,
+  description: site.description,
+  applicationCategory: "GameApplication",
+  operatingSystem: "Windows, macOS, Android, ChromeOS",
+  browserRequirements: "Requires Web Bluetooth: Chrome or Edge, or Bluefy on iPhone and iPad.",
+  isAccessibleForFree: true,
+  license: "https://www.gnu.org/licenses/agpl-3.0.html",
+  codeRepository: site.githubUrl,
+  author: { "@type": "Person", name: site.owner, url: site.ownerUrl },
+  offers: { "@type": "Offer", price: "0", priceCurrency: "EUR" },
+};
+
+// Shown next to the buttons when the server sleeps while nobody rides.
+const coldStartNote = "The free server naps when nobody rides, so the first start can take up to a minute.";
+
+const steps = [
   {
-    title: "One island, everyone on it",
-    text: "Pick a route and you ride the same roads as everyone else on the server: valley, cliffs, a col and three cafés.",
+    title: "Connect your trainer",
+    text: "Any smart trainer or power meter that speaks Bluetooth FTMS or Cycling Power, like a Wahoo KICKR Core or a Van Rysel D500. A heart rate strap is optional.",
+    link: { href: devicesUrl, label: "Which devices work" },
   },
   {
-    title: "Never an empty road",
-    text: "Bots ride along when it’s quiet, each with its own fitness and style. They’re always marked, and make room as people join.",
+    title: "Open Chrome or Edge",
+    text: "On Windows, macOS, Android or ChromeOS, for Web Bluetooth. On iPhone and iPad, use the free Bluefy browser. Add it to your home screen and it opens like an app.",
   },
   {
-    title: "Drafting and races",
-    text: "Sit on a wheel to save watts. Join a race during its countdown, then go for the climbs and the sprints.",
+    title: "Type a name and ride",
+    text: "No sign-up. Pick a route, a spin class or a workout, set your weight and FTP, and go. Strava is optional.",
   },
+];
+
+const extras = [
   {
-    title: "Spin studio",
-    text: "A group class starts every 30 minutes. Coach Lemon calls the blocks, targets follow your FTP, and the room board ranks time on target.",
-  },
-  {
-    title: "Workouts in ERG mode",
-    text: "Ride the built-in sessions or import your own .zwo files. The trainer holds the watts, you hold on.",
+    title: "ERG workouts",
+    text: "Ride the built-in sessions or import your own .zwo files. The trainer holds the watts.",
   },
   {
     title: "Virtual shifting",
-    text: "Gears for single-speed setups like the Zwift Cog. Shift from the keyboard, the screen or a Zwift Click, Play or Ride.",
+    text: "Gears for single-speed setups like the Zwift Cog, from the keyboard, the screen or a Zwift Click, Play or Ride.",
   },
   {
-    title: "Strava upload",
-    text: "Finish a ride and send it to Strava as a virtual ride with its climbing and a map. Or download .fit, .gpx and .tcx.",
+    title: "Strava and files",
+    text: "Send a ride to Strava with its climbing and a map, or download .fit, .gpx and .tcx.",
   },
   {
-    title: "Runs in the browser",
-    text: "Nothing to install or update. Add it to your home screen and it opens like an app.",
+    title: "Opens like an app",
+    text: "Nothing to install or update. Add it to your home screen and it starts full screen.",
   },
 ];
 
@@ -63,154 +94,202 @@ const faq = [
   },
   {
     q: "I don’t have a smart trainer. Can I still try it?",
-    a: "Yes. Pick Simulated trainer on the start screen and set your power with the arrow keys. A power meter on a classic trainer works too, without resistance control.",
+    a: "Yes. Pick Simulator on the start screen and set your power with the arrow keys. A power meter on a classic trainer works too, without resistance control.",
   },
   {
     q: "Who are the other riders?",
     a: "People, and bots marked as bots. Bots keep the roads busy when few people are online, chase drafts and race, and leave as more humans join.",
   },
+  ...(coldStart
+    ? [
+        {
+          q: "Why does the first start take a minute?",
+          a: "The public server runs on a free plan that sleeps after 15 minutes without riders. The next visit wakes it, which takes about a minute; while people ride, it stays awake.",
+        },
+      ]
+    : []),
 ];
 ---
 
 <Base overlay>
+  <script type="application/ld+json" slot="head" set:html={JSON.stringify(structuredData).replace(/</g, "\\u003c")} />
   <section class="hero" aria-labelledby="hero-title">
     <Picture
       class="hero-shot"
       src={hero}
       formats={["avif", "webp"]}
       fallbackFormat="jpg"
-      widths={[800, 1280, 1920]}
-      sizes="100vw"
+      widths={[800, 1200, hero.width]}
+      sizes="(max-width: 52rem) 100vh, (max-aspect-ratio: 16/9) 178vh, 100vw"
       alt="A rider in the GOindoor 3D world on a winding country road in evening light, seen from the drone camera."
       loading="eager"
       fetchpriority="high"
     />
     <div class="wrap hero-text">
-      <h1 id="hero-title">Free indoor cycling, together.</h1>
-      <p class="lede">
-        Connect your smart trainer, open the browser and ride an island world with friends, strangers and bots.
-        Open source, no subscription.
-      </p>
-      <div class="actions">
-        <a class="button primary large" href={startUrl}>{startLabel}</a>
+      <div class="hero-copy">
+        <p class="eyebrow">Open source · Runs in your browser</p>
+        <h1 id="hero-title">Free indoor cycling, together.</h1>
+        <p class="lede">
+          Connect your smart trainer, open the browser and ride an island world with friends, strangers and bots. No
+          download, no account, no subscription.
+        </p>
+        <div class="actions">
+          <a class="button primary large" href={startUrl} data-wake={wakeUrl}>{start}</a>
+          <a class="button large" href="#how">How it works</a>
+        </div>
         {
-          hasApp ? (
-            <a class="button large" href="#host">Host your own server</a>
-          ) : (
-            <a class="button large" href={site.githubUrl}>View on GitHub</a>
+          hasApp && (
+            <p class="cta-note">
+              Opens {appHost} in Chrome or Edge.
+              {coldStart && <span class="cold-start">{coldStartNote}</span>}
+            </p>
           )
         }
       </div>
+      <ul class="at-a-glance glass" aria-label="At a glance">
+        <li><strong>{routesFact.value} routes</strong> {lengthFact.value} in all</li>
+        <li><strong>Spin classes</strong> every 30 minutes</li>
+        <li><strong>Strava upload</strong> optional</li>
+      </ul>
     </div>
     <div class="hero-ground">
       <Profile route="col-de-la-forge" />
     </div>
   </section>
 
-  <section class="section features" aria-labelledby="features-title">
-    <div class="wrap split">
-      <div class="split-head">
-        <h2 id="features-title">Everything you need for a winter on the trainer</h2>
-      </div>
-      <ul class="feature-list">
+  <section class="section how" id="how" aria-labelledby="how-title">
+    <div class="wrap how-grid">
+      <header class="section-head reveal">
+        <p class="eyebrow">How it works</p>
+        <h2 id="how-title">From this page to your first pedal stroke in about two minutes.</h2>
+      </header>
+      <ol class="steps">
         {
-          features.map((f) => (
-            <li class="glass">
-              <h3>{f.title}</h3>
-              <p>{f.text}</p>
+          steps.map((step) => (
+            <li>
+              <h3>{step.title}</h3>
+              <p>
+                {step.text}
+                {step.link && (
+                  <>
+                    {" "}
+                    <a href={step.link.href}>{step.link.label}</a>
+                  </>
+                )}
+              </p>
+            </li>
+          ))
+        }
+      </ol>
+      <figure class="how-shot reveal">
+        <Picture
+          src={menuShot}
+          formats={["avif", "webp"]}
+          fallbackFormat="jpg"
+          widths={[640, 960, 1280, 1600]}
+          sizes="(min-width: 60rem) 40rem, calc(100vw - 2rem)"
+          alt="The GOindoor start screen: route tabs, the selected route with its elevation profile, route cards with distance and climbing, and the rider panel with name, weight, FTP and how you ride."
+        />
+        <figcaption>
+          The start screen. No trainer? Pick <strong>Simulator</strong> and set your power with the arrow keys.
+        </figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section class="section ride glow" aria-labelledby="ride-title">
+    <div class="wrap">
+      <header class="section-head reveal">
+        <p class="eyebrow">The ride</p>
+        <h2 id="ride-title">Everything you need for a winter on the trainer.</h2>
+      </header>
+      <div class="bento">
+        <article class="tile tile-xl glass reveal">
+          <div class="tile-text">
+            <h3>One island, everyone on it</h3>
+            <p>
+              Pick a route and you ride the same roads as everyone else on the server: valley, cliffs, a col and three
+              cafés.
+            </p>
+          </div>
+          <Picture
+            class="tile-shot"
+            src={rideShot}
+            formats={["avif", "webp"]}
+            fallbackFormat="jpg"
+            widths={[640, 960, 1280, 1600]}
+            sizes="(min-width: 60rem) 48rem, calc(100vw - 2rem)"
+            alt="A ride in GOindoor: the rider on a village road, with power, speed, cadence and gradient on screen."
+            loading="lazy"
+          />
+        </article>
+        <article class="tile tile-l glass reveal">
+          <div class="tile-text">
+            <h3>A spin class every 30 minutes</h3>
+            <p>Coach Lemon calls the blocks, targets follow your FTP, and the room board ranks time on target.</p>
+          </div>
+          <Picture
+            class="tile-shot studio-shot"
+            src={studio}
+            formats={["avif", "webp"]}
+            fallbackFormat="jpg"
+            widths={[640, 960, 1280, 1600]}
+            sizes="(min-width: 60rem) 36rem, calc(100vw - 2rem)"
+            alt="The GOindoor spin studio: Coach Lemon on stage, riders side by side, and the class targets for power and cadence."
+            loading="lazy"
+          />
+        </article>
+        <article class="tile tile-m glass reveal">
+          <h3>Never an empty road</h3>
+          <p>
+            Bots ride along when it’s quiet, each with its own fitness and style. They’re always marked, and make room
+            as people join.
+          </p>
+        </article>
+        <article class="tile tile-m glass reveal">
+          <h3>Draft, race, sprint</h3>
+          <p>
+            Sit on a wheel to save watts. Join a race during its countdown, then go for the climbs and the sprints.
+          </p>
+        </article>
+        <ul class="extras glass reveal">
+          {
+            extras.map((extra) => (
+              <li>
+                <h3>{extra.title}</h3>
+                <p>{extra.text}</p>
+              </li>
+            ))
+          }
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section class="section facts" aria-labelledby="facts-title">
+    <div class="wrap">
+      <h2 id="facts-title" class="eyebrow">By the numbers</h2>
+      <ul class="fact-band glass reveal">
+        {
+          facts.map((fact) => (
+            <li>
+              <strong class="fact-value">{fact.value}</strong>
+              <span class="fact-label">{fact.label}</span>
             </li>
           ))
         }
       </ul>
+      <p class="facts-note">Counted from the game’s own route files when this page was built.</p>
     </div>
   </section>
 
-  <section class="section shots" aria-label="Screenshots">
-    <div class="wrap shots-grid">
-      <figure>
-        <Picture
-          src={ride}
-          formats={["avif", "webp"]}
-          fallbackFormat="jpg"
-          widths={[640, 1080, 1600]}
-          sizes="(min-width: 68rem) 34rem, 100vw"
-          alt="A ride in GOindoor: the rider on a country road, with power, speed, cadence and gradient on screen."
-        />
-        <figcaption>On the road: watts, speed, gradient, and the next sprint or climb.</figcaption>
-      </figure>
-      <figure>
-        <Picture
-          src={studio}
-          formats={["avif", "webp"]}
-          fallbackFormat="jpg"
-          widths={[640, 1080, 1600]}
-          sizes="(min-width: 68rem) 34rem, 100vw"
-          alt="The GOindoor spin studio: Coach Lemon on stage, riders side by side, the room board and the class plan with target and power."
-        />
-        <figcaption>In the spin studio: a class every half hour, bikes side by side.</figcaption>
-      </figure>
-    </div>
-  </section>
-
-  <section class="section needs" aria-labelledby="needs-title">
-    <div class="wrap split">
-      <div class="split-head">
-        <h2 id="needs-title">What you need</h2>
-        <p class="muted">About two minutes from opening the page to your first pedal stroke.</p>
-      </div>
-      <ol class="steps">
-        <li>
-          <h3>A smart trainer or a power meter</h3>
-          <p>
-            Anything that speaks Bluetooth FTMS or Cycling Power, like a Wahoo KICKR Core or a Van Rysel D500. A heart
-            rate strap is optional. <a href={devicesUrl}>Which devices work</a>
-          </p>
-        </li>
-        <li>
-          <h3>Chrome or Edge</h3>
-          <p>
-            On Windows, macOS, Android or ChromeOS, for Web Bluetooth. On iPhone and iPad, use the Bluefy browser.
-          </p>
-        </li>
-        <li>
-          <h3>A name</h3>
-          <p>
-            {hasApp ? <>Open <a href={site.appUrl}>{appHost}</a>,</> : <>Open your <a href="#host">GOindoor server</a>,</>} type
-            a name, connect your trainer and pick a route. No sign-up.
-          </p>
-        </li>
-      </ol>
-    </div>
-  </section>
-
-  <section class="section host" id="host" aria-labelledby="host-title">
-    <div class="wrap split">
-      <div class="split-head">
-        <h2 id="host-title">Open source. Host your own.</h2>
-      </div>
-      <div class="host-body">
-        <p>
-          GOindoor is open source and every server is a single Docker container. Run one at home for your LAN, on a
-          small VPS for your club{hasApp ? ", or ride on ours" : ""}. The game server is written in Rust, the client is plain JavaScript.
-        </p>
-        <pre><code><span class="muted"># needs Docker with Compose and make</span>
-git clone {site.githubUrl}.git
-cd GOwift
-make up</code></pre>
-        <p>
-          Then open <code>http://localhost:8080</code>. Bug reports, routes and pull requests are welcome
-          on <a href={site.githubUrl}>GitHub</a>.
-        </p>
-      </div>
-    </div>
-  </section>
-
-  <section class="section faq" aria-labelledby="faq-title">
-    <div class="wrap split">
-      <div class="split-head">
-        <h2 id="faq-title">Questions</h2>
-      </div>
-      <div class="faq-list glass">
+  <section class="section faq glow" aria-labelledby="faq-title">
+    <div class="wrap faq-grid">
+      <header class="section-head reveal">
+        <p class="eyebrow">Questions</p>
+        <h2 id="faq-title">Before your first ride.</h2>
+      </header>
+      <div class="faq-list glass reveal">
         {
           faq.map((item) => (
             <details>
@@ -223,25 +302,57 @@ make up</code></pre>
     </div>
   </section>
 
-  <section class="section last-call" aria-label="Start riding">
-    <div class="wrap last-call-inner">
-      <p class="last-call-line">The road is open.</p>
-      <a class="button primary large" href={startUrl}>{startLabel}</a>
-      <p class="community muted">
-        {
-          site.discordUrl ? (
-            <>
-              Looking for riding partners? Meet them on <a href={site.discordUrl}>Discord</a>.
-            </>
-          ) : (
-            <>
-              Ideas and bug reports go to{" "}
-              <a href={`${site.githubUrl}/issues`}>GitHub issues</a>.
-            </>
-          )
-        }{" "}
-        Riding stays free for everyone.
-      </p>
+  <section class="section host" id="host" aria-labelledby="host-title">
+    <div class="wrap host-grid">
+      <header class="section-head reveal">
+        <p class="eyebrow">For clubs and tinkerers</p>
+        <h2 id="host-title">Open source. Host your own.</h2>
+        <p>
+          Every server is a single Docker container. Run one at home for your LAN, on a small VPS for your club{
+            hasApp ? ", or ride on ours" : ""
+          }. The game server is written in Rust, the client is plain JavaScript.
+        </p>
+      </header>
+      <div class="host-body reveal">
+        <div class="code">
+          <pre id="host-code"><code><span class="muted"># needs Docker with Compose and make</span>
+git clone {site.githubUrl}.git
+cd GOwift
+make up</code></pre>
+          <CopyButton target="host-code" />
+        </div>
+        <p>
+          Then open <code>http://localhost:8080</code>. Bug reports, routes and pull requests are welcome on <a
+            href={site.githubUrl}>GitHub</a
+          >.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <section class="section last-call glow" aria-label="Start riding">
+    <div class="wrap">
+      <div class="last-call-panel glass reveal">
+        <p class="last-call-line">The road is open.</p>
+        <div class="last-call-action">
+          <a class="button primary large" href={startUrl} data-wake={wakeUrl}>{start}</a>
+          {hasApp && <p class="cta-note">Opens {appHost} in Chrome or Edge.</p>}
+        </div>
+        <p class="community">
+          {
+            site.discordUrl ? (
+              <>
+                Looking for riding partners? Meet them on <a href={site.discordUrl}>Discord</a>.
+              </>
+            ) : (
+              <>
+                Ideas and bug reports go to <a href={`${site.githubUrl}/issues`}>GitHub issues</a>.
+              </>
+            )
+          }{" "}
+          Riding stays free for everyone.
+        </p>
+      </div>
     </div>
   </section>
 </Base>
@@ -256,6 +367,9 @@ make up</code></pre>
     isolation: isolate;
     overflow: hidden;
   }
+  /* The picture is cropped to cover the hero, so on a screen narrower than
+     16:9 it is wider than the screen: its `sizes` asks for that width (178vh),
+     not the screen's, or the browser picks a file far too small. */
   .hero :global(.hero-shot) {
     position: absolute;
     inset: 0;
@@ -272,33 +386,86 @@ make up</code></pre>
     z-index: -1;
     background:
       linear-gradient(to right, rgb(11 11 12 / 0.88) 0%, rgb(11 11 12 / 0.4) 55%, rgb(11 11 12 / 0) 80%),
-      linear-gradient(to bottom, rgb(11 11 12 / 0.6) 0%, rgb(11 11 12 / 0) 25%);
+      linear-gradient(to bottom, rgb(11 11 12 / 0.6) 0%, rgb(11 11 12 / 0) 25%),
+      linear-gradient(to top, rgb(11 11 12 / 0.55) 0%, rgb(11 11 12 / 0) 45%);
   }
   .hero-text {
     align-self: end;
-    padding-top: 8rem;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: end;
+    gap: var(--s-4);
+    padding-top: 7rem;
     padding-bottom: clamp(1.5rem, 4vw, 3rem);
   }
+  .hero .eyebrow {
+    color: var(--silver);
+    margin-bottom: var(--s-2);
+    text-shadow: 0 1px 12px rgb(11 11 12 / 0.8);
+  }
   h1 {
-    font-size: clamp(3.5rem, 11vw, 8.5rem);
-    line-height: 0.88;
+    font-size: var(--fs-h1);
+    line-height: 0.9;
+    letter-spacing: -0.045em;
     max-width: 11ch;
     text-shadow: 0 2px 24px rgb(11 11 12 / 0.5);
   }
   .lede {
-    margin-top: 1.5rem;
+    margin-top: var(--s-3);
     font-size: clamp(1.125rem, 2vw, 1.3rem);
-    max-width: 40ch;
+    color: var(--lede);
+    max-width: 34ch;
     text-shadow: 0 1px 12px rgb(11 11 12 / 0.8);
   }
   .actions {
     display: flex;
     flex-wrap: wrap;
     gap: 0.75rem;
-    margin-top: 2rem;
+    margin-top: var(--s-4);
   }
   .actions .button:not(.primary) {
     background: rgb(255 255 255 / 0.09);
+  }
+  /* On phones the buttons take the full width, one under the other, so the
+     page never scrolls sideways. */
+  @media (max-width: 30rem) {
+    .actions .button {
+      flex: 1 1 100%;
+    }
+  }
+  .cta-note {
+    margin-top: 0.75rem;
+    font-size: 0.875rem;
+    color: var(--muted);
+    max-width: 44ch;
+  }
+  .hero .cta-note {
+    color: var(--silver);
+    text-shadow: 0 1px 8px rgb(11 11 12 / 0.9);
+  }
+  .cold-start {
+    display: block;
+  }
+  /* Glass over the photo, where its blur shows. */
+  .at-a-glance {
+    list-style: none;
+    margin: 0;
+    padding: var(--s-1) var(--s-3);
+    min-width: 15rem;
+  }
+  .at-a-glance li {
+    padding-block: 0.7rem;
+    font-size: 0.9375rem;
+    color: var(--silver);
+    line-height: 1.3;
+  }
+  .at-a-glance li + li {
+    border-top: 1px solid var(--divider);
+  }
+  .at-a-glance strong {
+    display: block;
+    color: var(--text);
+    font-size: 1.0625rem;
   }
   .hero-ground {
     margin-bottom: -1px;
@@ -307,101 +474,112 @@ make up</code></pre>
     padding-top: 0.25rem;
     background: var(--bg);
   }
+  /* Phones: the picture fills the top of the screen with the rider in view,
+     fades into the ground, and the text stands on the dark part below. A
+     shorter picture is also upscaled less: about 100vh wide (`sizes`)
+     instead of the full hero's height times 16:9. */
+  @media (max-width: 52rem) {
+    .hero {
+      --shot-h: max(22rem, 56svh);
+      min-height: 0;
+    }
+    .hero :global(.hero-shot),
+    .hero::before {
+      inset: 0 0 auto;
+      height: var(--shot-h);
+    }
+    .hero :global(.hero-shot) {
+      object-position: 52% 50%;
+      -webkit-mask-image: linear-gradient(#000 76%, transparent);
+      mask-image: linear-gradient(#000 76%, transparent);
+    }
+    .hero::before {
+      background: linear-gradient(
+        to bottom,
+        rgb(11 11 12 / 0.72) 0%,
+        rgb(11 11 12 / 0.2) 28%,
+        rgb(11 11 12 / 0) 50%,
+        rgb(11 11 12 / 0.55) 100%
+      );
+    }
+    .hero-text {
+      grid-template-columns: minmax(0, 1fr);
+      padding-top: calc(var(--shot-h) - 5rem);
+    }
+    /* One row per item: the name on the left, the detail on the right. */
+    .at-a-glance {
+      min-width: 0;
+      padding: 0.25rem var(--s-3);
+    }
+    .at-a-glance li {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 0 var(--s-2);
+      padding-block: 0.6rem;
+    }
+    .at-a-glance strong {
+      display: inline;
+      font-size: 1rem;
+    }
+  }
 
   /* Sections */
   .section {
-    padding-block: clamp(4rem, 10vw, 7.5rem);
+    padding-block: var(--section);
   }
-  .section + .section {
-    border-top: 1px solid var(--border);
+  .section-head {
+    margin-bottom: var(--s-6);
   }
-  .split {
+  .section-head .eyebrow {
+    margin-bottom: var(--s-2);
+  }
+  .section-head p:not(.eyebrow) {
+    margin-top: var(--s-3);
+    color: var(--muted);
+    max-width: 52ch;
+  }
+
+  /* How it works: three steps beside the real start screen. */
+  .how-grid {
     display: grid;
     grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
-    gap: 2.5rem clamp(2rem, 6vw, 5rem);
+    grid-template-areas:
+      "head head"
+      "steps shot";
+    gap: 0 clamp(2rem, 5vw, 4rem);
     align-items: start;
   }
-  .split-head {
-    position: sticky;
-    top: 2rem;
+  .how-grid .section-head {
+    grid-area: head;
   }
-  .split-head p {
-    margin-top: 1rem;
-  }
-  @media (max-width: 52rem) {
-    .split {
-      grid-template-columns: 1fr;
-    }
-    .split-head {
-      position: static;
-    }
-  }
-
-  .feature-list {
-    list-style: none;
-    margin: 0;
-    padding: 0;
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
-    gap: 1rem;
-  }
-  .feature-list li {
-    padding: 1.4rem 1.5rem 1.5rem;
-  }
-  .feature-list h3 {
-    font-size: 1.25rem;
-    margin-bottom: 0.5rem;
-  }
-  .feature-list p {
-    color: var(--muted);
-  }
-
-  .shots {
-    padding-top: 0;
-    border-top: 0 !important;
-  }
-  .shots-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(min(100%, 24rem), 1fr));
-    gap: 1.5rem;
-  }
-  .shots figure {
-    margin: 0;
-  }
-  .shots :global(img) {
-    display: block;
-    width: 100%;
-    height: auto;
-    border-radius: var(--radius);
-    border: 1px solid var(--border);
-  }
-  .shots figcaption {
-    margin-top: 0.75rem;
-    color: var(--muted);
-    font-size: 0.9375rem;
-  }
-
   .steps {
+    grid-area: steps;
     list-style: none;
     counter-reset: step;
     margin: 0;
     padding: 0;
-    display: grid;
-    gap: 2rem;
   }
   .steps li {
     counter-increment: step;
     display: grid;
-    grid-template-columns: 3.5rem 1fr;
-    column-gap: 1rem;
+    grid-template-columns: 3rem 1fr;
+    column-gap: var(--s-2);
+    padding-block: var(--s-3);
+    border-top: 1px solid var(--divider);
+  }
+  .steps li:first-child {
+    padding-top: 0;
+    border-top: 0;
   }
   .steps li::before {
     content: counter(step);
     grid-row: span 2;
-    font-family: var(--display);
     font-weight: 700;
-    font-size: 3.5rem;
-    line-height: 0.8;
+    font-size: 2.75rem;
+    line-height: 0.85;
+    letter-spacing: -0.04em;
     color: var(--brand);
   }
   .steps h3 {
@@ -409,25 +587,224 @@ make up</code></pre>
   }
   .steps p {
     color: var(--muted);
+    font-size: var(--fs-card);
   }
-
-  .host-body {
-    display: grid;
-    gap: 1.25rem;
+  .steps a {
+    color: var(--text);
+    white-space: nowrap;
   }
-  pre {
+  .how-shot {
+    grid-area: shot;
     margin: 0;
-    padding: 1.25rem 1.5rem;
-    background: var(--surface);
+  }
+  .how-shot :global(img) {
+    display: block;
+    width: 100%;
+    height: auto;
+    border-radius: var(--radius);
     border: 1px solid var(--border);
     border-top-color: var(--glass-top);
-    border-radius: var(--radius);
-    overflow-x: auto;
-    line-height: 1.7;
+    background: var(--surface);
+  }
+  .how-shot figcaption {
+    margin-top: var(--s-2);
+    color: var(--muted);
+    font-size: 0.9375rem;
+  }
+  .how-shot strong {
+    color: var(--text);
+  }
+  @media (max-width: 52rem) {
+    .how-grid {
+      grid-template-columns: minmax(0, 1fr);
+      grid-template-areas: "head" "steps" "shot";
+    }
+    .how-shot {
+      margin-top: var(--s-4);
+    }
   }
 
+  /* The ride: a bento of real screenshots and short tiles. */
+  .bento {
+    display: grid;
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    gap: var(--s-2);
+  }
+  .tile {
+    position: relative;
+    overflow: hidden;
+    padding: var(--s-4);
+  }
+  .tile h3 {
+    margin-bottom: var(--s-1);
+  }
+  .tile p {
+    color: var(--muted);
+    font-size: var(--fs-card);
+    line-height: 1.5;
+  }
+  .tile-xl {
+    grid-column: span 8;
+    grid-row: span 2;
+    min-height: 34rem;
+  }
+  .tile-l {
+    grid-column: span 4;
+    grid-row: span 2;
+  }
+  .tile-m {
+    grid-column: span 6;
+  }
+  /* The smaller features share one glass strip instead of four more cards. */
+  .extras {
+    grid-column: 1 / -1;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+  .extras li {
+    padding: var(--s-3);
+  }
+  .extras li + li {
+    border-left: 1px solid var(--divider);
+  }
+  .extras h3 {
+    font-size: 1.0625rem;
+    margin-bottom: 0.35rem;
+  }
+  .extras p {
+    color: var(--muted);
+    font-size: 0.9375rem;
+    line-height: 1.45;
+  }
+  .tile-text {
+    position: relative;
+    z-index: 1;
+    max-width: 30rem;
+  }
+  /* The screenshot fills the tile's lower part and fades into the glass. */
+  .tile :global(.tile-shot) {
+    position: absolute;
+    inset: auto 0 0;
+    width: 100%;
+    height: 74%;
+    object-fit: cover;
+    object-position: 50% 100%;
+    /* The fade also hides the game's top bar, which a narrow crop would cut. */
+    -webkit-mask-image: linear-gradient(transparent 10%, #000 36%);
+    mask-image: linear-gradient(transparent 10%, #000 36%);
+  }
+  .tile :global(.studio-shot) {
+    height: 62%;
+    object-position: 50% 78%;
+  }
+  @media (max-width: 60rem) {
+    .bento {
+      grid-template-columns: minmax(0, 1fr);
+    }
+    .tile-xl,
+    .tile-l,
+    .tile-m {
+      grid-column: 1 / -1;
+      grid-row: auto;
+    }
+    .tile-xl,
+    .tile-l {
+      min-height: min(30rem, 120vw);
+    }
+    .extras {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    .extras li:nth-child(3) {
+      border-left: 0;
+    }
+    .extras li:nth-child(n + 3) {
+      border-top: 1px solid var(--divider);
+    }
+  }
+  @media (max-width: 30rem) {
+    .tile {
+      padding: var(--s-3);
+    }
+    .extras {
+      grid-template-columns: minmax(0, 1fr);
+    }
+    .extras li + li {
+      border-left: 0;
+      border-top: 1px solid var(--divider);
+    }
+  }
+
+  /* By the numbers */
+  .facts {
+    padding-block: 0;
+  }
+  .facts .eyebrow {
+    margin-bottom: var(--s-2);
+  }
+  .fact-band {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+  .fact-band li {
+    padding: var(--s-4) var(--s-3);
+    display: grid;
+    gap: var(--s-1);
+    align-content: start;
+    /* The numbers scale with their column, so "4,138 m" always fits. */
+    container-type: inline-size;
+  }
+  .fact-band li + li {
+    border-left: 1px solid var(--divider);
+  }
+  .fact-value {
+    font-size: clamp(1.75rem, 4.4vw, 3.5rem);
+    font-size: clamp(1.5rem, 23cqi, 3.5rem);
+    font-weight: 700;
+    line-height: 1;
+    letter-spacing: -0.04em;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+  .fact-label {
+    color: var(--muted);
+    font-size: 0.9375rem;
+    line-height: 1.35;
+  }
+  .facts-note {
+    margin-top: var(--s-2);
+    color: var(--muted);
+    font-size: 0.875rem;
+  }
+  @media (max-width: 52rem) {
+    .fact-band {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    .fact-band li:nth-child(3) {
+      border-left: 0;
+    }
+    .fact-band li:nth-child(n + 3) {
+      border-top: 1px solid var(--divider);
+    }
+    .fact-band li {
+      padding: var(--s-3) var(--s-2);
+    }
+  }
+
+  /* Questions */
+  .faq-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 4fr) minmax(0, 8fr);
+    gap: 0 clamp(2rem, 5vw, 4rem);
+    align-items: start;
+  }
   .faq-list {
-    padding: 0.25rem 1.5rem;
+    padding: 0.25rem var(--s-3);
   }
   details + details {
     border-top: 1px solid var(--divider);
@@ -443,8 +820,9 @@ make up</code></pre>
   summary::-webkit-details-marker {
     display: none;
   }
+  /* The empty alternative text keeps screen readers from saying "plus". */
   summary::after {
-    content: "+";
+    content: "+" / "";
     position: absolute;
     right: 0.25rem;
     color: var(--accent);
@@ -454,29 +832,96 @@ make up</code></pre>
     translate: 0 -50%;
   }
   details[open] summary::after {
-    content: "−";
+    content: "−" / "";
+  }
+  summary:focus-visible {
+    outline-offset: -2px;
   }
   details p {
     padding-bottom: 1.25rem;
     color: var(--muted);
   }
 
-  .last-call-inner {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    justify-content: space-between;
-    gap: 1.5rem;
+  /* Host your own */
+  .host-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+    gap: var(--s-4) clamp(2rem, 5vw, 4rem);
+    align-items: start;
   }
-  .community {
-    flex-basis: 100%;
-    margin-top: 1rem;
+  .host-grid .section-head {
+    margin-bottom: 0;
+  }
+  .host-body {
+    display: grid;
+    gap: var(--s-3);
+  }
+  .host-body p {
+    color: var(--muted);
+  }
+  .code {
+    position: relative;
+    /* Lets the code block scroll inside the column instead of widening it. */
+    min-width: 0;
+  }
+  /* Room above the commands for the Copy button, so it never covers them. */
+  .code pre {
+    padding-top: 3.25rem;
+  }
+  pre {
+    margin: 0;
+    padding: 1.25rem 1.5rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-top-color: var(--glass-top);
+    border-radius: var(--radius);
+    overflow-x: auto;
+    line-height: 1.7;
+  }
+  @media (max-width: 52rem) {
+    .faq-grid,
+    .host-grid {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+  /* Phones: the clone line fits without scrolling sideways. */
+  @media (max-width: 30rem) {
+    pre {
+      font-size: 0.8125rem;
+      padding: 1rem 1.1rem;
+    }
+  }
+
+  /* Last call */
+  .last-call-panel {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: var(--s-3) var(--s-4);
+    padding: clamp(2rem, 5vw, 4rem);
   }
   .last-call-line {
-    font-family: var(--display);
     font-weight: 700;
-    letter-spacing: -0.03em;
+    letter-spacing: -0.04em;
     font-size: clamp(2.5rem, 6vw, 4.5rem);
     line-height: 1;
+  }
+  .last-call-action .cta-note {
+    text-align: center;
+  }
+  .community {
+    grid-column: 1 / -1;
+    color: var(--muted);
+  }
+  @media (max-width: 40rem) {
+    .last-call-panel {
+      grid-template-columns: minmax(0, 1fr);
+    }
+    .last-call-action .button {
+      width: 100%;
+    }
+    .last-call-action .cta-note {
+      text-align: left;
+    }
   }
 </style>

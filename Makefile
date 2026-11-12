@@ -29,8 +29,12 @@ endif
 
 ifneq ($(shell command -v npm 2>/dev/null),)
   NPM := cd client && npm
+  LANDING_NPM := cd landing && npm
 else
   NPM := docker run --rm -t -v "$(CURDIR)/client":/app -w /app $(NODE_IMAGE) npm
+  # The landing page reads ../routes, ../docs/assets and ../CHANGELOG.md, so it
+  # needs the whole repository.
+  LANDING_NPM := docker run --rm -t -v "$(CURDIR)":/src -w /src/landing $(NODE_IMAGE) npm
 endif
 
 .PHONY: help
@@ -121,7 +125,7 @@ dev: ## Run the server locally with cargo on http://localhost:8080 (reads .env.d
 		GOINDOOR_BIND=127.0.0.1:8080 RUST_LOG=$${RUST_LOG:-info,goindoor_server=debug} cargo run --bin goindoor-server
 
 .PHONY: test
-test: test-server test-client ## Run all tests
+test: test-server test-client test-landing ## Run all tests
 
 .PHONY: test-server
 test-server: ## Run the Rust tests (simulation, server, end-to-end)
@@ -130,6 +134,11 @@ test-server: ## Run the Rust tests (simulation, server, end-to-end)
 .PHONY: test-client
 test-client: ## Run the browser client tests
 	$(NPM) test
+
+.PHONY: test-landing
+test-landing: landing/node_modules ## Build the landing page and run its tests (unit and built-site checks)
+	$(LANDING_NPM) run build
+	$(LANDING_NPM) test
 
 .PHONY: lint
 lint: lint-server lint-client ## Check formatting and lints
@@ -148,6 +157,10 @@ screenshot: client/node_modules ## Screenshot of the running client (start it fi
 
 client/node_modules: client/package.json
 	$(NPM) install --no-audit --no-fund
+	@touch $@
+
+landing/node_modules: landing/package.json landing/package-lock.json
+	$(LANDING_NPM) ci --no-audit --no-fund
 	@touch $@
 
 .PHONY: fmt
@@ -193,4 +206,4 @@ lock: ## Create or refresh server/Cargo.lock (commit it afterwards)
 
 .PHONY: clean
 clean: ## Remove build output and local dependencies
-	rm -rf server/target client/node_modules
+	rm -rf server/target client/node_modules landing/node_modules landing/dist

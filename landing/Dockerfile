@@ -1,5 +1,6 @@
 # GOindoor landing page: Astro builds static files, Caddy serves them.
-# Build from the repository root (the page reads ../routes and ../CHANGELOG.md):
+# Build from the repository root (the page reads ../routes, ../docs/assets and
+# ../CHANGELOG.md):
 #
 #   docker build -f landing/Dockerfile .
 
@@ -8,12 +9,15 @@ WORKDIR /src/landing
 COPY landing/package.json landing/package-lock.json ./
 RUN npm ci --no-audit --no-fund
 COPY routes /src/routes
+COPY docs/assets /src/docs/assets
 COPY CHANGELOG.md /src/CHANGELOG.md
 COPY landing/ ./
 
 # Addresses baked into the page (see landing/README.md).
 ARG PUBLIC_SITE_URL=http://landing.localhost
 ARG PUBLIC_APP_URL=
+ARG PUBLIC_APP_COLD_START=
+ARG PUBLIC_APP_PREWARM=
 ARG PUBLIC_DISCORD_URL=
 ARG PUBLIC_PRIVACY_URL=
 ARG PUBLIC_IMPRINT_URL=

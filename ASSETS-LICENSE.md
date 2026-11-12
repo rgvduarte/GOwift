@@ -33,7 +33,7 @@ and fall under the AGPL like the rest of the code.
   anything else. A fork replaces them with its own (see
   [TRADEMARKS.md](TRADEMARKS.md)).
 - **Screenshots of GOindoor** (`docs/assets/screenshot-*.png`,
-  `landing/src/assets/ride.png`, `landing/src/assets/studio.png`):
+  `landing/src/assets/studio.png`):
   © 2026 GD, CC BY-SA 4.0. They show the 3D world drawn by the
   OpenRadlr code (AGPL).
 - **Hero image** (`landing/src/assets/hero.png`): Artwork © The OpenRadlr

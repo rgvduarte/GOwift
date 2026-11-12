@@ -1,0 +1,16 @@
+{
+  "id": "square",
+  "name": "Square",
+  "loop": true,
+  "points": [
+    [0, 0, 0],
+    [300, 0, 0],
+    [300, 400, 10],
+    [0, 400, 4]
+  ],
+  "markers": [
+    { "type": "start_finish", "distance": 0 },
+    { "type": "climb", "distance": 300, "length": 400 },
+    { "type": "sprint", "distance": 700, "length": 200 }
+  ]
+}
