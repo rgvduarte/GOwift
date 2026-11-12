@@ -27,11 +27,12 @@ export interface Profile {
   segments: { type: "climb" | "sprint"; from: number; to: number }[];
 }
 
-// Builds run in landing/, so the bundled routes are one level up.
-const routesDir = resolve(process.cwd(), "../routes");
+// Builds run in landing/, so the bundled routes are one level up. Tests pass
+// their own directory.
+export const routesDir = resolve(process.cwd(), "../routes");
 
-export function loadProfile(id: string): Profile {
-  const file = resolve(routesDir, `${id}.json`);
+export function loadProfile(id: string, dir = routesDir): Profile {
+  const file = resolve(dir, `${id}.json`);
   const route: RouteFile = JSON.parse(readFileSync(file, "utf8"));
 
   const samples: [number, number][] = [];

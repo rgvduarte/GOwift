@@ -27,7 +27,14 @@ With Node 22.12+ installed, in `landing/`:
 npm ci
 npm run dev       # http://localhost:4321, reloads on save
 npm run build     # static files in dist/
+npm test          # unit tests, plus checks on dist/ if it exists
 ```
+
+`make test-landing` (part of `make test` and `make check`) builds the page and
+runs the tests. They are plain `node --test` files in `test/`: the helpers in
+`src/lib/` take their inputs (the routes directory, `fetch`) as arguments, and
+`test/build.test.mjs` checks the built site, e.g. that every link stays under
+the base path.
 
 ## Settings (build time)
 
