@@ -311,7 +311,8 @@ impl World {
 
     /// One physics step per vehicle: the seats' summed power pushes the
     /// vehicle along its captain's road, and every seat takes the captain's
-    /// place. `drafts` holds each vehicle's draft factor.
+    /// place. `drafts` holds each vehicle's draft factor; the air's thinness
+    /// where the captain rides comes on top.
     pub(super) fn step_vehicles(&mut self, dt: f64, drafts: &[(VehicleId, f64)]) {
         let lane_step = dt / self.config.lane_change_s.max(1e-6);
         let roads = Roads {
@@ -319,7 +320,7 @@ impl World {
             steps: &self.steps,
             network: self.network.as_ref(),
         };
-        for &(id, cda_factor) in drafts {
+        for &(id, draft) in drafts {
             let Some(vehicle) = self.vehicles.get(&id) else {
                 continue;
             };
@@ -339,6 +340,7 @@ impl World {
             };
 
             let grade = roads.grade(captain);
+            let cda_factor = draft * roads.thin_air(captain, &self.config.physics);
             captain.speed = physics::step_speed(
                 &self.config.physics,
                 &StepInput {
@@ -369,7 +371,7 @@ impl World {
                 r.target_lane = c.target_lane;
                 r.turn = c.turn;
                 r.odometer += advance;
-                r.draft = cda_factor;
+                r.draft = draft;
                 r.drag_factor = cda_factor;
             }
         }
@@ -968,6 +970,25 @@ mod tests {
     }
 
     #[test]
+    fn every_seat_carries_the_thin_air() {
+        let mut world = empty_world(crate::route::tests::flat_loop_at(10_000.0, 1500.0));
+        let captain = human(&mut world, "Captain", 3.0);
+        let id = world
+            .create_vehicle(captain, VehicleKind::Tandem, false, &no_codes_taken)
+            .unwrap();
+        let both = crew(&mut world, id, captain, 1);
+
+        ride(&mut world, DT, &powers(&both, 150.0));
+
+        let params = physics::PhysicsParams::default();
+        let thin = physics::air_density_at(&params, 1500.0) / params.air_density;
+        for seat in both {
+            let factor = world.rider(seat).unwrap().drag_factor;
+            assert!((factor - thin).abs() < 1e-12, "{factor} vs {thin}");
+        }
+    }
+
+    #[test]
     fn only_the_captain_steers() {
         let mut world = empty_world(square_loop());
         let anna = human(&mut world, "Anna", 3.0);
@@ -1042,9 +1063,10 @@ mod tests {
     }
 
     /// Recorded on c10a43d, before vehicles had their own physics step;
-    /// re-recorded for the calibrated physics, #22, and for wheel inertia
-    /// (0.32 m less from a standing start over the minute).
-    const SOLO_ODOMETER: f64 = 400.635_321_287_640_86;
+    /// re-recorded for the calibrated physics, #22, for wheel inertia (0.32 m
+    /// less from a standing start over the minute) and for air density by
+    /// altitude (0.59 m more in the thinner air 100–110 m up).
+    const SOLO_ODOMETER: f64 = 401.221_248_778_026_5;
 
     #[test]
     fn huge_power_is_capped() {

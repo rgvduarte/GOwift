@@ -8,7 +8,8 @@
 //! Biomech. 14:276–291) makes speed changes a little slower, and the rear
 //! tyre's grip `mu` caps the push from rest; neither changes a steady speed.
 //! There is no drivetrain loss: trainers measure power at the hub, after the
-//! chain.
+//! chain. The air thins with altitude ([`air_density_at`]); the world folds
+//! that into the drag factor.
 //!
 //! All values are SI units. The grade is given in percent.
 
@@ -25,7 +26,7 @@ pub struct PhysicsParams {
     pub cda: f64,
     /// Rider weight in kg at which the drag area is `cda`.
     pub cda_reference_kg: f64,
-    /// Air density in kg/m³.
+    /// Air density in kg/m³ at sea level; higher up see [`air_density_at`].
     pub air_density: f64,
     /// Mass of the bike in kg, added to the rider's mass.
     pub bike_mass_kg: f64,
@@ -91,6 +92,19 @@ const CDA_MASS_RANGE: (f64, f64) = (30.0, 200.0);
 pub fn rider_cda(params: &PhysicsParams, rider_mass_kg: f64) -> f64 {
     let mass = rider_mass_kg.clamp(CDA_MASS_RANGE.0, CDA_MASS_RANGE.1);
     params.cda * (mass / params.cda_reference_kg).powf(2.0 / 3.0)
+}
+
+/// Highest elevation (m) the air keeps thinning to: the tropopause of the
+/// standard atmosphere, above which its temperature stops falling.
+const TROPOPAUSE_M: f64 = 11_000.0;
+
+/// Air density at `elevation_m` metres above sea level, in the ISA troposphere
+/// (ISO 2533: 288.15 K at sea level, 6.5 K/km lapse rate):
+/// `ρ₀ · (1 − 2.25577·10⁻⁵ · h)^4.25588`. About 1.112 kg/m³ at 1000 m and
+/// 1.007 at 2000 m, so a rider high up is a little faster at the same power.
+pub fn air_density_at(params: &PhysicsParams, elevation_m: f64) -> f64 {
+    let h = elevation_m.min(TROPOPAUSE_M);
+    params.air_density * (1.0 - 2.255_77e-5 * h).powf(4.255_88)
 }
 
 /// The numbers a solo rider is ridden with, as the client needs them for
@@ -313,6 +327,24 @@ mod tests {
         };
         let input = solo(&p, 8.0, 400.0);
         assert_eq!(acceleration(&p, &input), acceleration(&ungripped, &input));
+    }
+
+    #[test]
+    fn air_density_at_sea_level_is_rho0() {
+        let p = PhysicsParams::default();
+        assert_eq!(air_density_at(&p, 0.0), p.air_density);
+    }
+
+    #[test]
+    fn air_density_at_1000_m_is_isa() {
+        let rho = air_density_at(&PhysicsParams::default(), 1000.0);
+        assert!((rho - 1.1117).abs() < 0.001, "{rho}");
+    }
+
+    #[test]
+    fn air_density_stops_thinning_at_the_tropopause() {
+        let p = PhysicsParams::default();
+        assert_eq!(air_density_at(&p, 100_000.0), air_density_at(&p, 11_000.0));
     }
 
     #[test]

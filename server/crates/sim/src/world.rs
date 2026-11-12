@@ -944,8 +944,10 @@ impl World {
 
             // 2. Physics with drafting. A parked rider has no slot in the field
             // and so no shelter: it rides in clear air.
-            let (ahead, cda_factor) = shelter.get(&rider.id).map_or((None, 1.0), |s| (s.ahead, s.factor));
-            rider.draft = cda_factor;
+            let (ahead, draft) = shelter.get(&rider.id).map_or((None, 1.0), |s| (s.ahead, s.factor));
+            let air = roads.thin_air(rider, &self.config.physics);
+            let cda_factor = draft * air;
+            rider.draft = draft;
             rider.drag_factor = cda_factor;
             let power_watts = if rider.parked {
                 0.0
@@ -970,7 +972,7 @@ impl World {
                 let settled = (rider.lane - f64::from(rider.target_lane)).abs() < 1e-9;
                 let at_their_speed = StepInput {
                     speed: ahead.speed,
-                    cda_factor: 1.0,
+                    cda_factor: air,
                     ..input
                 };
                 // Compared with what the leader really does: riders speeding up
@@ -1782,6 +1784,20 @@ impl Roads<'_> {
         }
     }
 
+    /// Metres above sea level under the rider.
+    fn elevation(&self, rider: &Rider) -> f64 {
+        match (rider.off_route, self.network) {
+            (Some(off), Some(network)) => network.elevation(off.road, off.offset),
+            _ => self.routes[rider.route].elevation_at(rider.position),
+        }
+    }
+
+    /// How much thinner than at sea level the air is around the rider: the
+    /// share of the sea-level drag it rides with.
+    fn thin_air(&self, rider: &Rider, params: &PhysicsParams) -> f64 {
+        physics::air_density_at(params, self.elevation(rider)) / params.air_density
+    }
+
     /// Moves the rider `advance` metres on, turning at a junction where they
     /// picked another road.
     fn advance(&self, rider: &mut Rider, advance: f64) {
@@ -2372,6 +2388,38 @@ mod tests {
 
         let accel = world.rider(sprinter).unwrap().accel;
         assert!(accel <= 0.5 * physics::GRAVITY + 1e-9, "{accel} m/s²");
+    }
+
+    /// Metres one rider covers in a minute at 200 W on a flat loop at `elevation`.
+    fn minute_at(elevation: f64) -> f64 {
+        let mut world = empty_world(crate::route::tests::flat_loop_at(10_000.0, elevation));
+        let rider = world.join_human("Rider", 75.0);
+        ride(&mut world, 60.0, &[(rider, 200.0)]);
+        world.rider(rider).unwrap().odometer
+    }
+
+    #[test]
+    fn the_same_power_is_faster_high_up() {
+        assert!(minute_at(2000.0) > minute_at(0.0) + 10.0);
+    }
+
+    #[test]
+    fn the_drag_factor_carries_the_thin_air() {
+        let mut world = empty_world(crate::route::tests::flat_loop_at(10_000.0, 2000.0));
+        let rider = world.join_human("Rider", 75.0);
+        ride(&mut world, DT, &[(rider, 200.0)]);
+        let params = PhysicsParams::default();
+        let thin = physics::air_density_at(&params, 2000.0) / params.air_density;
+        let r = world.rider(rider).unwrap();
+        assert!((r.drag_factor - thin).abs() < 1e-12, "{} vs {thin}", r.drag_factor);
+    }
+
+    #[test]
+    fn thin_air_is_no_draft() {
+        let mut world = empty_world(crate::route::tests::flat_loop_at(10_000.0, 2000.0));
+        let rider = world.join_human("Rider", 75.0);
+        ride(&mut world, DT, &[(rider, 200.0)]);
+        assert_eq!(world.rider(rider).unwrap().draft, 1.0);
     }
 
     #[test]

@@ -72,6 +72,13 @@ test("no drafting is shown when the server says clear air, whatever the mirror s
   assert.equal(rideDraft({ state: { drag_factor: 1 }, me, riders, route }).shown, null);
 });
 
+test("thin air lightens the drag the pedals feel without showing as drafting", () => {
+  const route = squareRoute();
+  const me = { id: 1, distance: 100, lane: 1 };
+  const draft = rideDraft({ state: { drag_factor: 0.822 }, me, riders: [me], route });
+  assert.deepEqual(draft, { dragFactor: 0.822, shown: null });
+});
+
 test("an older server's draft is shown from the mirror", () => {
   const { me, riders, route } = mirrored();
   assert.equal(rideDraft({ state: {}, me, riders, route }).shown.savingPercent, 20);

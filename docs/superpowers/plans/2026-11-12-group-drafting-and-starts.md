@@ -55,6 +55,6 @@
 
 ### Task 4: Air density by altitude
 
-- [ ] `physics.rs` tests: `air_density_at_sea_level_is_rho0`, `air_density_at_1000_m_is_isa`; world test `the_same_power_is_faster_high_up`; protocol: the drag factor carries the altitude.
-- [ ] `air_density_at`, `Network::elevation`, `Roads::elevation`; the world folds ρ(h)/ρ₀ into `drag_factor` and the clear-air pass comparison.
-- [ ] Re-record `SOLO_ODOMETER`; ADR 0026 gains the air; `docs/protocol.md` (`physics.air_density` is sea level).
+- [x] `physics.rs` tests: `air_density_at_sea_level_is_rho0`, `air_density_at_1000_m_is_isa`; `air_density_stops_thinning_at_the_tropopause`; `network.rs` `elevations_follow_the_riding_direction`; world tests `the_same_power_is_faster_high_up`, `the_drag_factor_carries_the_thin_air`, `thin_air_is_no_draft`, `every_seat_carries_the_thin_air`; protocol `the_drag_factor_carries_thin_air_but_the_draft_does_not`; client `thin air lightens the drag the pedals feel without showing as drafting`.
+- [x] `air_density_at`, `Network::elevation`, `Roads::elevation`; the world folds ρ(h)/ρ₀ into `drag_factor` and the clear-air pass comparison.
+- [x] Re-record `SOLO_ODOMETER`; ADR 0026 gains the air; `docs/protocol.md` (`physics.air_density` is sea level), `docs/routes.md`, `docs/devices.md`, `docs/architecture.md`.

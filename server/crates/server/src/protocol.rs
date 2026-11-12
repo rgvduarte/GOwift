@@ -1598,8 +1598,8 @@ mod tests {
         );
     }
 
-    /// A flat road with `leader` 3.5 m ahead of `follower` in the middle lane, after one tick.
-    fn two_in_a_line() -> (World, RiderId, RiderId) {
+    /// A world without bots on a flat road `elevation` metres up.
+    fn flat_world(elevation: f64) -> World {
         use goindoor_sim::rng::SplitMix64;
         use goindoor_sim::route::{Point, Route, RouteSpec};
         use goindoor_sim::SimConfig;
@@ -1608,7 +1608,7 @@ mod tests {
             name: "R".into(),
             lanes: 4,
             seed: 1,
-            points: vec![Point::new(0.0, 0.0, 0.0), Point::new(2000.0, 0.0, 0.0)],
+            points: vec![Point::new(0.0, 0.0, elevation), Point::new(2000.0, 0.0, elevation)],
             markers: vec![],
             walk: vec![],
         })
@@ -1617,7 +1617,12 @@ mod tests {
             target_riders: 0,
             ..SimConfig::default()
         };
-        let mut world = World::new(route, config, Box::new(SplitMix64::new(1)));
+        World::new(route, config, Box::new(SplitMix64::new(1)))
+    }
+
+    /// A flat road with `leader` 3.5 m ahead of `follower` in the middle lane, after one tick.
+    fn two_in_a_line() -> (World, RiderId, RiderId) {
+        let mut world = flat_world(0.0);
         let leader = world.join_human("Leader", 75.0);
         let follower = world.join_human("Follower", 75.0);
         world.place_at(leader, 103.5);
@@ -1657,5 +1662,15 @@ mod tests {
         let json = state_json(&world, leader);
         assert!(!json.contains("\"draft\""), "{json}");
         assert!(json.contains("\"drag_factor\":1.0"), "{json}");
+    }
+
+    #[test]
+    fn the_drag_factor_carries_thin_air_but_the_draft_does_not() {
+        let mut world = flat_world(2000.0);
+        let solo = world.join_human("Solo", 75.0);
+        world.tick(0.05);
+        let json = state_json(&world, solo);
+        assert!(json.contains("\"drag_factor\":0.822"), "{json}");
+        assert!(!json.contains("\"draft\""), "{json}");
     }
 }

@@ -72,7 +72,8 @@ that died after its rider was taken over by a new one can't touch the rider.
    rider's result in `state` (`drag_factor`, `draft`).
 4. Physics integrates speed; position advances and wraps around the loop.
    The wheels' inertia counts as about 1.45 kg more to accelerate, and the push
-   is capped at 0.5 g, the rear tyre's grip, so a standing start doesn't leap
+   is capped at 0.5 g, the rear tyre's grip, so a standing start doesn't leap;
+   the air thins with the road's elevation, as in the standard atmosphere
    ([ADR 26](adr/0026-inertia-grip-and-thin-air.md)).
    Nobody rides through the wheel ahead: closing in, a rider slows to sit on
    it 2 m behind, and pulls out into a free neighbouring lane to pass when it
