@@ -15,7 +15,7 @@ export const site = {
   // *Ride now* buttons then lead to the self-hosting quick start.
   appUrl: env.PUBLIC_APP_URL || "",
   githubUrl,
-  owner: "rgvduarte",
+  owner: "GD",
   ownerUrl: "https://github.com/rgvduarte",
   upstreamUrl: "https://github.com/Lethonium/OpenRadlr",
   discordUrl: env.PUBLIC_DISCORD_URL || "",

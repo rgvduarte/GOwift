@@ -1,6 +1,6 @@
 # Notice
 
-**GOindoor** — Copyright (C) 2026 [rgvduarte](https://github.com/rgvduarte),
+**GOindoor** — Copyright (C) 2026 [GD](https://github.com/rgvduarte),
 owner and developer of GOindoor.
 
 GOindoor is a fork of **OpenRadlr**

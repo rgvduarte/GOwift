@@ -7,7 +7,7 @@
 
 <p align="center">
   Open-source indoor cycling in the browser, with friends — and bots, so the road is never empty.<br>
-  <sub>Owner and developer: <a href="https://github.com/rgvduarte">@rgvduarte</a> ·
+  <sub>Owner and developer: <a href="https://github.com/rgvduarte">GD</a> ·
   Website: <a href="https://rgvduarte.github.io/GOwift/">rgvduarte.github.io/GOwift</a> ·
   Based on <a href="https://github.com/Lethonium/OpenRadlr">OpenRadlr</a></sub>
 </p>
@@ -243,7 +243,7 @@ All settings live in `.env`; see [`.env.example`](.env.example) for descriptions
 
 ## License
 
-GOindoor is created and maintained by [@rgvduarte](https://github.com/rgvduarte).
+GOindoor is created and maintained by [GD](https://github.com/rgvduarte).
 It is a fork of [OpenRadlr](https://github.com/Lethonium/OpenRadlr) by the
 OpenRadlr contributors; see [NOTICE.md](NOTICE.md) for what comes from where.
 

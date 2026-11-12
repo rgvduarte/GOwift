@@ -26,20 +26,20 @@ and fall under the AGPL like the rest of the code.
   brand mark** (`brand/*.svg`, `docs/assets/goindoor-emblem.png`,
   `client/public/icons/`, `landing/public/icons/`, `app/assets/` and the app
   icons and splash screens generated from them under `app/android/` and
-  `app/ios/`): © 2026 [rgvduarte](https://github.com/rgvduarte). **All rights
+  `app/ios/`): © 2026 [GD](https://github.com/rgvduarte). **All rights
   reserved, not under CC BY-SA.** They are original works, not based on
-  OpenRadlr artwork; the GD monogram is rgvduarte's personal mark. You may
+  OpenRadlr artwork; the GD monogram is GD's personal mark. You may
   pass them on unchanged as part of GOindoor, but not use or adapt them for
   anything else. A fork replaces them with its own (see
   [TRADEMARKS.md](TRADEMARKS.md)).
 - **Screenshots of GOindoor** (`docs/assets/screenshot-*.png`,
   `landing/src/assets/ride.png`, `landing/src/assets/studio.png`):
-  © 2026 rgvduarte, CC BY-SA 4.0. They show the 3D world drawn by the
+  © 2026 GD, CC BY-SA 4.0. They show the 3D world drawn by the
   OpenRadlr code (AGPL).
 - **Hero image** (`landing/src/assets/hero.png`): Artwork © The OpenRadlr
   contributors, CC BY-SA 4.0, <https://github.com/Lethonium/OpenRadlr>.
   Unchanged.
-- **Open Graph image** (`landing/public/og.png`): © 2026 rgvduarte,
+- **Open Graph image** (`landing/public/og.png`): © 2026 GD,
   CC BY-SA 4.0. It is a changed version of the hero image above (cropped,
   darkened, logo and text added), so the OpenRadlr credit applies to it too.
 
@@ -48,7 +48,7 @@ and fall under the AGPL like the rest of the code.
 Use, copy, change and share the CC BY-SA artwork, also commercially and in forks, as
 long as you:
 
-- **credit it** as listed above ("Artwork © rgvduarte (GOindoor), CC BY-SA 4.0"
+- **credit it** as listed above ("Artwork © GD (GOindoor), CC BY-SA 4.0"
   or "Artwork © The OpenRadlr contributors, CC BY-SA 4.0"), with a link to the
   source repository, and say if you changed it;
 - **share alike**: publish your changed versions under CC BY-SA 4.0 too.
