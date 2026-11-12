@@ -8,7 +8,7 @@ import { CAMERA_MODES, ChaseCamera } from "./chaseCamera.js";
 import { clipFor, mirrorPlant, mirrorPose, settle } from "./clips.js";
 import { chunkNear, chunkVisible } from "./chunks.js";
 import { TIME_MODES, TIME_PRESETS, resolvedLight, resolvePreset, sunShadowMatrix } from "./lighting.js";
-import { cross, invert, lerp3, lookAt, multiply, normalize, perspective, placement, rotationXAbout, scale, scaling, sub, transformPoint, yawFor } from "./math.js";
+import { cross, invert, lerp3, lookAt, multiply, normalize, perspective, placement, rotationXAbout, rotationZAbout, scale, scaling, sub, transformPoint, yawFor } from "./math.js";
 import { Renderer, createContext } from "./renderer.js";
 import {
   RIDER_GEOMETRY,
@@ -26,10 +26,12 @@ import {
   legPose,
   ridingBodyParts,
   riderLook,
+  riderStance,
   uploadBodyParts,
   variantLook,
 } from "./riderModel.js";
 import { blend, bodyTransforms, poseAt } from "./riderPose.js";
+import { climbsStanding, packCadence, riderMotion, saddleState } from "./riderMotion.js";
 import { CROWD, cheer, crowdShare } from "./crowd.js";
 import { buildLemon } from "./lemonModel.js";
 import { buildFlag, buildRotor, buildSpectator } from "./structures.js";
@@ -329,6 +331,8 @@ export class View3D {
   #glow = { gym: null, index: null };
   #pedalPhase = new Map();
   #wheelPhase = new Map();
+  /** Per rider: in or out of the saddle (`saddleState`). */
+  #saddle = new Map();
   /** Per workout rider: the exercise shown, the pose it fades from and when it changed. */
   #clips = new Map();
   #lastTime = null;
@@ -548,7 +552,7 @@ export class View3D {
       [0.12, 0],
       [-0.12, Math.PI],
     ]) {
-      const pose = legPose(phase + offset);
+      const pose = legPose(phase + offset, hip);
       if (offset === 0) limbs.push({ mesh: this.crankset, model: joint(bottomBracket, pose.crankAngle) });
       limbs.push(
         { mesh: this.thighs[look.variant], model: joint([side, hy, hz], pose.thighAngle) },
@@ -559,9 +563,9 @@ export class View3D {
     return limbs;
   }
 
-  /** Upper-body parts of a rider in the riding pose, hung off `model` (the bike frame). */
-  #torso(model, look) {
-    return ridingBodyParts(look).map(({ mesh, model: local }) => ({ mesh: this.bodyParts[look.variant].get(mesh), model: multiply(model, local) }));
+  /** Upper-body parts of a rider in `stance` (`riderStance`; the riding pose without one), hung off `model` (the bike frame). */
+  #torso(model, look, stance) {
+    return ridingBodyParts(look, stance).map(({ mesh, model: local }) => ({ mesh: this.bodyParts[look.variant].get(mesh), model: multiply(model, local) }));
   }
 
   /**
@@ -629,18 +633,26 @@ export class View3D {
     return spots;
   }
 
-  #riderParts(rider, position, forward, cadence, dt) {
+  /** A rider on the road; `ftp` is known for my own rider only (it decides when I stand up to surge). */
+  #riderParts(rider, position, forward, cadence, dt, ftp = null) {
     const look = riderLook(rider.id);
     const pitch = Math.asin(Math.max(-1, Math.min(1, forward[1])));
-    const model = multiply(placement(position, yawFor(forward), pitch), scaling(look.scale));
+    const phase = this.#pedal(rider.id, cadence, dt);
+    // Out of the saddle for sprints, attacks and steep ramps: the hips go forward and the bike rocks with the strokes.
+    const input = { move: rider.move ?? null, grade: Math.tan(pitch), power: rider.power ?? 0, ftp, climber: climbsStanding(rider) };
+    const saddle = saddleState(this.#saddle.get(rider.id) ?? null, input, dt);
+    this.#saddle.set(rider.id, saddle);
+    const motion = riderMotion(phase, saddle.w);
+    const stance = riderStance(saddle.w, motion);
+    const model = multiply(multiply(placement(position, yawFor(forward), pitch), rotationZAbout([0, 0, 0], motion.bikeRoll)), scaling(look.scale));
 
-    const limbs = this.#legs(model, look, this.#pedal(rider.id, cadence, dt));
+    const limbs = this.#legs(model, look, phase, stance.hip);
 
     // Rolling forward (−Z) turns the wheel backwards around X.
     const spin = (this.#wheelPhase.get(rider.id) ?? 0) - ((rider.speed ?? 0) * dt) / (RIDER_GEOMETRY.wheelRadius * look.scale);
     this.#wheelPhase.set(rider.id, spin % (Math.PI * 2));
     const wheels = WHEEL_HUBS.map((hub) => multiply(model, multiply(placement(hub), rotationXAbout([0, 0, 0], spin))));
-    return { model, limbs, torso: this.#torso(model, look), wheels, variant: look.variant };
+    return { model, limbs, torso: this.#torso(model, look, stance), wheels, variant: look.variant };
   }
 
   /**
@@ -685,9 +697,10 @@ export class View3D {
 
   /**
    * Draws one frame.
-   * @param {{riders: object[], myId: number, myCadence?: number, timeS: number, colors: {me: string, human: string, bot: string}}} frame
+   * @param {{riders: object[], myId: number, myCadence?: number, myFtp?: number, timeS: number, colors: {me: string, human: string, bot: string}}} frame
+   *   `myFtp`: my FTP, so my avatar stands up when I surge well over it
    */
-  render({ riders, myId, myCadence, timeS, colors }) {
+  render({ riders, myId, myCadence, myFtp = null, timeS, colors }) {
     const dt = this.#lastTime === null ? 0 : Math.min(0.1, timeS - this.#lastTime);
     this.#lastTime = timeS;
 
@@ -728,9 +741,10 @@ export class View3D {
       const fromCamera = Math.hypot(position[0] - this.camera.eye[0], position[2] - this.camera.eye[2]);
       // Far riders are invisible anyway; riders right at the camera would block the view.
       if (fromCamera > 600 || (fromCamera < SCENE.nearCameraHide && rider.id !== myId)) continue;
-      const cadence = rider.id === myId ? (myCadence ?? 0) : rider.power > 0 ? 85 : 0;
+      // Others' cadence is not sent: each pedals at their own, so a pack never spins in lock-step.
+      const cadence = rider.id === myId ? (myCadence ?? 0) : rider.power > 0 ? packCadence(rider.id) : 0;
       const tint = rider.ghost ? SCENE.ghost.tint : rider.id === myId ? tints.me : isRemote(rider) ? tints.remote : rider.is_bot ? botTint(rider, tints) : tints.human;
-      const parts = gym ? this.#workoutParts(rider, gym, timeS) : this.#riderParts(rider, position, forward, cadence, dt);
+      const parts = gym ? this.#workoutParts(rider, gym, timeS) : this.#riderParts(rider, position, forward, cadence, dt, rider.id === myId ? myFtp : null);
       visible.push({ rider, position, forward, fromCamera, tint, ghost: Boolean(rider.ghost), ...parts });
     }
 
@@ -854,7 +868,7 @@ export class View3D {
     this.#updateLabels(placed, myId, viewProjection, width, height, seatHeads, probes, timeS);
     const vehicleIds = new Set(riders.filter((r) => r.vehicle).map((r) => `vehicle:${r.vehicle.id}`));
     for (const id of this.#clips.keys()) if (!gymSpots.has(id)) this.#clips.delete(id);
-    for (const phases of [this.#pedalPhase, this.#wheelPhase]) {
+    for (const phases of [this.#pedalPhase, this.#wheelPhase, this.#saddle]) {
       for (const id of phases.keys()) if (!riders.some((r) => r.id === id) && !vehicleIds.has(id)) phases.delete(id);
     }
   }

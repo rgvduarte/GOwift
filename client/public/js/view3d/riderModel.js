@@ -7,7 +7,7 @@
  * around the bottom bracket, each foot rides its pedal and the knee follows by
  * two-bone IK (see `legPose`), so the legs actually drive the bike.
  */
-import { multiply, placement, rotationXAbout } from "./math.js";
+import { multiply, placement, rotationXAbout, rotationZAbout, transformPoint } from "./math.js";
 import { MeshBuilder } from "./meshBuilder.js";
 
 const KIT = [1, 1, 1, 1];
@@ -169,7 +169,27 @@ export const BODY_ATTITUDE = Object.freeze({
  */
 export const RIDING_POSE = Object.freeze({ spine: 0, neck: 0, shoulderL: 0, shoulderR: 0, elbowL: 0, elbowR: 0 });
 
+/**
+ * Out of the saddle the hips move forward over the cranks, hardly up: the
+ * legs (thigh and shin 0.82 m) must still reach the bottom of the stroke.
+ */
+export const STANDING_HIP = Object.freeze([0, 1.0, -0.06]);
+/** Out of the saddle the torso pitches this much further forward about the hips (X rotation), shoulders over the bars. */
+export const STANDING_SPINE = -0.05;
+/** The head turns back up by this share of the torso's pitch, so the rider keeps looking down the road. */
+const HEAD_LEVEL = 0.8;
+
 const minus = (a, b) => [a[0] - b[0], a[1] - b[1], a[2] - b[2]];
+const mix3 = (a, b, w) => a.map((v, k) => v + (b[k] - v) * w);
+
+/**
+ * Where the upper body sits for a standing blend `w` (0 seated, 1 out of the
+ * saddle) and the cadence's `motion` (`riderMotion`): the hip joint the legs
+ * hang from, the torso's extra pitch, its roll against the bike and its bob.
+ */
+export function riderStance(w, { torsoRoll = 0, bob = 0 } = {}) {
+  return { hip: mix3(RIDER_GEOMETRY.hip, STANDING_HIP, w), spine: STANDING_SPINE * w, roll: torsoRoll, bob };
+}
 
 /** Shorts, origin at the pelvis joint. */
 export function buildPelvis({ shorts } = variantLook(0)) {
@@ -229,20 +249,61 @@ export function uploadBodyParts(renderer, look) {
   ]);
 }
 
-/** Upper-body parts in the riding pose: `mesh` names a `build*` part, `model` is its transform in the bike frame. */
-export function ridingBodyParts(_look = variantLook(0)) {
-  const at = (joint, angle) => multiply(placement(joint), rotationXAbout([0, 0, 0], angle));
+/**
+ * The elbow (y, z) for a shoulder and a hand on the bars: two-bone IK in the
+ * YZ plane like the legs, bending to `bend`'s side of the shoulder–hand line.
+ */
+function elbowFor(shoulder, hand, upper, fore, bend) {
+  const dy = hand[1] - shoulder[1];
+  const dz = hand[2] - shoulder[2];
+  const reach = Math.hypot(dy, dz);
+  const d = Math.min(upper + fore - 1e-4, Math.max(Math.abs(upper - fore) + 1e-4, reach));
+  const [uy, uz] = [dy / reach, dz / reach];
+  const cos = (upper * upper + d * d - fore * fore) / (2 * upper * d);
+  const sin = bend * Math.sqrt(Math.max(0, 1 - cos * cos));
+  return [shoulder[0], shoulder[1] + upper * (cos * uy - sin * uz), shoulder[2] + upper * (cos * uz + sin * uy)];
+}
+
+const yzLength = (a, b) => Math.hypot(b[1] - a[1], b[2] - a[2]);
+/** Each arm as modelled: its bone lengths in the YZ plane and the side its elbow bends to. */
+const ARMS = Object.freeze(
+  ["L", "R"].map((s) => {
+    const [shoulder, elbow, hand] = [BODY_JOINTS[`shoulder${s}`], BODY_JOINTS[`elbow${s}`], BODY_JOINTS[`hand${s}`]];
+    const [dy, dz] = [hand[1] - shoulder[1], hand[2] - shoulder[2]];
+    const side = (elbow[1] - shoulder[1]) * -dz + (elbow[2] - shoulder[2]) * dy;
+    return { s, upper: yzLength(shoulder, elbow), fore: yzLength(elbow, hand), bend: side < 0 ? -1 : 1 };
+  }),
+);
+
+/**
+ * Upper-body parts on the bike: `mesh` names a `build*` part, `model` is its
+ * transform in the bike frame. Without a stance it is the riding pose. A
+ * stance (`riderStance`) moves the torso with the hips, pitches and rolls it
+ * and bobs it; the hands stay on the hoods and the elbows follow by IK.
+ */
+export function ridingBodyParts(_look = variantLook(0), { hip = RIDER_GEOMETRY.hip, spine = RIDING_POSE.spine, roll = 0, bob = 0 } = {}) {
   const J = BODY_JOINTS;
-  const P = RIDING_POSE;
-  return [
-    { mesh: "pelvis", model: at(J.pelvis, 0) },
-    { mesh: "torso", model: at(J.spine, P.spine) },
-    { mesh: "head", model: at(J.neck, P.neck) },
-    { mesh: "upperArmL", model: at(J.shoulderL, P.shoulderL) },
-    { mesh: "upperArmR", model: at(J.shoulderR, P.shoulderR) },
-    { mesh: "forearmL", model: at(J.elbowL, P.elbowL) },
-    { mesh: "forearmR", model: at(J.elbowR, P.elbowR) },
+  const pelvis = [hip[0], hip[1] + bob, hip[2]];
+  const torso = multiply(placement(pelvis), multiply(rotationZAbout([0, 0, 0], roll), rotationXAbout([0, 0, 0], spine)));
+  const inTorso = (joint) => transformPoint(torso, minus(J[joint], J.spine)).slice(0, 3);
+  // Each limb turns about X from the attitude it is modelled in to its new direction.
+  const limb = (at, from, to, restFrom, restTo) => multiply(placement(at), rotationXAbout([0, 0, 0], hangAngle(from, to) - hangAngle(restFrom, restTo)));
+  const parts = [
+    { mesh: "pelvis", model: placement(pelvis) },
+    { mesh: "torso", model: torso },
+    { mesh: "head", model: multiply(placement(inTorso("neck")), multiply(rotationZAbout([0, 0, 0], roll), rotationXAbout([0, 0, 0], spine * (1 - HEAD_LEVEL) + RIDING_POSE.neck))) },
   ];
+  for (const { s, upper, fore, bend } of ARMS) {
+    const shoulder = inTorso(`shoulder${s}`);
+    const hand = J[`hand${s}`];
+    const elbow = elbowFor(shoulder, hand, upper, fore, bend);
+    elbow[0] = shoulder[0] + J[`elbow${s}`][0] - J[`shoulder${s}`][0];
+    parts.push(
+      { mesh: `upperArm${s}`, model: limb(shoulder, shoulder, elbow, J[`shoulder${s}`], J[`elbow${s}`]) },
+      { mesh: `forearm${s}`, model: limb(elbow, elbow, hand, J[`elbow${s}`], hand) },
+    );
+  }
+  return parts;
 }
 
 /** Rotation of the point (y, z) around the X axis, same sense as `rotationXAbout`. */
@@ -254,12 +315,13 @@ function rotateYZ([x, y, z], angle) {
 
 /**
  * Pose of one leg for a crank phase (radians, grows while pedalling forward;
- * 0 = this leg's pedal at the bottom). Points are in the rider's local YZ plane
+ * 0 = this leg's pedal at the bottom), hanging from `hip` (forward of the
+ * saddle when the rider stands). Points are in the rider's local YZ plane
  * (x = 0); angles are X rotations for `rotationXAbout`, applied to the meshes
  * from `buildThigh`, `buildShin` and `buildFoot` at the hip, knee and ankle.
  */
-export function legPose(phase) {
-  const { hip, bottomBracket: bb, crankLength: r, thigh, shin, ball } = RIDER_GEOMETRY;
+export function legPose(phase, hip = RIDER_GEOMETRY.hip) {
+  const { bottomBracket: bb, crankLength: r, thigh, shin, ball } = RIDER_GEOMETRY;
   // Forward pedalling turns the cranks the same way as the wheels: top → front → bottom → back.
   const crankAngle = -phase;
   const pedal = [0, bb[1] - r * Math.cos(phase), bb[2] + r * Math.sin(phase)];

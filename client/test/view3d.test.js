@@ -889,6 +889,41 @@ test("my best lap's ghost is drawn see-through, casting no shadow, never solid",
   assert.equal(solidAtGhost(renderer.casters).length, 0, "no shadow");
 });
 
+// --- riders' body motion -----------------------------------------------------------
+
+/** How far each frame's bike of `id` leaned off upright (radians), riding `seconds` on the flat first side of the square. */
+function bikeLeans(rider, { seconds = 1.5, myId = 1, myFtp } = {}) {
+  const { view, renderer } = gymView([]);
+  const bike = view.bodies[riderLook(rider.id).variant];
+  const scale = riderLook(rider.id).scale;
+  const leans = [];
+  // The camera stays back at the start, so another rider is out of label range (no DOM here).
+  view.camera.update(0, 1, 0);
+  for (let t = 0; t <= seconds; t += 0.05) {
+    renderer.draws = [];
+    view.render({ riders: [rider], myId, myCadence: 90, myFtp, timeS: 10 + t, colors });
+    const model = renderer.draws.find((d) => d.handle === bike).model;
+    leans.push(Math.acos(Math.min(1, model[5] / scale)));
+  }
+  return leans;
+}
+
+const bot = { id: 42, name: "Bot", distance: 100, lane: 2, speed: 12, power: 450, is_bot: true };
+
+test("a sprinting bot gets out of the saddle and rocks its bike", () => {
+  assert.ok(Math.max(...bikeLeans({ ...bot, move: "sprint" })) > 0.08);
+});
+
+test("a rider cruising in the saddle keeps the bike upright", () => {
+  assert.ok(Math.max(...bikeLeans({ ...bot, power: 200 })) < 0.01);
+});
+
+test("I get out of the saddle when I surge well over my FTP", () => {
+  const me = { id: 1, name: "Me", distance: 100, lane: 1, speed: 10, power: 500 };
+  assert.ok(Math.max(...bikeLeans(me, { myFtp: 250 })) > 0.08);
+  assert.ok(Math.max(...bikeLeans(me, { myFtp: 400 })) < 0.01);
+});
+
 // --- water ----------------------------------------------------------------------
 
 /** The water shading the sea and the rivers were drawn with, at `quality` in `biome`. */

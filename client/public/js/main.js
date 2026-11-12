@@ -4481,7 +4481,7 @@ function frame() {
 
   const draft = me ? draftInfo(me, riders, app.route) : null;
   if (app.viewMode === "3d") {
-    app.view3d.render({ riders: ghost ? [...everyone, ghost] : everyone, myId: app.riderId, myCadence: app.session.latest.cadence, timeS: time, colors });
+    app.view3d.render({ riders: ghost ? [...everyone, ghost] : everyone, myId: app.riderId, myCadence: app.session.latest.cadence, myFtp: app.profile.ftp, timeS: time, colors });
     governFrame(time);
   } else {
     drawRideMap($("ride-map"), { route: app.route, riders: ghost ? [...riders, ghost] : riders, me, draft, lemons: app.lemonHunt?.lemons, colors, network: app.network, routes: app.routes, biome: app.biome, timeMode: app.timeMode });
