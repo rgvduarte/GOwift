@@ -32,10 +32,11 @@ the gap.
   - each rider ahead in a neighbouring lane (at most 1.5 lanes off) adds up
     to 4 % for a rider on a wheel: all of it a bike length (2 m) ahead, fading
     to nothing level with the rider and 4 m ahead;
-  - a bunch saves at most 60 %;
+  - a bunch saves at most 60 %, the gain from a wheel behind included;
   - a rider with a wheel 2 m behind saves 2.6 %, fading to nothing at 4 m.
   The window and its linear fade stay as they were, so bots' draft window and
-  the spacing logic need no change, and a pair rides exactly as before. Behind
+  the spacing logic need no change. The follower of a pair rides exactly as
+  before; its leader now saves up to 2.6 %. Behind
   a beer bike every wheel of a closed-up line keeps its 50 %: a line saves up
   to what any of its wheels gives the rider right behind it, faded by the links
   up to that wheel like the depth. Every part fades, so no rider's drag jumps
@@ -58,8 +59,11 @@ the gap.
   comparison of the pass logic: at equal power, followers pass a little less.
 - Each rider's line is walked to its front, so a beer bike's draft reaches
   its whole line; the walk ends back at the rider round a ring of riders on a
-  short loop, and after one link per rider in the field at most. The per-tick
-  cost stays one scan of the field per rider, as before.
+  short loop, and after one link per rider in the field at most. Per tick,
+  each rider still scans the field once for its wheel ahead; a rider on a
+  wheel scans it a second time for the riders alongside and walks its line
+  along the links already found. With 100 bots a tick still takes about
+  0.4 ms in a release build, within the noise of the one-wheel rule.
 - The HUD now shows what the server applies: 0 % behind another app's rider,
   50 % behind a beer bike. A leader with a wheel behind is not drafting and
   sees no drafting line; its few percent reach the pedals through

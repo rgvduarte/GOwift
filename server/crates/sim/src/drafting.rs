@@ -33,7 +33,8 @@ pub struct DraftParams {
     pub side_per_rider: f64,
     pub side_gap: f64,
     pub side_lanes: f64,
-    /// The most reduction a rider gets, however deep in a bunch.
+    /// The most reduction a rider gets, however deep in a bunch, a wheel
+    /// behind included (more only behind a wheel that gives more by itself).
     pub max_bunch: f64,
     /// Reduction for a rider with a wheel `min_gap` behind, fading out at `leader_gap`.
     pub leader: f64,
@@ -90,13 +91,14 @@ impl DraftParams {
     }
 
     /// CdA multiplier for a rider at `place` in a group: its draft (see
-    /// [`Self::group_draft`]) times the little a wheel behind gives.
+    /// [`Self::group_draft`]) times the little a wheel behind gives, within
+    /// the bunch cap.
     pub fn group_factor(&self, place: &GroupPlace) -> f64 {
         let lead = place.gap_behind.map_or(1.0, |gap| {
             let t = ((gap - self.min_gap) / (self.leader_gap - self.min_gap)).clamp(0.0, 1.0);
             1.0 - self.leader * (1.0 - t)
         });
-        self.group_draft(place) * lead
+        (self.group_draft(place) * lead).max(1.0 - self.most(&place.line))
     }
 
     /// The drafting part of [`Self::group_factor`]: the shelter of the
@@ -109,6 +111,12 @@ impl DraftParams {
             let flanked = line + self.side_per_rider * side;
             self.follow(wheel.gap, flanked.min(self.max_bunch.max(line)))
         })
+    }
+
+    /// The most a rider at the back of `line` can save: the bunch cap, or
+    /// more where the line alone gives more (as [`Self::group_draft`] caps it).
+    fn most(&self, line: &[Wheel]) -> f64 {
+        self.max_bunch.max(self.line_reduction(line))
     }
 
     /// The most a rider at the back of `line` saves right behind its wheel.
@@ -287,6 +295,17 @@ mod tests {
     #[test]
     fn riders_alongside_add_no_more_than_the_bunch_cap() {
         assert!((flanked(&[2.0; 10]) - (1.0 - DraftParams::default().max_bunch)).abs() < 1e-12);
+    }
+
+    #[test]
+    fn a_wheel_behind_saves_no_more_than_the_bunch_cap() {
+        let p = DraftParams::default();
+        let deep_in_a_bunch = GroupPlace {
+            alongside: vec![2.0; 10],
+            gap_behind: Some(2.0),
+            ..in_line(2.0, 4)
+        };
+        assert!((p.group_factor(&deep_in_a_bunch) - (1.0 - p.max_bunch)).abs() < 1e-12);
     }
 
     #[test]

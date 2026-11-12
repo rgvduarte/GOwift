@@ -24,7 +24,7 @@ the drag the server's physics applies. Today:
 | Who computes the draft | The server, and only the server. `state` carries the viewer's `drag_factor` (everything the physics scaled ½·ρ·CdA·v² by) and `draft` (drafting alone, for display). The client mirror stays as the fallback for older servers |
 | Depth in a line | Reduction 30 / 40 / 45 / 48 % on the 1st / 2nd / 3rd / 4th-and-later wheel of a same-lane line whose every link is inside the draft window; each step up counts as far as the links up to that depth are close (the window's fade), so the draft stays continuous as a link opens |
 | Riders alongside | Up to +4 % per rider ahead in a neighbouring lane (≤ 1.5 lanes off), only for a rider on a wheel: all of it 2 m ahead, nothing level or 4 m ahead |
-| Bunch cap | 60 % (Blocken et al. 2018 measured 90–95 % deep in a peloton; game riders hold perfect position and nobody is gapped by crosswind) |
+| Bunch cap | 60 %, the leader's gain from a wheel behind included (Blocken et al. 2018 measured 90–95 % deep in a peloton; game riders hold perfect position and nobody is gapped by crosswind) |
 | Leader | 2.6 % less drag with a wheel 2 m behind, fading to none at 4 m (Blocken et al. 2013) |
 | Draft window | Unchanged (2–6.5 m, linear fade): bots' `draft_window` and the spacing logic stay valid |
 | Beer bike | Its 50 % holds on every wheel of a closed-up line behind it (each step up the line also rises to the largest reduction any wheel up to there gives) |
@@ -66,7 +66,8 @@ f_lead = 1 − leader · (1 − clamp((gap_behind − 2) / (4 − 2), 0, 1))
 ```
 
 A rider's draft (sent as `state.draft`, shown as drafting) is `f`; its
-`drag_factor` is `f · f_lead · ρ(h) / ρ₀`.
+`drag_factor` is `max(f · f_lead, 1 − max(max_bunch, R)) · ρ(h) / ρ₀`: the cap
+holds with a wheel behind too.
 The walk follows the line to its front, so a beer bike anywhere ahead counts; it
 ends back at the rider round a ring of riders on a short loop, and after one link
 per rider in the field at most.
